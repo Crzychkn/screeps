@@ -1,6 +1,7 @@
 var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
 var roleBuilder = require('role.builder');
+var towerDefense = require('towerDefense');
 
 
 module.exports.loop = function () {
@@ -38,6 +39,9 @@ module.exports.loop = function () {
         var newName = Game.spawns['Spawn1'].createCreep([WORK,CARRY,MOVE], undefined, {role: 'builder'});
         console.log('Spawning new builder: ' + newName);
     }
+
+	//Run Tower Defense
+	towerDefense();
 
     //Defense Tower
     /*var tower = Game.getObjectById('TOWER_ID');
