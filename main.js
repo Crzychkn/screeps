@@ -1,7 +1,7 @@
 var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
 var roleBuilder = require('role.builder');
-var towerDefense = require('towerDefense');
+var 
 
 
 module.exports.loop = function () {
@@ -41,7 +41,7 @@ module.exports.loop = function () {
     }
 
 	//Run Tower Defense
-	towerDefense();
+	defendRoom();
 
     //Defense Tower
     /*var tower = Game.getObjectById('TOWER_ID');
