@@ -1,5 +1,8 @@
-Game.spawns['Spawn1'].room.createConstructionSite( 35, 15, STRUCTURE_TOWER );
+var towerSpawn = {
 
-module.exports = {
+	var spawnPos = Game.spawns['Spawn1'].pos;
 
-};
+	Game.spawns['Spawn1'].room.createConstructionSite( spawnPos + 5, spawnPos - 5, STRUCTURE_TOWER );
+
+}
+module.exports = towerSpawn;
