@@ -40,7 +40,7 @@ module.exports.loop = function () {
     }
 
     //Defense Tower
-    /*var tower = Game.getObjectById('TOWER_ID');
+    var tower = Game.getObjectById('TOWER_ID');
     if(tower) {
         var closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
             filter: (structure) => structure.hits < structure.hitsMax
@@ -54,7 +54,6 @@ module.exports.loop = function () {
             tower.attack(closestHostile);
         }
     }
-    */
     
     //Define roles of creeps
     for(var name in Game.creeps) {
