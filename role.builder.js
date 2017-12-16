@@ -16,6 +16,8 @@ var roleBuilder = {
 
         if(creep.memory.building) {
             var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
+			//var towers = _.filter(Game.structures, s => s.structureType == STRUCTURE_TOWER);
+			//console.log(towers);
             
             if (targets[priority] == StructureExtension)
             {
