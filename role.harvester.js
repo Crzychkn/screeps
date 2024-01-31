@@ -1,20 +1,6 @@
 var roleHarvester = {
   /** @param {Creep} creep **/
   run: function (creep) {
-    var harvesters = _.filter(
-      Game.creeps,
-      (creep) => creep.memory.role == "harvester",
-    );
-    console.log("Harvesters: " + harvesters.length);
-
-    if (harvesters.length < 2) {
-      var newName = "Harvester" + Game.time;
-      console.log("Spawning new harvester: " + newName);
-      Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
-        memory: { role: "harvester" },
-      });
-    }
-
     if (creep.store.getFreeCapacity() > 0) {
       var sources = creep.room.find(FIND_SOURCES);
       if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
