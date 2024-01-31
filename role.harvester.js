@@ -27,14 +27,12 @@ var roleHarvester = {
         }
         //Otherwise, upgrade controller
       } else {
-        while (creep.store.getFreeCapacity != 0) {
-          if (
-            creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE
-          ) {
-            creep.moveTo(creep.room.controller, {
-              visualizePathStyle: { stroke: "#ffffff" },
-            });
-          }
+        if (
+          creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE
+        ) {
+          creep.moveTo(creep.room.controller, {
+            visualizePathStyle: { stroke: "#ffffff" },
+          });
         }
       }
     }
