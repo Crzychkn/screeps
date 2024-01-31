@@ -29,7 +29,7 @@ module.exports.loop = function () {
     Game.creeps,
     (creep) => creep.memory.role == "upgrader",
   );
-  console.log("Upgrader: " + upgrader.length);
+  console.log("Upgrader: " + upgraders.length);
 
   if (upgraders.length < 2) {
     var newName = "Upgrader" + Game.time;
