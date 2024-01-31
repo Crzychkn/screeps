@@ -25,6 +25,20 @@ module.exports.loop = function () {
     });
   }
 
+  var upgraders = _.filter(
+    Game.creeps,
+    (creep) => creep.memory.role == "upgrader",
+  );
+  console.log("Upgrader: " + upgrader.length);
+
+  if (harvesters.length < 2) {
+    var newName = "Upgrader" + Game.time;
+    console.log("Spawning new upgrader: " + newName);
+    Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
+      memory: { role: "upgrader" },
+    });
+  }
+
   if (Game.spawns["Spawn1"].spawning) {
     var spawningCreep = Game.creeps[Game.spawns["Spawn1"].spawning.name];
     Game.spawns["Spawn1"].room.visual.text(
