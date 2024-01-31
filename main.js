@@ -11,6 +11,7 @@ module.exports.loop = function () {
     }
   }
 
+  //Harvesters auto spawn
   var harvesters = _.filter(
     Game.creeps,
     (creep) => creep.memory.role == "harvester",
@@ -25,6 +26,7 @@ module.exports.loop = function () {
     });
   }
 
+  //Upgraders auto spawn
   var upgraders = _.filter(
     Game.creeps,
     (creep) => creep.memory.role == "upgrader",
@@ -36,6 +38,21 @@ module.exports.loop = function () {
     console.log("Spawning new upgrader: " + newName);
     Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
       memory: { role: "upgrader" },
+    });
+  }
+
+  //Builders auto spawn
+  var builders = _.filter(
+    Game.creeps,
+    (creep) => creep.memory.role == "builder",
+  );
+  console.log("Builder: " + builders.length);
+
+  if (builders.length < 2) {
+    var newName = "Builder" + Game.time;
+    console.log("Spawning new builder: " + newName);
+    Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
+      memory: { role: "builder" },
     });
   }
 
@@ -68,6 +85,7 @@ module.exports.loop = function () {
     }
   }
 
+  //Run screeps logic
   for (var name in Game.creeps) {
     var creep = Game.creeps[name];
     if (creep.memory.role == "harvester") {
