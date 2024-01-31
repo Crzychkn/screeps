@@ -27,7 +27,7 @@ var roleHarvester = {
         }
         //Otherwise, upgrade controller
       } else {
-        while (creep.store.getFreeCapacity > 0) {
+        while (creep.store.getFreeCapacity < 0) {
           if (
             creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE
           ) {
