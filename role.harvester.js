@@ -25,15 +25,6 @@ var roleHarvester = {
             visualizePathStyle: { stroke: "#ffffff" },
           });
         }
-        //Otherwise, upgrade controller
-      } else {
-        if (
-          creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE
-        ) {
-          creep.moveTo(creep.room.controller, {
-            visualizePathStyle: { stroke: "#ffffff" },
-          });
-        }
       }
     }
   },
