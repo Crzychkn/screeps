@@ -1,6 +1,7 @@
 var roleHarvester = {
   /** @param {Creep} creep **/
   run: function (creep) {
+    //If creep has space, find energy and harvest
     if (creep.store.getFreeCapacity() > 0) {
       var sources = creep.room.find(FIND_SOURCES);
       if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
@@ -17,9 +18,17 @@ var roleHarvester = {
           );
         },
       });
+      //If spawn, extension, or tower need energy, supply them
       if (targets.length > 0) {
         if (creep.transfer(targets[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
           creep.moveTo(targets[0], {
+            visualizePathStyle: { stroke: "#ffffff" },
+          });
+        }
+        //Otherwise, upgrade controller
+      } else {
+        if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANE) {
+          creep.moveTo(creep.room.controller, {
             visualizePathStyle: { stroke: "#ffffff" },
           });
         }
