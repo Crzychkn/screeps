@@ -5,9 +5,6 @@ module.exports = {
     if (targets.length > 0) {
       creep.memory.building = true;
       creep.say("🚧 build");
-      if (creep.build(targets[0]) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(targets[0], { visualizePathStyle: { stroke: "#ffffff" } });
-      }
     }
 
     // If the creep is currently building and is out of energy, switch to harvesting mode
