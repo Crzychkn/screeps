@@ -2,7 +2,7 @@ module.exports = {
   run: function (creep) {
     //Check if there are buildings to construct
     var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
-    if (targets.length > 0) {
+    if (targets.length > 0 && creep.store.getFreeCapacity() == 0) {
       creep.memory.building = true;
       creep.say("🚧 build");
     }
