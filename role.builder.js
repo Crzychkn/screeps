@@ -2,8 +2,9 @@ module.exports = {
   run: function (creep) {
     //Check if there are buildings to construct
     var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
-    if (targets.length > 0 && creep.store.getFreeCapacity() == 0) {
+    if (targets.length > 0) {
       creep.memory.building = true;
+      creep.memory.upgrading = false;
       creep.say("🚧 build");
     }
 
@@ -30,6 +31,7 @@ module.exports = {
       } else {
         // If there are no construction sites, switch to upgrading mode
         creep.memory.building = false;
+        creep.memory.upgrading = true;
         creep.say("🔄 upgrade");
       }
     } else {
@@ -41,7 +43,7 @@ module.exports = {
     }
 
     // If the creep is not building or harvesting, it must be in upgrading mode
-    if (!creep.memory.building) {
+    if (creep.memory.upgrading) {
       // Find a controller to upgrade
       var controller = creep.room.controller;
       if (creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
