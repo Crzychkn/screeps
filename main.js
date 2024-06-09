@@ -14,7 +14,7 @@ module.exports.loop = function () {
   //Harvesters auto spawn
   var harvesters = _.filter(
     Game.creeps,
-    (creep) => creep.memory.role == "harvester",
+    (creep) => creep.memory.role == "harvester"
   );
   console.log("Harvesters: " + harvesters.length);
 
@@ -29,7 +29,7 @@ module.exports.loop = function () {
   //Upgraders auto spawn
   var upgraders = _.filter(
     Game.creeps,
-    (creep) => creep.memory.role == "upgrader",
+    (creep) => creep.memory.role == "upgrader"
   );
   console.log("Upgrader: " + upgraders.length);
 
@@ -44,11 +44,11 @@ module.exports.loop = function () {
   //Builders auto spawn
   var builders = _.filter(
     Game.creeps,
-    (creep) => creep.memory.role == "builder",
+    (creep) => creep.memory.role == "builder"
   );
   console.log("Builder: " + builders.length);
 
-  if (builders.length < 1) {
+  if (builders.length < 2) {
     var newName = "Builder" + Game.time;
     console.log("Spawning new builder: " + newName);
     Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
@@ -62,7 +62,7 @@ module.exports.loop = function () {
       "🛠️" + spawningCreep.memory.role,
       Game.spawns["Spawn1"].pos.x + 1,
       Game.spawns["Spawn1"].pos.y,
-      { align: "left", opacity: 0.8 },
+      { align: "left", opacity: 0.8 }
     );
   }
 
@@ -73,7 +73,7 @@ module.exports.loop = function () {
       FIND_STRUCTURES,
       {
         filter: (structure) => structure.hits < structure.hitsMax,
-      },
+      }
     );
     if (closestDamagedStructure) {
       tower.repair(closestDamagedStructure);
