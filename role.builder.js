@@ -1,8 +1,19 @@
 module.exports = {
   run: function (creep) {
+    let creepFull;
+
+    //Check if creep is full of energy
+    if (creep.store.getFreeCapacity == 0) {
+      //Creep is full
+      creepFull = true;
+    } else {
+      //Creep is empty
+      creepFull = false;
+    }
+
     //Check if there are buildings to construct
     var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
-    if (targets.length > 0 && creep.store.getFreeCapacity == 0) {
+    if (targets.length > 0 && creepFull) {
       creep.memory.building = true;
       creep.memory.upgrading = false;
       creep.say("🚧 build");
@@ -36,7 +47,7 @@ module.exports = {
       }
     } else {
       // If the creep is not in building mode, find energy sources and harvest them
-      while (creep.getUsedCapacity != 100) {
+      if (!creepFull) {
         var sources = creep.room.find(FIND_SOURCES);
         if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
           creep.moveTo(sources[0], {
