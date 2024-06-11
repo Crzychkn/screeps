@@ -1,6 +1,6 @@
 var roleHarvester = require("role.harvester");
 var roleUpgrader = require("role.upgrader");
-var roleBuilder = require("role.builder");
+var roleBuilder = require("role.builder-v3");
 
 module.exports.loop = function () {
   //Clear memory of dead creeps
