@@ -25,6 +25,8 @@ var roleHarvester = {
             visualizePathStyle: { stroke: "#ffffff" },
           });
         }
+      } else {
+        creep.moveTo(Game.spawns.Spawn1.pos.x, Game.spawns.Spawn1.pos.y);
       }
     }
   },
