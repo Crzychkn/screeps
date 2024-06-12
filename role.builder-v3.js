@@ -32,12 +32,21 @@ module.exports = {
 
     // If the creep is in building mode, find construction sites and build them
     if (creep.memory.building) {
-      var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
-      if (targets.length > 0) {
-        if (creep.build(targets[0]) == ERR_NOT_IN_RANGE) {
-          creep.moveTo(targets[0], {
+      const constructionSites = creep.room.find(FIND_CONSTRUCTION_SITES);
+      const repairSites = creep.room.find(FIND_STRUCTURES, {
+        filter: (object) => object.hits < object.hitsMax,
+      });
+      if (constructionSites.length > 0) {
+        if (creep.build(onstructionSites[0]) == ERR_NOT_IN_RANGE) {
+          creep.moveTo(onstructionSites[0], {
             visualizePathStyle: { stroke: "#ffffff" },
           });
+        } else if (repairSites.length > 0) {
+          if (creep.repair(repairSites[0]) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(repairSites[0], {
+              visualizePathStyle: { stroke: "#ffffff" },
+            });
+          }
         }
       } else {
         // If there are no construction sites, switch to upgrading mode
