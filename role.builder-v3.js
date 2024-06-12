@@ -37,7 +37,7 @@ module.exports = {
         filter: (object) => object.hits < object.hitsMax,
       });
       if (constructionSites.length > 0) {
-        if (creep.build(onstructionSites[0]) == ERR_NOT_IN_RANGE) {
+        if (creep.build(constructionSites[0]) == ERR_NOT_IN_RANGE) {
           creep.say("Construct");
           creep.moveTo(constructionSites[0], {
             visualizePathStyle: { stroke: "#ffffff" },
