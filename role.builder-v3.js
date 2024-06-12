@@ -31,7 +31,7 @@ module.exports = {
     }
 
     // If the creep is in building mode, find construction sites and build them
-    if (creep.memory.building) {
+    if (creep.memory.building && creepFull) {
       const constructionSites = creep.room.find(FIND_CONSTRUCTION_SITES);
       const repairSites = creep.room.find(FIND_STRUCTURES, {
         filter: (object) => object.hits < object.hitsMax,
@@ -67,7 +67,7 @@ module.exports = {
     }
 
     // If the creep is not building or harvesting, it must be in upgrading mode
-    if (creep.memory.upgrading) {
+    if (creep.memory.upgradingi && creepFull) {
       // Find a controller to upgrade
       var controller = creep.room.controller;
       if (creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
