@@ -55,6 +55,7 @@ module.exports = {
         creep.memory.building = false;
         creep.memory.upgrading = true;
         creep.say("🔄 upgrade");
+        creep.say("I'm stuck.");
       }
     } else {
       // If the creep is not in building mode, find energy sources and harvest them
