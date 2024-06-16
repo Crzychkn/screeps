@@ -69,7 +69,7 @@ module.exports = {
     }
 
     // If the creep is not building or harvesting, it must be in upgrading mode
-    if (creep.memory.upgradingi && creepFull) {
+    if (creep.memory.upgrading && creepFull) {
       // Find a controller to upgrade
       var controller = creep.room.controller;
       if (creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
