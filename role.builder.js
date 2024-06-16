@@ -19,6 +19,16 @@ module.exports = {
       creep.say("🚧 build");
     }
 
+    //Check if there are buildings to repair
+    const repairSites = creep.room.find(FIND_STRUCTURES, {
+      filter: (object) => object.hits < object.hitsMax,
+    });
+    if (repairSites.length > 0) {
+      creep.memory.building = true;
+      creep.memory.upgrading = false;
+      creep.say("🚧 repair");
+    }
+
     // If the creep is currently building and is out of energy, switch to harvesting mode
     if (creep.memory.building && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.building = false;
