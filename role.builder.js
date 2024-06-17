@@ -7,7 +7,7 @@ module.exports = {
       //Creep is full
       creepFull = true;
     } else {
-      //Creep is empty
+      //Creep as space free
       creepFull = false;
     }
 
@@ -23,7 +23,7 @@ module.exports = {
     const repairSites = creep.room.find(FIND_STRUCTURES, {
       filter: (object) => object.hits < object.hitsMax,
     });
-    if (repairSites.length > 0) {
+    if (repairSites.length > 0 && creepFull) {
       creep.memory.building = true;
       creep.memory.upgrading = false;
       creep.say("🚧 repair");
@@ -60,12 +60,6 @@ module.exports = {
             });
           }
         }
-      } else {
-        // If there are no construction sites, switch to upgrading mode
-        creep.memory.building = false;
-        creep.memory.upgrading = true;
-        creep.say("🔄 upgrade");
-        creep.say("I'm stuck.");
       }
     } else {
       // If the creep is not in building mode, find energy sources and harvest them
@@ -76,15 +70,6 @@ module.exports = {
             visualizePathStyle: { stroke: "#ffaa00" },
           });
         }
-      }
-    }
-
-    // If the creep is not building or harvesting, it must be in upgrading mode
-    if (creep.memory.upgrading && creepFull) {
-      // Find a controller to upgrade
-      var controller = creep.room.controller;
-      if (creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(controller, { visualizePathStyle: { stroke: "#ffffff" } });
       }
     }
   },
