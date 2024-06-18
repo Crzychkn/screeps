@@ -11,31 +11,35 @@ module.exports = {
       creepFull = false;
     }
 
-    //Check if there are buildings to construct
-    var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
-    if (targets.length > 0 && creepFull) {
-      creep.memory.building = true;
-      creep.say("🚧 build");
+    //Check if there are buildings to repair
+    const repairSites = creep.room.find(FIND_STRUCTURES, {
+      filter: (object) => object.hits < object.hitsMax,
+    });
+    if (repairSites.length > 0 && creepFull) {
+      creep.memory.repairing = true;
+      creep.say("🚧 repair");
     }
 
     // If the creep is currently building and is out of energy, switch to harvesting mode
-    if (creep.memory.building && creep.store[RESOURCE_ENERGY] == 0) {
-      creep.memory.building = false;
+    if (creep.memory.repairing && creep.store[RESOURCE_ENERGY] == 0) {
+      creep.memory.repairing = false;
       creep.say("🔄 harvest");
     }
     // If the creep is currently harvesting and is full of energy, switch to building mode
     if (!creep.memory.building && creep.store.getFreeCapacity() == 0) {
       creep.memory.building = true;
-      creep.say("🚧 build");
+      creep.say("🚧 repair");
     }
 
     // If the creep is in building mode, find sites to build
-    if (creep.memory.building) {
-      const constructionSites = creep.room.find(FIND_CONSTRUCTION_SITES);
-      if (constructionSites.length > 0) {
-        if (creep.build(constructionSites[0]) == ERR_NOT_IN_RANGE) {
-          creep.say("Construct");
-          creep.moveTo(constructionSites[0], {
+    if (creep.memory.repairing) {
+      const repairSites = creep.room.find(FIND_STRUCTURES, {
+        filter: (object) => object.hits < object.hitsMax,
+      });
+      if (repairSites.length > 0) {
+        if (creep.repair(repairSites[0]) == ERR_NOT_IN_RANGE) {
+          creep.say("Repair");
+          creep.moveTo(repairSites[0], {
             visualizePathStyle: { stroke: "#ffffff" },
           });
         }
