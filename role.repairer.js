@@ -26,7 +26,7 @@ module.exports = {
       creep.say("🔄 harvest");
     }
     // If the creep is currently harvesting and is full of energy, switch to building mode
-    if (!creep.memory.building && creep.store.getFreeCapacity() == 0) {
+    if (!creep.memory.repairing && creep.store.getFreeCapacity() == 0) {
       creep.memory.building = true;
       creep.say("🚧 repair");
     }
