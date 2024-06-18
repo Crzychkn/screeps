@@ -25,13 +25,13 @@ module.exports = {
       creep.memory.repairing = false;
       creep.say("🔄 harvest");
     }
-    // If the creep is currently harvesting and is full of energy, switch to building mode
+    // If the creep is currently harvesting and is full of energy, switch to repairing mode
     if (!creep.memory.repairing && creep.store.getFreeCapacity() == 0) {
-      creep.memory.building = true;
+      creep.memory.repairing = true;
       creep.say("🚧 repair");
     }
 
-    // If the creep is in building mode, find sites to build
+    // If the creep is in repair mode, find sites to repair
     if (creep.memory.repairing) {
       const repairSites = creep.room.find(FIND_STRUCTURES, {
         filter: (object) => object.hits < object.hitsMax,
