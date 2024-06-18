@@ -19,6 +19,7 @@ module.exports = {
     }
 
     // If the creep is currently building and is out of energy, switch to harvesting mode
+    //TODO: Maybe pull from containers instead of harvesting
     if (creep.memory.building && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.building = false;
       creep.say("🔄 harvest");
