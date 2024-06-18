@@ -52,7 +52,8 @@ module.exports = {
           creep.moveTo(constructionSites[0], {
             visualizePathStyle: { stroke: "#ffffff" },
           });
-        } else if (repairSites.length > 0) {
+        }
+        if (repairSites.length > 0) {
           if (creep.repair(repairSites[0]) == ERR_NOT_IN_RANGE) {
             creep.say("Repair");
             creep.moveTo(repairSites[0], {
