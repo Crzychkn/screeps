@@ -28,7 +28,7 @@ var roleHarvester = {
           });
         }
       } else {
-        // creep.moveTo(Game.spawns.Spawn1.pos.x, Game.spawns.Spawn1.pos.y);
+        creep.moveTo(Game.spawns.Spawn1.pos.x, Game.spawns.Spawn1.pos.y);
       }
     }
   },
