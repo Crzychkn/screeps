@@ -3,7 +3,7 @@ module.exports = {
     let creepFull;
 
     //Check if creep is full of energy
-    if (creep.store.getFreeCapacity == 0) {
+    if (creep.store.getFreeCapacity() == 0) {
       //Creep is full
       creepFull = true;
     } else {
