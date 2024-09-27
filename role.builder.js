@@ -6,9 +6,11 @@ module.exports = {
     if (creep.store[RESOURCE_ENERGY] == 0) {
       // Creep is empty
       creepEmpty = true;
+      console.log("Builder is empty");
     } else {
       // Creep has energy
       creepEmpty = false;
+      console.log("Builder is full");
     }
 
     //Check if there are buildings to construct
