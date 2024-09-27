@@ -43,17 +43,16 @@ module.exports = {
           });
         }
       }
-    } else {
-      // If the creep is not in building mode, find energy sources and harvest them
-      if (creepEmpty) {
-        console.log(creep.room.storage.pos);
-        console.log(creep.room.storage.isActive());
-        if (creep.withdraw(creep.room.storage) === ERR_NOT_IN_RANGE) {
-          creep.say("Too far, moving.");
-          creep.moveTo(creep.room.storage.pos, {
-            visualizePathStyle: { stroke: "#ffaa00" },
-          });
-        }
+    }
+    // If the creep is not in building mode, find energy sources and harvest them
+    if (creepEmpty) {
+      console.log(creep.room.storage.pos);
+      console.log(creep.room.storage.isActive());
+      if (creep.withdraw(creep.room.storage) === ERR_NOT_IN_RANGE) {
+        creep.say("Too far, moving.");
+        creep.moveTo(creep.room.storage.pos, {
+          visualizePathStyle: { stroke: "#ffaa00" },
+        });
       }
     }
   },
