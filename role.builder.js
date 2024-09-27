@@ -15,8 +15,10 @@ module.exports = {
 
     // If the creep is in building mode, find sites to build
     if (creep.memory.building) {
+      creep.say("Building step 1");
       const constructionSites = creep.room.find(FIND_CONSTRUCTION_SITES);
       if (constructionSites.length > 0) {
+        console.log("Construction Site found.");
         if (creep.build(constructionSites[0]) == ERR_NOT_IN_RANGE) {
           creep.say("Moving");
           creep.moveTo(constructionSites[0], {
