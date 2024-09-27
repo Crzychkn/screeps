@@ -43,7 +43,8 @@ module.exports = {
     } else {
       // If the creep is not in building mode, find energy sources and harvest them
       if (creepEmpty) {
-        console.log(Room.storage);
+        console.log(Room.storage.pos);
+        console.log(Room.storage.isActive());
         if (creep.withdraw(Room.storage) == ERR_NOT_IN_RANGE) {
           creep.moveTo(Room.storage.pos, {
             visualizePathStyle: { stroke: "#ffaa00" },
