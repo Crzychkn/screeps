@@ -20,6 +20,18 @@ module.exports = {
             visualizePathStyle: { stroke: "#ffffff" },
           });
         }
+      } else {
+        // Repair stuff here maybe.
+        //Check if there are buildings to repair
+        const repairSites = creep.room.find(FIND_STRUCTURES, {
+          filter: (object) => object.hits < object.hitsMax,
+        });
+        if (repairSites.length) {
+          creep.say("🚧 repair");
+          if (creep.repair(repairSites[0]) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(repairSites[0]);
+          }
+        }
       }
     }
     // If the creep is not in building mode, find energy sources and harvest them
