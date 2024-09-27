@@ -25,7 +25,10 @@ module.exports = {
     }
     // If the creep is not in building mode, find energy sources and harvest them
     if (!creep.memory.building) {
-      if (creep.withdraw(creep.room.storage) === ERR_NOT_IN_RANGE) {
+      if (
+        creep.withdraw(creep.room.storage, [RESOURCE_ENERGY]) ===
+        ERR_NOT_IN_RANGE
+      ) {
         creep.say("Too far, moving.");
         creep.moveTo(creep.room.storage.pos, {
           visualizePathStyle: { stroke: "#ffaa00" },
