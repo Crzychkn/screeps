@@ -1,6 +1,7 @@
 module.exports = {
   run: function (creep) {
     creep.say("Function running");
+    creep.memory.building = false;
     // If the creep is currently building and is out of energy, switch to harvesting mode
     if (creep.memory.building && creep.store[RESOURCE_ENERGY] === 0) {
       creep.memory.building = false;
