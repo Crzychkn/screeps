@@ -36,6 +36,7 @@ module.exports = {
     }
     // If the creep is not in building mode, find energy sources and harvest them
     if (!creep.memory.building) {
+      // TODO: Check if storage exists, and if it doesn't, get from source
       if (
         creep.withdraw(creep.room.storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
       ) {
