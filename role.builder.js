@@ -45,8 +45,8 @@ module.exports = {
       if (creepEmpty) {
         console.log(creep.room.storage.pos);
         console.log(creep.room.storage.isActive());
-        if (creep.withdraw(Room.storage) == ERR_NOT_IN_RANGE) {
-          creep.moveTo(Room.storage.pos, {
+        if (creep.withdraw(creep.room.storage) == ERR_NOT_IN_RANGE) {
+          creep.moveTo(creep.room.storage.pos, {
             visualizePathStyle: { stroke: "#ffaa00" },
           });
         }
