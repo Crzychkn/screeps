@@ -16,7 +16,7 @@ module.exports = {
       const constructionSites = creep.room.find(FIND_CONSTRUCTION_SITES);
       if (constructionSites.length > 0) {
         if (creep.build(constructionSites[0]) == ERR_NOT_IN_RANGE) {
-          creep.say("Construct");
+          creep.say("Constructing");
           creep.moveTo(constructionSites[0], {
             visualizePathStyle: { stroke: "#ffffff" },
           });
@@ -29,7 +29,7 @@ module.exports = {
         creep.withdraw(creep.room.storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
       ) {
         creep.say("Too far, moving.");
-        creep.moveTo(creep.room.storage.pos, {
+        creep.moveTo(creep.room.storage, {
           visualizePathStyle: { stroke: "#ffaa00" },
         });
       }
