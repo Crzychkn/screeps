@@ -17,7 +17,8 @@ module.exports = {
     if (creep.memory.building) {
       creep.say("Building step 1");
       const constructionSites = creep.room.find(FIND_CONSTRUCTION_SITES);
-      console.log({ constructionSites });
+      console.log(constructionSites);
+      console.log(constructionSites.length);
       if (constructionSites.length > 0) {
         console.log("Construction Site found.");
         if (creep.build(constructionSites[0]) == ERR_NOT_IN_RANGE) {
