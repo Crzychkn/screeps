@@ -1,25 +1,25 @@
 module.exports = {
   run: function (creep) {
-    let creepFull;
+    let creepEmpty;
 
     //Check if creep is full of energy
     if (creep.store[RESOURCE_ENERGY] == 0) {
-      // Creep has energy still.
-      creepFull = true;
-    } else {
       // Creep is empty
-      creepFull = false;
+      creepEmpty = true;
+    } else {
+      // Creep has energy
+      creepEmpty = false;
     }
 
     //Check if there are buildings to construct
     var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
-    if (targets.length > 0 && creepFull) {
+    if (targets.length > 0 && !creepEmpty) {
       creep.memory.building = true;
       creep.say("🚧 build");
     }
 
     // If the creep is currently building and is out of energy, switch to harvesting mode
-    if (creep.memory.building && creep.store[RESOURCE_ENERGY] == 0) {
+    if (creep.memory.building && creepEmpty) {
       creep.memory.building = false;
       creep.say("🔄 withdraw");
     }
