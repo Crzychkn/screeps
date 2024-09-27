@@ -3,11 +3,11 @@ module.exports = {
     let creepFull;
 
     //Check if creep is full of energy
-    if (creep.store.getFreeCapacity() == 0) {
-      //Creep is full
+    if (creep.store[RESOURCE_ENERGY] == 0) {
+      // Creep has energy still.
       creepFull = true;
     } else {
-      //Creep as space free
+      // Creep is empty
       creepFull = false;
     }
 
@@ -19,10 +19,9 @@ module.exports = {
     }
 
     // If the creep is currently building and is out of energy, switch to harvesting mode
-    //TODO: Maybe pull from containers instead of harvesting
     if (creep.memory.building && creep.store[RESOURCE_ENERGY] == 0) {
       creep.memory.building = false;
-      creep.say("🔄 harvest");
+      creep.say("🔄 withdraw");
     }
     // If the creep is currently harvesting and is full of energy, switch to building mode
     if (!creep.memory.building && creep.store.getFreeCapacity() == 0) {
@@ -44,7 +43,6 @@ module.exports = {
     } else {
       // If the creep is not in building mode, find energy sources and harvest them
       if (!creepFull) {
-        var structures = creep.room.find(FIND_STRUCTURES);
         if (creep.withdraw(Room.storage) == ERR_NOT_IN_RANGE) {
           creep.moveTo(Room.storage, {
             visualizePathStyle: { stroke: "#ffaa00" },
