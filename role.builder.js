@@ -1,6 +1,5 @@
 module.exports = {
   run: function (creep) {
-    creep.memory.building = false;
     // If the creep is currently building and is out of energy, switch to harvesting mode
     if (creep.memory.building && creep.store[RESOURCE_ENERGY] === 0) {
       creep.memory.building = false;
@@ -14,7 +13,6 @@ module.exports = {
 
     // If the creep is in building mode, find sites to build
     if (creep.memory.building) {
-      creep.say("Building step 1");
       const constructionSites = creep.room.find(FIND_CONSTRUCTION_SITES);
       if (constructionSites.length > 0) {
         if (creep.build(constructionSites[0]) == ERR_NOT_IN_RANGE) {
