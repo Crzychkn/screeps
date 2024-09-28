@@ -16,6 +16,15 @@ function getEnergy(creep) {
   }
 }
 
+function loadBalance(creep) {
+  // Assign the creep either a 0 or 1 based on its index or name hash
+  const index = creep.name.length % 4; // Use name length or another unique identifier
+
+  // Map the index to 0 or 1 in a balanced way
+  return index % 2; // This will alternate between 0 and 1
+}
+
 module.exports = {
   getEnergy,
+  loadBalance,
 };
