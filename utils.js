@@ -16,6 +16,6 @@ function getEnergy(creep) {
   }
 }
 
-modules.export = {
+module.export = {
   getEnergy,
 };
