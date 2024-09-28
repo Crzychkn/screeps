@@ -1,4 +1,4 @@
-const utils = "utils";
+const utils = require("utils");
 
 module.exports = {
   run: function (creep) {
