@@ -35,6 +35,14 @@ module.exports.loop = function () {
 
   if (tractors.length < 1 && Game.gcl.level === 3) {
     console.log("Tractor can be made.");
+    var newName = "Tractor" + Game.time;
+    Game.spawns["Spawn1"].spawnCreep(
+      [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE],
+      newName,
+      {
+        memory: { role: "tractor" },
+      }
+    );
   }
 
   //Upgraders auto spawn
