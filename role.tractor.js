@@ -36,4 +36,4 @@ var roleTractor = {
   },
 };
 
-modele.exports = roleTractor;
+module.exports = roleTractor;
