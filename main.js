@@ -27,6 +27,16 @@ module.exports.loop = function () {
     });
   }
 
+  var tractors = _.filter(
+    Game.creeps,
+    (creep) => creep.memory.role == "tractor"
+  );
+  console.log("Tractors: ", tractors.length);
+
+  if (tractors.length < 1 && Game.gcl.level === 3) {
+    console.log("Tractor can be made.");
+  }
+
   //Upgraders auto spawn
   var upgraders = _.filter(
     Game.creeps,
@@ -34,7 +44,7 @@ module.exports.loop = function () {
   );
   console.log("Upgrader: " + upgraders.length);
 
-  if (harvesters.length > 3 && upgraders.length < 4) {
+  if (harvesters.length > 3 && upgraders.length < 3) {
     var newName = "Upgrader" + Game.time;
     console.log("Spawning new upgrader: " + newName);
     Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
