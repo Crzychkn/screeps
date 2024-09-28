@@ -5,6 +5,7 @@ var roleHarvester = {
   run: function (creep) {
     //If creep has space, find energy and harvest
     if (creep.store.getFreeCapacity() > 0) {
+      var sources = creep.room.find(FIND_SOURCES);
       let random = utils.loadBalance(creep);
       if (creep.harvest(sources[random]) == ERR_NOT_IN_RANGE) {
         creep.moveTo(sources[random], {
