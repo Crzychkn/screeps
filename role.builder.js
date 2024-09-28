@@ -1,3 +1,5 @@
+const utils = "utils";
+
 module.exports = {
   run: function (creep) {
     // If the creep is currently building and is out of energy, switch to harvesting mode
@@ -36,14 +38,7 @@ module.exports = {
     }
     // If the creep is not in building mode, find energy sources and harvest them
     if (!creep.memory.building) {
-      // TODO: Check if storage exists, and if it doesn't, get from source
-      if (
-        creep.withdraw(creep.room.storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
-      ) {
-        creep.moveTo(creep.room.storage, {
-          visualizePathStyle: { stroke: "#ffaa00" },
-        });
-      }
+      utils.getEnergy(creep);
     }
   },
 };
