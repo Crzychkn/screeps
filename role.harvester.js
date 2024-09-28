@@ -1,16 +1,11 @@
-const utils = require("utils");
-
 var roleHarvester = {
   /** @param {Creep} creep **/
   run: function (creep) {
     //If creep has space, find energy and harvest
     if (creep.store.getFreeCapacity() > 0) {
       var sources = creep.room.find(FIND_SOURCES);
-      let random = utils.loadBalance(creep);
-      if (creep.harvest(sources[random]) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(sources[random], {
-          visualizePathStyle: { stroke: "#ffaa00" },
-        });
+      if (creep.harvest(sources[0]) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(sources[0], { visualizePathStyle: { stroke: "#ffaa00" } });
       }
     } else {
       var targets = creep.room.find(FIND_STRUCTURES, {
