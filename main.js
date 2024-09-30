@@ -34,7 +34,7 @@ module.exports.loop = function () {
   );
   console.log("Tractors: ", tractors.length);
 
-  if (tractors.length < 1 && Game.gcl.level === 3) {
+  if (tractors.length < 1 && Game.gcl.level >= 3) {
     console.log("Tractor can be made.");
     var newName = "Tractor" + Game.time;
     Game.spawns["Spawn1"].spawnCreep(
