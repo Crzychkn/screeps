@@ -53,7 +53,7 @@ module.exports.loop = function () {
   );
   console.log("Upgrader: " + upgraders.length);
 
-  if (harvesters.length > 3 && upgraders.length < 3) {
+  if (harvesters.length > 3 && upgraders.length < 2) {
     var newName = "Upgrader" + Game.time;
     console.log("Spawning new upgrader: " + newName);
     Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
@@ -83,7 +83,7 @@ module.exports.loop = function () {
   );
   console.log("Repairer: " + builders.length);
 
-  if (harvesters.length > 3 && repairers.length < 2) {
+  if (harvesters.length > 3 && repairers.length < 1) {
     var newName = "Repairer" + Game.time;
     console.log("Spawning new repairer: " + newName);
     Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
