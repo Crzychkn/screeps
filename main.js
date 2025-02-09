@@ -13,6 +13,10 @@ module.exports.loop = function () {
     }
   }
 
+  const bucket = Game.cpu.bucket;
+
+  console.log(bucket);
+
   //Harvesters auto spawn
   var harvesters = _.filter(
     Game.creeps,
