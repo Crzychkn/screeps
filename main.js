@@ -12,7 +12,7 @@ module.exports.loop = function () {
   console.log('*********************');
   const controllerSign = "A new player learning and having fun.";
 
-  console.log(Room.controller.sign);
+  // console.log(Room.controller.sign);
 
   // Declare variables
   let newName;
