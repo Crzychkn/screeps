@@ -10,6 +10,7 @@ module.exports.loop = function () {
 
   // Start Script
   console.log('*********************');
+  console.log(sign.text);
 
   // Declare variables
   let newName;
