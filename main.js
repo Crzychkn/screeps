@@ -8,6 +8,9 @@ let name;
 
 module.exports.loop = function () {
 
+  // Start Script
+  console.log('*********************');
+
   // Declare variables
   let newName;
 
@@ -153,4 +156,8 @@ module.exports.loop = function () {
       roleTractor.run(creep);
     }
   }
+
+  // End Script
+  console.log('*********************');
+  console.log('\n')
 };
