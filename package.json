@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@types/screeps": "^3.3.8"
+  }
+}
