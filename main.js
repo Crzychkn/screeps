@@ -25,7 +25,7 @@ module.exports.loop = function () {
 
   console.log('CPU Bucket: ' + bucket);
   console.log('CPU Tick Limit: ' + tickLimit);
-  console.log('CPU Unlocked Status' + cpuUnlocked)
+  console.log('CPU Unlocked Status: ' + cpuUnlocked)
 
   //Harvesters auto spawn
   let harvesters = _.filter(
