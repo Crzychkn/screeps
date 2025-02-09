@@ -10,7 +10,9 @@ module.exports.loop = function () {
 
   // Start Script
   console.log('*********************');
-  // console.log(sign.text);
+  const controllerSign = "A new player learning and having fun.";
+
+  console.log(Room.controller.sign);
 
   // Declare variables
   let newName;
