@@ -14,8 +14,10 @@ module.exports.loop = function () {
   }
 
   const bucket = Game.cpu.bucket;
+  const tickLimit = Game.cpu.tickLimit;
 
   console.log('CPU Bucket: ' + bucket);
+  console.log('CPU Tick Limit: ' + tickLimit);
 
   //Harvesters auto spawn
   var harvesters = _.filter(
