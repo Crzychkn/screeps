@@ -8,7 +8,7 @@ var roleUpgrader = {
     const controller = creep.room.controller;
 
     if (controller) {
-      const newSign = "New player learning.";
+      const newSign = "New player learning and having fun.";
 
       // Check existing sign
       if (!controller.sign || controller.sign.text !== newSign) {
