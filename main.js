@@ -15,7 +15,7 @@ module.exports.loop = function () {
 
   const bucket = Game.cpu.bucket;
 
-  console.log(bucket);
+  console.log('CPU Bucket: ' + bucket);
 
   //Harvesters auto spawn
   var harvesters = _.filter(
