@@ -15,10 +15,6 @@ module.exports.loop = function () {
   // Declare variables
   let newName;
 
-  for (const i in Game.rooms) {
-    console.log(Game.rooms[i].name);
-  }
-
   //Clear memory of dead creeps
   for (name in Memory.creeps) {
     if (!Game.creeps[name]) {
