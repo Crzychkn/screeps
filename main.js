@@ -3,6 +3,7 @@ let roleUpgrader = require("role.upgrader");
 let roleBuilder = require("role.builder");
 let roleRepairer = require("role.repairer");
 let roleTractor = require("role.tractor");
+let roleScout = require("role.scout");
 
 let name;
 
