@@ -8,7 +8,7 @@ module.exports = {
     if ( currentGcl > 2 ) {
       // If we do, grab the first room from our rooms
 
-      const firstRoom = Game.rooms[1];
+      const firstRoom = Game.rooms[0];
 
       // Check the exits to that room and see if adjacent rooms are claimed
       console.log(firstRoom)
