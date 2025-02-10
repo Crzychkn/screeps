@@ -14,6 +14,10 @@ module.exports.loop = function () {
   // Declare variables
   let newName;
 
+  for (const i in Game.rooms) {
+    console.log(Game.rooms[i].name);
+  }
+
   //Clear memory of dead creeps
   for (name in Memory.creeps) {
     if (!Game.creeps[name]) {
@@ -108,6 +112,21 @@ module.exports.loop = function () {
     });
   }
 
+  // Scout auto spawn
+  let scout = _.filter(
+      Game.creeps,
+      (creep) => creep.memory.role === "scout"
+  );
+  console.log("Scout: " + scout.length);
+
+  if (scout.length < 1 && Game.gcl.level > 2) {
+    newName = "Scout" + Game.time;
+    console.log("Spawning new scout: ", newName);
+    Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, MOVE], newName, {
+      memory: { role: "scout" },
+    });
+  }
+
   if (Game.spawns["Spawn1"].spawning) {
     let spawningCreep = Game.creeps[Game.spawns["Spawn1"].spawning.name];
     Game.spawns["Spawn1"].room.visual.text(
@@ -154,6 +173,9 @@ module.exports.loop = function () {
     }
     if (creep.memory.role === "tractor") {
       roleTractor.run(creep);
+    }
+    if (creep.memory.role === "scout") {
+      roleScout.run(creep);
     }
   }
 
