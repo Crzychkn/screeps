@@ -5,13 +5,7 @@ module.exports = {
     let creepFull;
 
     //Check if creep is full of energy
-    if (creep.store.getFreeCapacity == 0) {
-      //Creep is full
-      creepFull = true;
-    } else {
-      //Creep as space free
-      creepFull = false;
-    }
+    creepFull = creep.store.getFreeCapacity === 0;
 
     //Check if there are buildings to repair
     const repairSites = creep.room.find(FIND_STRUCTURES, {
@@ -23,13 +17,12 @@ module.exports = {
     }
 
     // If the creep is currently building and is out of energy, switch to harvesting mode
-    //TODO: Maybe pull from containers instead of harvesting
-    if (creep.memory.repairing && creep.store[RESOURCE_ENERGY] == 0) {
+    if (creep.memory.repairing && creep.store[RESOURCE_ENERGY] === 0) {
       creep.memory.repairing = false;
       creep.say("🔄 harvest");
     }
     // If the creep is currently harvesting and is full of energy, switch to repairing mode
-    if (!creep.memory.repairing && creep.store.getFreeCapacity() == 0) {
+    if (!creep.memory.repairing && creep.store.getFreeCapacity() === 0) {
       creep.memory.repairing = true;
       creep.say("🚧 repair");
     }
@@ -40,7 +33,7 @@ module.exports = {
         filter: (object) => object.hits < object.hitsMax,
       });
       if (repairSites.length > 0) {
-        if (creep.repair(repairSites[0]) == ERR_NOT_IN_RANGE) {
+        if (creep.repair(repairSites[0]) === ERR_NOT_IN_RANGE) {
           creep.say("Repair");
           creep.moveTo(repairSites[0], {
             visualizePathStyle: { stroke: "#ffffff" },
