@@ -2,7 +2,7 @@ module.exports = {
   run: function (creep) {
     // Check GCL level and owned rooms to see if we can claim one
     const gclLevel = Game.gcl.level;
-    console.log('gclLevel', gclLevel);
+    console.log('gclLevel: ', gclLevel);
 
     const currentGcl = Game.gcl.level;
 
@@ -15,7 +15,7 @@ module.exports = {
       }
 
       // Check the exits to that room and see if adjacent rooms are claimed
-      console.log('firstRoom', firstRoom);
+      console.log('firstRoom: ', firstRoom);
 
     }
 
