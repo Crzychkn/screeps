@@ -15,7 +15,7 @@ module.exports.loop = function () {
   // Declare variables
   let newName;
 
-  //Clear memory of dead creeps
+  // Clear memory of dead creeps
   for (name in Memory.creeps) {
     if (!Game.creeps[name]) {
       delete Memory.creeps[name];
@@ -31,7 +31,7 @@ module.exports.loop = function () {
   console.log('CPU Tick Limit: ' + tickLimit);
   console.log('CPU Unlocked Status: ' + cpuUnlocked)
 
-  //Harvesters auto spawn
+  // Harvesters auto spawn
   let harvesters = _.filter(
     Game.creeps,
     (creep) => creep.memory.role === "harvester"
@@ -64,7 +64,7 @@ module.exports.loop = function () {
     );
   }
 
-  //Upgraders auto spawn
+  // Upgraders auto spawn
   let upgraders = _.filter(
     Game.creeps,
     (creep) => creep.memory.role === "upgrader"
@@ -79,7 +79,7 @@ module.exports.loop = function () {
     });
   }
 
-  //Builders auto spawn
+  // Builders auto spawn
   let builders = _.filter(
     Game.creeps,
     (creep) => creep.memory.role === "builder"
@@ -94,7 +94,7 @@ module.exports.loop = function () {
     });
   }
 
-  //Repairers auto spawn
+  // Repairers auto spawn
   let repairers = _.filter(
     Game.creeps,
     (creep) => creep.memory.role === "repairer"
@@ -119,7 +119,7 @@ module.exports.loop = function () {
   if (scout.length < 1 && Game.gcl.level > 2) {
     newName = "Scout" + Game.time;
     console.log("Spawning new scout: ", newName);
-    Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, MOVE], newName, {
+    Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, MOVE, CLAIM], newName, {
       memory: { role: "scout" },
     });
   }
@@ -134,7 +134,7 @@ module.exports.loop = function () {
     );
   }
 
-  //Tower Code
+  // Tower Code
   let tower = Game.getObjectById("TOWER_ID");
   if (tower) {
     var closestDamagedStructure = tower.pos.findClosestByRange(
@@ -153,7 +153,7 @@ module.exports.loop = function () {
     }
   }
 
-  //Run screeps logic
+  // Run screeps logic
   for (name in Game.creeps) {
     var creep = Game.creeps[name];
     if (creep.memory.role === "harvester") {
