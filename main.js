@@ -119,9 +119,10 @@ module.exports.loop = function () {
   if (scout.length < 1 && Game.gcl.level > 1) {
     newName = "Scout" + Game.time;
     console.log("Spawning new scout: ", newName);
-    Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, CLAIM], newName, {
+    const result = Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, CLAIM], newName, {
       memory: { role: "scout" },
     });
+    console.log(result);
   }
 
   if (Game.spawns["Spawn1"].spawning) {
