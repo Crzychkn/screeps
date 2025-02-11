@@ -7,7 +7,7 @@ module.exports = {
     const currentGcl = Game.gcl.level;
 
     // Check that we have GCL above 1.
-    if ( currentGcl > 2 ) {
+    if ( currentGcl > 1 ) {
       // If we do, grab the first room from our rooms
 
       for (const i in Game.rooms) {
@@ -17,7 +17,7 @@ module.exports = {
       // Check the exits to that room and see if adjacent rooms are claimed
       console.log('firstRoom: ', firstRoom);
       Game.map.getRoomStatus(firstRoom);
-      console.log(Game.map.describeExits(firstRoom))
+      console.log(Game.map.describeExits(firstRoom.name))
     }
 
     // Check list of adjacent rooms to current room
