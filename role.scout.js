@@ -10,9 +10,7 @@ module.exports = {
     if ( currentGcl > 1 ) {
       // If we do, grab the first room from our rooms
 
-      for (const i in Game.rooms) {
-        firstRoom = Game.rooms[i];
-      }
+      const firstRoom = Object.keys(Game.rooms)[0];
 
       // Check the exits to that room and see if adjacent rooms are claimed
       console.log('firstRoom: ', firstRoom);
