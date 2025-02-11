@@ -15,7 +15,7 @@ module.exports = {
       // Check the exits to that room and see if adjacent rooms are claimed
       console.log('firstRoom: ', firstRoom);
       const status = Game.map.getRoomStatus(firstRoom);
-      console.log('status: ', status);
+      console.log('status: ', status.status);
       console.log(Game.map.describeExits(firstRoom))
     }
 
