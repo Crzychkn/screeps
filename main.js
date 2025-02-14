@@ -110,20 +110,20 @@ module.exports.loop = function () {
   }
 
   // Scout auto spawn
-  let scout = _.filter(
-      Game.creeps,
-      (creep) => creep.memory.role === "scout"
-  );
-  console.log("Scout: " + scout.length);
-
-  if (scout.length < 1 && Game.gcl.level > 1) {
-    newName = "Scout" + Game.time;
-    console.log("Spawning new scout: ", newName);
-    const result = Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, CLAIM], newName, {
-      memory: { role: "scout" },
-    });
-    console.log(result);
-  }
+  // let scout = _.filter(
+  //     Game.creeps,
+  //     (creep) => creep.memory.role === "scout"
+  // );
+  // console.log("Scout: " + scout.length);
+  //
+  // if (scout.length < 1 && Game.gcl.level > 1) {
+  //   newName = "Scout" + Game.time;
+  //   console.log("Spawning new scout: ", newName);
+  //   const result = Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, CLAIM], newName, {
+  //     memory: { role: "scout" },
+  //   });
+  //   console.log(result);
+  // }
 
   if (Game.spawns["Spawn1"].spawning) {
     let spawningCreep = Game.creeps[Game.spawns["Spawn1"].spawning.name];
