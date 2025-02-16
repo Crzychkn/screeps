@@ -51,5 +51,6 @@ function loadBalance(creep) {
 
 module.exports = {
   getEnergy,
+  getRepairQueue,
   loadBalance,
 };
