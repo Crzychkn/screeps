@@ -5,7 +5,7 @@ module.exports = {
     // If the creep is currently building and is out of energy, switch to harvesting mode
     if (creep.memory.building && creep.store[RESOURCE_ENERGY] === 0) {
       creep.memory.building = false;
-      creep.say("🔄 withdraw");
+      creep.say("🔄 empty");
     }
     // If the creep is currently harvesting and is full of energy, switch to building mode
     if (!creep.memory.building && creep.store.getFreeCapacity() === 0) {
