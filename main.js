@@ -28,7 +28,6 @@ module.exports.loop = function () {
   // const bucket = Game.cpu.bucket;
   // const tickLimit = Game.cpu.tickLimit;
   // const cpuUnlocked = Game.cpu.unlocked;
-  const myRooms = Game.rooms[0];
 
   // Stats to monitor
   // console.log('CPU Bucket: ' + bucket);
@@ -161,7 +160,9 @@ module.exports.loop = function () {
       roleScout.run(creep);
     }
     if (creep.memory.role === 'tower') {
-      roleTower.run(myRooms);
+      for (let roomName in Game.rooms) {
+        roleTower.run(roomName);
+      }
     }
   }
 
