@@ -36,13 +36,13 @@ module.exports = {
 
         // TODO: Check what structure to repair here.
         for (let site of repairSites) {
-          if (site === STRUCTURE_TOWER) {
+          if (site.structureType === STRUCTURE_TOWER) {
             console.log('Tower found!')
           }
-          else if (site === STRUCTURE_ROAD) {
+          else if (site.structureType === STRUCTURE_ROAD) {
             console.log('Road found!')
           }
-          else if (site === STRUCTURE_RAMPART) {
+          else if (site.structureType === STRUCTURE_RAMPART) {
             console.log('Rampart found!')
           }
           else {
