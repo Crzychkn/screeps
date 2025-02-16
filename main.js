@@ -23,13 +23,14 @@ module.exports.loop = function () {
     }
   }
 
-  const bucket = Game.cpu.bucket;
-  const tickLimit = Game.cpu.tickLimit;
-  const cpuUnlocked = Game.cpu.unlocked;
+  // Variables for stats
+  // const bucket = Game.cpu.bucket;
+  // const tickLimit = Game.cpu.tickLimit;
+  // const cpuUnlocked = Game.cpu.unlocked;
 
   // Stats to monitor
-  console.log('CPU Bucket: ' + bucket);
-  console.log('CPU Tick Limit: ' + tickLimit);
+  // console.log('CPU Bucket: ' + bucket);
+  // console.log('CPU Tick Limit: ' + tickLimit);
   // console.log('CPU Unlocked Status: ' + cpuUnlocked)
 
   // Harvesters auto spawn
