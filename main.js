@@ -141,6 +141,7 @@ module.exports.loop = function () {
   // Run screeps logic
   for (name in Game.creeps) {
     var creep = Game.creeps[name];
+    console.log(creep);
     if (creep.memory.role === "harvester") {
       roleHarvester.run(creep);
     }
