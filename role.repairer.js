@@ -37,17 +37,17 @@ module.exports = {
         // Look for tower structures
         const towersToRepair = repairSites.filter(site => site.structureType === STRUCTURE_TOWER)
         if (towersToRepair.length > 0) {
-          console.log(towersToRepair.length);
+          console.log('Towers to repair: ', towersToRepair.length);
         }
 
         const roadsToRepair = repairSites.filter(site => site.structureType === STRUCTURE_ROAD)
         if (roadsToRepair.length > 0) {
-          console.log(roadsToRepair.length);
+          console.log('Roads to repair: ', roadsToRepair.length);
         }
 
         const rampartsToRepair = repairSites.filter(site => site.structureType === STRUCTURE_RAMPART)
         if (rampartsToRepair.length > 0) {
-          console.log(rampartsToRepair.length);
+          console.log('Ramparts to repair: ', rampartsToRepair.length);
         }
 
         if (creep.repair(repairSites[0]) === ERR_NOT_IN_RANGE) {
