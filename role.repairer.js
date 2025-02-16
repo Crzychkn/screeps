@@ -50,7 +50,6 @@ module.exports = {
           }
           else {
             console.log('Nothing found')
-            return
           }
         }
 
