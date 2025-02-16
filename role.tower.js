@@ -21,7 +21,11 @@ module.exports = {
         }
         else {
             // Nothing to attack, so repair something instead.
-            towers.forEach(tower => tower.repair(utils.getRepairQueue(Game.rooms[roomName])[0]));
+            towers.forEach(tower => {
+                if (tower.store.getCapacity > 500) {
+                    tower.repair(utils.getRepairQueue(Game.rooms[roomName])[0])
+                }
+            });
         }
     }
 };
