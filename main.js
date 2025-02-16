@@ -130,7 +130,6 @@ module.exports.loop = function () {
 
   // Tower code
     for (let roomName in Game.rooms) {
-      console.log("Room: " + roomName);
       roleTower.run(roomName);
     }
 
