@@ -103,7 +103,7 @@ module.exports.loop = function () {
   );
   console.log("Repairer: " + builders.length);
 
-  if (harvesters.length > 3 && repairers.length < 2) {
+  if (harvesters.length > 3 && repairers.length < 3) {
     newName = "Repairer" + Game.time;
     console.log("Spawning new repairer: " + newName);
     Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
@@ -176,6 +176,9 @@ module.exports.loop = function () {
     }
     if (creep.memory.role === "scout") {
       roleScout.run(creep);
+    }
+    if (creep.memory.role === 'tower') {
+      roleTower.run(creep);
     }
   }
 
