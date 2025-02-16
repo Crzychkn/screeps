@@ -3,12 +3,23 @@ var roleHarvester = {
   run: function (creep) {
     //If creep has space, find energy and harvest
     if (creep.store.getFreeCapacity() > 0) {
-      var sources = creep.room.find(FIND_SOURCES);
+
+      // TODO: Pull energy from tombstones if any exist first
+      // Find tombstones
+      const tombstones = room.find(FIND_TOMBSTONES)
+
+      // If there are any
+      // Harvest energy from them instead
+      if (tombstones.length > 0) {
+        console.log('Tombstones found!')
+      }
+
+      let sources = creep.room.find(FIND_SOURCES);
       if (creep.harvest(sources[0]) === ERR_NOT_IN_RANGE) {
         creep.moveTo(sources[0], { visualizePathStyle: { stroke: "#ffaa00" } });
       }
     } else {
-      var targets = creep.room.find(FIND_STRUCTURES, {
+      let targets = creep.room.find(FIND_STRUCTURES, {
         filter: (structure) => {
           return (
             (structure.structureType === STRUCTURE_TOWER ||
