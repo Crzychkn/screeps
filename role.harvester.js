@@ -6,7 +6,7 @@ var roleHarvester = {
 
       // TODO: Pull energy from tombstones if any exist first
       // Find tombstones
-      const tombstones = room.find(FIND_TOMBSTONES)
+      const tombstones = creep.room.find(FIND_TOMBSTONES)
 
       // If there are any
       // Harvest energy from them instead
