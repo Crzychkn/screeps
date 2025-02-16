@@ -29,7 +29,7 @@ module.exports = {
     // If the creep is in repair mode, find sites to repair
     if (creep.memory.repairing) {
         if (creep.repair(repairQueue[0]) === ERR_NOT_IN_RANGE) {
-          creep.say("Repair");
+          creep.say("🚧 repair");
           creep.moveTo(repairQueue[0], {
             visualizePathStyle: { stroke: "#ffffff" },
           });
