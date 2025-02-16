@@ -4,6 +4,7 @@ let roleBuilder = require("role.builder");
 let roleRepairer = require("role.repairer");
 let roleTractor = require("role.tractor");
 let roleScout = require("role.scout");
+let roleTower = require("role.tower");
 
 let name;
 
@@ -135,25 +136,6 @@ module.exports.loop = function () {
       Game.spawns["Spawn1"].pos.y,
       { align: "left", opacity: 0.8 }
     );
-  }
-
-  // Tower Code
-  let tower = Game.getObjectById("TOWER_ID");
-  if (tower) {
-    var closestDamagedStructure = tower.pos.findClosestByRange(
-      FIND_STRUCTURES,
-      {
-        filter: (structure) => structure.hits < structure.hitsMax,
-      }
-    );
-    if (closestDamagedStructure) {
-      tower.repair(closestDamagedStructure);
-    }
-
-    var closestHostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
-    if (closestHostile) {
-      tower.attack(closestHostile);
-    }
   }
 
   // Run screeps logic
