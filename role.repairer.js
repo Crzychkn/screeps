@@ -4,6 +4,12 @@ module.exports = {
   run: function (creep) {
     let creepFull;
 
+    const repairPriorities = {
+      [STRUCTURE_TOWER]: 1,
+      [STRUCTURE_RAMPART]: 2,
+      [STRUCTURE_ROAD]: 3
+    };
+
     //Check if creep is full of energy
     creepFull = creep.store.getFreeCapacity === 0;
 
@@ -34,25 +40,17 @@ module.exports = {
       });
       if (repairSites.length > 0) {
 
-        // Look for tower structures
-        const towersToRepair = repairSites.filter(site => site.structureType === STRUCTURE_TOWER)
-        if (towersToRepair.length > 0) {
-          console.log('Towers to repair: ', towersToRepair.length);
-        }
+        const repairQueue = repairSites.sort((a, b) => {
+          const priorityA = repairPriorities[a.structureType] || 99;
+          const priorityB = repairPriorities[b.structureType] || 99;
 
-        const roadsToRepair = repairSites.filter(site => site.structureType === STRUCTURE_ROAD)
-        if (roadsToRepair.length > 0) {
-          console.log('Roads to repair: ', roadsToRepair.length);
-        }
+          if (priorityA !== priorityB) return priorityA - priorityB;
+          return (a.hits / a.hitsMax) - (b.hits / b.hitsMax);
+        })
 
-        const rampartsToRepair = repairSites.filter(site => site.structureType === STRUCTURE_RAMPART)
-        if (rampartsToRepair.length > 0) {
-          console.log('Ramparts to repair: ', rampartsToRepair.length);
-        }
-
-        if (creep.repair(repairSites[0]) === ERR_NOT_IN_RANGE) {
+        if (creep.repair(repairQueue[0]) === ERR_NOT_IN_RANGE) {
           creep.say("Repair");
-          creep.moveTo(repairSites[0], {
+          creep.moveTo(repairQueue[0], {
             visualizePathStyle: { stroke: "#ffffff" },
           });
         }
