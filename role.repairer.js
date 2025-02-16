@@ -1,5 +1,4 @@
 const utils = require("utils");
-const {getRepairQueue} = require("./utils");
 
 module.exports = {
   run: function (creep) {
@@ -33,7 +32,7 @@ module.exports = {
 
       if (repairSites.length > 0) {
 
-        const repairQueue = getRepairQueue(creep.room);
+        const repairQueue = utils.getRepairQueue(creep.room);
 
         if (creep.repair(repairQueue[0]) === ERR_NOT_IN_RANGE) {
           creep.say("Repair");
