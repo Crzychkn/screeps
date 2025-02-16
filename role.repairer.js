@@ -8,10 +8,9 @@ module.exports = {
     creepFull = creep.store.getFreeCapacity === 0;
 
     //Check if there are buildings to repair
-    const repairSites = creep.room.find(FIND_STRUCTURES, {
-      filter: (object) => object.hits < object.hitsMax,
-    });
-    if (repairSites.length > 0 && creepFull) {
+    const repairQueue = utils.getRepairQueue(creep.room);
+
+    if (repairQueue.length > 0 && creepFull) {
       creep.memory.repairing = true;
       creep.say("🚧 repair");
     }
@@ -29,18 +28,12 @@ module.exports = {
 
     // If the creep is in repair mode, find sites to repair
     if (creep.memory.repairing) {
-
-      if (repairSites.length > 0) {
-
-        const repairQueue = utils.getRepairQueue(creep.room);
-
         if (creep.repair(repairQueue[0]) === ERR_NOT_IN_RANGE) {
           creep.say("Repair");
           creep.moveTo(repairQueue[0], {
             visualizePathStyle: { stroke: "#ffffff" },
           });
         }
-      }
     } else {
       // If the creep is not in building mode, find energy sources and harvest them
       utils.getEnergy(creep);

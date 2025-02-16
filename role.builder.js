@@ -27,7 +27,7 @@ module.exports = {
 
           const repairQueue = utils.getRepairQueue(creep.room);
 
-          if (creep.repair(repairQueue[0]) === ERR_NOT_IN_RANGE) {
+          if (repairQueue.length > 0 && creep.repair(repairQueue[0]) === ERR_NOT_IN_RANGE) {
             creep.moveTo(repairQueue[0]);
           }
       }
