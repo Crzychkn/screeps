@@ -33,6 +33,23 @@ module.exports = {
         filter: (object) => object.hits < object.hitsMax,
       });
       if (repairSites.length > 0) {
+
+        // TODO: Check what structure to repair here.
+        for (let site of repairSites) {
+          if (site === STRUCTURE_TOWER) {
+            console.log('Tower found!')
+          }
+          else if (site === STRUCTURE_ROAD) {
+            console.log('Road found!')
+          }
+          else if (site === STRUCTURE_RAMPART) {
+            console.log('Rampart found!')
+          }
+          else {
+            console.log('Nothing found')
+          }
+        }
+
         if (creep.repair(repairSites[0]) === ERR_NOT_IN_RANGE) {
           creep.say("Repair");
           creep.moveTo(repairSites[0], {
