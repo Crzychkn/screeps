@@ -34,23 +34,20 @@ module.exports = {
       });
       if (repairSites.length > 0) {
 
-        // TODO: Check what structure to repair here.
-        for (let site of repairSites) {
-          if (site.structureType === STRUCTURE_TOWER) {
-            console.log('Tower found!')
-            return
-          }
-          else if (site.structureType === STRUCTURE_ROAD) {
-            console.log('Road found!')
-            return
-          }
-          else if (site.structureType === STRUCTURE_RAMPART) {
-            console.log('Rampart found!')
-            return
-          }
-          else {
-            console.log('Nothing found')
-          }
+        // Look for tower structures
+        const towersToRepair = repairSites.filter(site => site.structureType === STRUCTURE_TOWER)
+        if (towersToRepair.length > 0) {
+          console.log(towersToRepair.length);
+        }
+
+        const roadsToRepair = repairSites.filter(site => site.structureType === STRUCTURE_ROAD)
+        if (roadsToRepair.length > 0) {
+          console.log(roadsToRepair.length);
+        }
+
+        const rampartsToRepair = repairSites.filter(site => site.structureType === STRUCTURE_RAMPART)
+        if (rampartsToRepair.length > 0) {
+          console.log(rampartsToRepair.length);
         }
 
         if (creep.repair(repairSites[0]) === ERR_NOT_IN_RANGE) {
