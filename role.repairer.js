@@ -7,7 +7,8 @@ module.exports = {
     const repairPriorities = {
       [STRUCTURE_TOWER]: 1,
       [STRUCTURE_RAMPART]: 2,
-      [STRUCTURE_ROAD]: 3
+      [STRUCTURE_ROAD]: 3,
+      [STRUCTURE_WALL]: 4
     };
 
     //Check if creep is full of energy
