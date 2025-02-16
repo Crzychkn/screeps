@@ -17,7 +17,7 @@ function getEnergy(creep) {
   }
 }
 
-export function getRepairQueue(room) {
+function getRepairQueue(room) {
   const repairSites = room.find(FIND_STRUCTURES, {
     filter: (object) => object.hits < object.hitsMax,
   });
