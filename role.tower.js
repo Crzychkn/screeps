@@ -1,5 +1,3 @@
-const utils = require("utils");
-
 module.exports = {
     run: function(roomName) {
         // Get all towers in the room
@@ -18,10 +16,6 @@ module.exports = {
         if (hostiles.length > 0) {
             Game.notify('Hostiles found in a room!', 0);
             towers.forEach(tower => tower.attack(hostiles[0])); // Attack first enemy found
-        }
-        else {
-            // Nothing to attack, so repair something instead.
-            towers.forEach(tower => tower.repair(utils.getRepairQueue(roomName)));
         }
     }
 };
