@@ -22,6 +22,7 @@ function getRepairQueue(room) {
     filter: (object) => object.hits < object.hitsMax,
   });
 
+  // TODO: Add weight formula here for better prioritization.
   const repairPriorities = {
     [STRUCTURE_TOWER]: 1,
     [STRUCTURE_ROAD]: 2,
@@ -30,12 +31,12 @@ function getRepairQueue(room) {
   };
 
   return repairSites.sort((a, b) => {
-    // const priorityA = repairPriorities[a.structureType] || 99;
-    // const priorityB = repairPriorities[b.structureType] || 99;
+    const priorityA = repairPriorities[a.structureType] || 99;
+    const priorityB = repairPriorities[b.structureType] || 99;
 
-    // if (priorityA !== priorityB) {
-    //   return priorityA - priorityB;
-    // }
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
 
     return (a.hits / a.hitsMax) - (b.hits / b.hitsMax);
   })
