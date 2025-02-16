@@ -160,7 +160,7 @@ module.exports.loop = function () {
       roleScout.run(creep);
     }
     if (creep.memory.role === 'tower') {
-      roleTower.run(creep);
+      roleTower.run(creep.room);
     }
   }
 
