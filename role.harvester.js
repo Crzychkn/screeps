@@ -11,7 +11,7 @@ var roleHarvester = {
       // If there are any
       // Harvest energy from them instead
       if (tombstones.length > 0) {
-        console.log('Tombstones found!')
+        // Harvest tombstones here.
       }
 
       let sources = creep.room.find(FIND_SOURCES);
