@@ -128,6 +128,11 @@ module.exports.loop = function () {
   //   console.log(result);
   // }
 
+    for (let roomName in Game.rooms) {
+      console.log("Room: " + roomName);
+      roleTower.run(roomName);
+    }
+
   if (Game.spawns["Spawn1"].spawning) {
     let spawningCreep = Game.creeps[Game.spawns["Spawn1"].spawning.name];
     Game.spawns["Spawn1"].room.visual.text(
@@ -141,7 +146,6 @@ module.exports.loop = function () {
   // Run screeps logic
   for (name in Game.creeps) {
     var creep = Game.creeps[name];
-    console.log(creep);
     if (creep.memory.role === "harvester") {
       roleHarvester.run(creep);
     }
@@ -159,12 +163,6 @@ module.exports.loop = function () {
     }
     if (creep.memory.role === "scout") {
       roleScout.run(creep);
-    }
-    if (creep.memory.role === "tower") {
-      for (let roomName in Game.rooms) {
-        console.log("Room: " + roomName);
-        roleTower.run(roomName);
-      }
     }
   }
 
