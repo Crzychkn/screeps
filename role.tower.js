@@ -21,7 +21,7 @@ module.exports = {
         }
         else {
             // Nothing to attack, so repair something instead.
-            towers.forEach(tower => tower.repair(utils.getRepairQueue(Game.rooms[roomeName])));
+            towers.forEach(tower => tower.repair(utils.getRepairQueue(Game.rooms[roomName])));
         }
     }
 };
