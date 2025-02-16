@@ -30,6 +30,7 @@ module.exports = {
     if (creep.memory.repairing) {
         if (creep.repair(repairQueue[0]) === ERR_NOT_IN_RANGE) {
           creep.say("🚧 repair");
+          console.log(repairQueue.length, ' structures to repair.')
           creep.moveTo(repairQueue[0], {
             visualizePathStyle: { stroke: "#ffffff" },
           });
