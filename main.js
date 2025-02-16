@@ -161,6 +161,7 @@ module.exports.loop = function () {
     }
     if (creep.memory.role === "tower") {
       for (let roomName in Game.rooms) {
+        console.log("Room: " + roomName);
         roleTower.run(roomName);
       }
     }
