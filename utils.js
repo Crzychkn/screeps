@@ -30,27 +30,18 @@ function getRepairQueue(room) {
   };
 
   return repairSites.sort((a, b) => {
-    const priorityA = repairPriorities[a.structureType] || 99;
-    const priorityB = repairPriorities[b.structureType] || 99;
+    // const priorityA = repairPriorities[a.structureType] || 99;
+    // const priorityB = repairPriorities[b.structureType] || 99;
 
-    if (priorityA !== priorityB) {
-      return priorityA - priorityB;
-    }
+    // if (priorityA !== priorityB) {
+    //   return priorityA - priorityB;
+    // }
 
     return (a.hits / a.hitsMax) - (b.hits / b.hitsMax);
   })
 }
 
-function loadBalance(creep) {
-  // Assign the creep either a 0 or 1 based on its index or name hash
-  const index = creep.name.length % 4; // Use name length or another unique identifier
-
-  // Map the index to 0 or 1 in a balanced way
-  return index % 2; // This will alternate between 0 and 1
-}
-
 module.exports = {
   getEnergy,
   getRepairQueue,
-  loadBalance,
 };
