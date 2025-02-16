@@ -159,7 +159,7 @@ module.exports.loop = function () {
     if (creep.memory.role === "scout") {
       roleScout.run(creep);
     }
-    if (creep.memory.role === 'tower') {
+    if (creep.memory.role === "tower") {
       for (let roomName in Game.rooms) {
         roleTower.run(roomName);
       }

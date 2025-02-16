@@ -12,6 +12,8 @@ module.exports = {
         // Find enemy creeps in the room
         let hostiles = Game.rooms[roomName].find(FIND_HOSTILE_CREEPS);
 
+        console.log(hostiles)
+
         // If enemies exist, make towers attack
         if (hostiles.length > 0) {
             console.log("Hostiles found!");
