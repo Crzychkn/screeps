@@ -13,10 +13,11 @@ module.exports = {
 
         // Find enemy creeps in the room
         let hostiles = Game.rooms[roomName].find(FIND_HOSTILE_CREEPS);
+        let hostilesAmount = hostiles.length;
 
         // If enemies exist, make towers attack
         if (hostiles.length > 0) {
-            Game.notify(hostiles.length, ' Hostiles found in a room!', 0);
+            Game.notify( `${hostilesAmount} Hostiles found in a room!`, 0);
             towers.forEach(tower => tower.attack(hostiles[0])); // Attack first enemy found
         }
         else {
