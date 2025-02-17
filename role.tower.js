@@ -16,7 +16,7 @@ module.exports = {
 
         // If enemies exist, make towers attack
         if (hostiles.length > 0) {
-            Game.notify('Hostiles found in a room!', 0);
+            Game.notify(hostiles.length, ' Hostiles found in a room!', 0);
             towers.forEach(tower => tower.attack(hostiles[0])); // Attack first enemy found
         }
         else {
