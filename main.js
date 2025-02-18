@@ -58,13 +58,13 @@ module.exports.loop = function () {
   // TODO: Maybe check to ensure enough energy before creating this
   // Get all containers / storage and ensure energy levels exceed 900 in total.
   if (tractors.length < 1 && Game.gcl.level >= 3) {
-    let myContainers = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
-      filter: { structureType: STRUCTURE_CONTAINER },
+    let myExtensions = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
+      filter: { structureType: STRUCTURE_EXTENSION },
     });
-    console.log('Current Containers: ', myContainers.length);
-    if (myContainers.length > 0 ) {
+    console.log('Current Containers: ', myExtensions.length);
+    if (myExtensions.length > 0 ) {
       let containerStore = 0;
-      for (let container of myContainers) {
+      for (let container of myExtensions) {
         containerStore += container.store[RESOURCE_ENERGY];
       }
       console.log('Current Container Energy: ', containerStore);
