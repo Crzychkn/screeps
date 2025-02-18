@@ -34,6 +34,10 @@ module.exports.loop = function () {
   // console.log('CPU Tick Limit: ' + tickLimit);
   // console.log('CPU Unlocked Status: ' + cpuUnlocked)
 
+  // Check closest creep to death
+  const myCreeps = Game.creeps;
+  console.log(myCreeps.sort((a, b) => a.ticksToLive - b.ticksToLive)[0].ticksToLive);
+
   // Check Extensions
   let myExtensions = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
     filter: { structureType: STRUCTURE_EXTENSION },
