@@ -30,7 +30,7 @@ var roleTractor = {
         }
       } else {
         creep.moveTo(Game.spawns.Spawn1.pos.x, Game.spawns.Spawn1.pos.y);
-        creep.say("🛑 stuck.");
+        creep.say("🚫 storage");
       }
     }
   },
