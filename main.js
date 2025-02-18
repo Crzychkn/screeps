@@ -37,7 +37,9 @@ module.exports.loop = function () {
   // Check closest creep to death
   const myCreeps = Game.creeps;
   try {
-    console.log(myCreeps.sort((a, b) => a.ticksToLive - b.ticksToLive)[0].ticksToLive);
+    let closestToDeath = myCreeps.reduce((lowest, creep) => !lowest || creep.ticksToLive < lowest.ticksToLive ? creep : lowest, null
+    );
+    console.log(closestToDeath);
   } catch (error) {
     console.log(error);
   }
