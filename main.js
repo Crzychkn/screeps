@@ -34,6 +34,19 @@ module.exports.loop = function () {
   // console.log('CPU Tick Limit: ' + tickLimit);
   // console.log('CPU Unlocked Status: ' + cpuUnlocked)
 
+  // Check Extensions
+  let myExtensions = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
+    filter: { structureType: STRUCTURE_EXTENSION },
+  });
+  console.log('Current Containers: ', myExtensions.length);
+  if (myExtensions.length > 0 ) {
+    let containerStore = 0;
+    for (let container of myExtensions) {
+      containerStore += container.store[RESOURCE_ENERGY];
+    }
+    console.log('Current Container Energy: ', containerStore);
+  }
+
   // Harvesters auto spawn
   let harvesters = _.filter(
     Game.creeps,
@@ -58,17 +71,6 @@ module.exports.loop = function () {
   // TODO: Maybe check to ensure enough energy before creating this
   // Get all containers / storage and ensure energy levels exceed 900 in total.
   if (tractors.length < 1 && Game.gcl.level >= 3) {
-    let myExtensions = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
-      filter: { structureType: STRUCTURE_EXTENSION },
-    });
-    console.log('Current Containers: ', myExtensions.length);
-    if (myExtensions.length > 0 ) {
-      let containerStore = 0;
-      for (let container of myExtensions) {
-        containerStore += container.store[RESOURCE_ENERGY];
-      }
-      console.log('Current Container Energy: ', containerStore);
-    }
     console.log("Tractor can be made.");
     newName = "Tractor" + Game.time;
     Game.spawns["Spawn1"].spawnCreep(
