@@ -11,9 +11,9 @@ var roleHarvester = {
 
       try {
         // If there are any, harvest energy from them instead
-        if (tombstones.length > 0) {
+        if (tombstones.length > 0 && tombstones[0].store[RESOURCE_ENERGY] > 0) {
           // Harvest tombstones here.
-          console.log(tombstones, ' found!');
+          console.log(tombstones, ' found! Eat it!');
           if (creep.withdraw(tombstones[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
             creep.moveTo(tombstones[0], {
               visualizePathStyle: {
