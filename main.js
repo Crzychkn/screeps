@@ -35,7 +35,7 @@ module.exports.loop = function () {
   // console.log('CPU Unlocked Status: ' + cpuUnlocked)
 
   // Check closest creep to death
-  const myCreeps = Game.creeps;
+  const myCreeps = Object.values(Game.creeps);
   try {
     let closestToDeath = myCreeps.reduce((lowest, creep) => !lowest || creep.ticksToLive < lowest.ticksToLive ? creep : lowest, null
     );
