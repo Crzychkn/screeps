@@ -55,7 +55,20 @@ module.exports.loop = function () {
   );
   console.log("Tractors: ", tractors.length);
 
+  // TODO: Maybe check to ensure enough energy before creating this
+  // Get all containers / storage and ensure energy levels exceed 900 in total.
   if (tractors.length < 1 && Game.gcl.level >= 3) {
+    let myContainers = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
+      filter: { structureType: STRUCTURE_CONTAINER },
+    });
+    console.log('Current Containers: ', myContainers.length);
+    if (myContainers.length > 0 ) {
+      let containerStore = 0;
+      for (let container of myContainers) {
+        containerStore += container.store[RESOURCE_ENERGY];
+      }
+      console.log('Current Container Energy: ', containerStore);
+    }
     console.log("Tractor can be made.");
     newName = "Tractor" + Game.time;
     Game.spawns["Spawn1"].spawnCreep(
@@ -67,25 +80,10 @@ module.exports.loop = function () {
     );
   }
 
-  // Upgraders auto spawn
-  let upgraders = _.filter(
-    Game.creeps,
-    (creep) => creep.memory.role === "upgrader"
-  );
-  console.log("Upgrader: " + upgraders.length);
-
-  if (harvesters.length > 3 && upgraders.length < 2) {
-    newName = "Upgrader" + Game.time;
-    console.log("Spawning new upgrader: " + newName);
-    Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
-      memory: { role: "upgrader" },
-    });
-  }
-
   // Builders auto spawn
   let builders = _.filter(
-    Game.creeps,
-    (creep) => creep.memory.role === "builder"
+      Game.creeps,
+      (creep) => creep.memory.role === "builder"
   );
   console.log("Builder: " + builders.length);
 
@@ -94,6 +92,21 @@ module.exports.loop = function () {
     console.log("Spawning new builder: " + newName);
     Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
       memory: { role: "builder" },
+    });
+  }
+
+  // Upgraders auto spawn
+  let upgraders = _.filter(
+    Game.creeps,
+    (creep) => creep.memory.role === "upgrader"
+  );
+  console.log("Upgrader: " + upgraders.length);
+
+  if (harvesters.length > 3 && builders.length < 2 && upgraders.length < 2) {
+    newName = "Upgrader" + Game.time;
+    console.log("Spawning new upgrader: " + newName);
+    Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
+      memory: { role: "upgrader" },
     });
   }
 
@@ -113,20 +126,20 @@ module.exports.loop = function () {
   }
 
   // Scout auto spawn
-  // let scout = _.filter(
-  //     Game.creeps,
-  //     (creep) => creep.memory.role === "scout"
-  // );
-  // console.log("Scout: " + scout.length);
-  //
-  // if (scout.length < 1 && Game.gcl.level > 1) {
-  //   newName = "Scout" + Game.time;
-  //   console.log("Spawning new scout: ", newName);
-  //   const result = Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, CLAIM], newName, {
-  //     memory: { role: "scout" },
-  //   });
-  //   console.log(result);
-  // }
+  let scout = _.filter(
+      Game.creeps,
+      (creep) => creep.memory.role === "scout"
+  );
+  console.log("Scout: " + scout.length);
+
+  if (scout.length < 1 && Game.gcl.level > 1 && tractors.length > 0 && upgraders.length > 3) {
+    newName = "Scout" + Game.time;
+    console.log("Spawning new scout: ", newName);
+    const result = Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, CLAIM], newName, {
+      memory: { role: "scout" },
+    });
+    console.log(result);
+  }
 
   // Tower code
     for (let roomName in Game.rooms) {
