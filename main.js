@@ -36,7 +36,11 @@ module.exports.loop = function () {
 
   // Check closest creep to death
   const myCreeps = Game.creeps;
-  console.log(myCreeps.sort((a, b) => a.ticksToLive - b.ticksToLive)[0].ticksToLive);
+  try {
+    console.log(myCreeps.sort((a, b) => a.ticksToLive - b.ticksToLive)[0].ticksToLive);
+  } catch (error) {
+    console.log(error);
+  }
 
   // Check Extensions
   let myExtensions = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
