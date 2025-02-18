@@ -39,7 +39,7 @@ module.exports.loop = function () {
   try {
     let closestToDeath = myCreeps.reduce((lowest, creep) => !lowest || creep.ticksToLive < lowest.ticksToLive ? creep : lowest, null
     );
-    console.log('Next Creep Death in: ', closestToDeath.ticksToLive);
+    console.log(`Creep ${closestToDeath} dies in ${closestToDeath.ticksToLive}.`);
   } catch (error) {
     console.log(error);
   }
