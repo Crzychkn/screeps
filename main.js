@@ -38,13 +38,13 @@ module.exports.loop = function () {
   let myExtensions = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
     filter: { structureType: STRUCTURE_EXTENSION },
   });
-  console.log('Current Containers: ', myExtensions.length);
+  console.log('Current Extensions: ', myExtensions.length);
   if (myExtensions.length > 0 ) {
     let containerStore = 0;
     for (let container of myExtensions) {
       containerStore += container.store[RESOURCE_ENERGY];
     }
-    console.log('Current Container Energy: ', containerStore);
+    console.log('Current Extensions Total Energy: ', containerStore);
   }
 
   // Harvesters auto spawn
