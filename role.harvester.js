@@ -9,25 +9,29 @@ var roleHarvester = {
       const tombstones = creep.room.find(FIND_TOMBSTONES)
       let sources = creep.room.find(FIND_SOURCES);
 
-      try {
-        // If there are any, harvest energy from them instead
-        if (tombstones.length > 0 && tombstones[0].store[RESOURCE_ENERGY] > 0) {
-          // Harvest tombstones here.
-          console.log(tombstones, ' found! Eat it!');
-          if (creep.withdraw(tombstones[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-            creep.moveTo(tombstones[0], {
-              visualizePathStyle: {
-                stroke: "#ffaa00"
-              }
-            })
-          }
-        }
-        else if (creep.harvest(sources[0]) === ERR_NOT_IN_RANGE) {
-          creep.moveTo(sources[0], { visualizePathStyle: { stroke: "#ffaa00" } });
-        }
-      } catch (error) {
-        console.error(error);
+      if (creep.harvest(sources[0]) === ERR_NOT_IN_RANGE) {
+        creep.moveTo(sources[0], { visualizePathStyle: { stroke: "#ffaa00" } });
       }
+
+      // try {
+      //   // If there are any, harvest energy from them instead
+      //   if (tombstones.length > 0 && tombstones[0].store[RESOURCE_ENERGY] > 0) {
+      //     // Harvest tombstones here.
+      //     console.log(tombstones, ' found! Eat it!');
+      //     if (creep.withdraw(tombstones[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+      //       creep.moveTo(tombstones[0], {
+      //         visualizePathStyle: {
+      //           stroke: "#ffaa00"
+      //         }
+      //       })
+      //     }
+      //   }
+      //   else if (creep.harvest(sources[0]) === ERR_NOT_IN_RANGE) {
+      //     creep.moveTo(sources[0], { visualizePathStyle: { stroke: "#ffaa00" } });
+      //   }
+      // } catch (error) {
+      //   console.error(error);
+      // }
     } else {
       let targets = creep.room.find(FIND_STRUCTURES, {
         filter: (structure) => {
