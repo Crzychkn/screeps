@@ -36,6 +36,7 @@ module.exports.loop = function () {
   // console.log('CPU Unlocked Status: ' + cpuUnlocked)
   try {
     for (let roomName in Game.rooms) {
+      let room = Game.rooms[roomName];
       const repairQueue = utils.getRepairQueue(roomName);
       console.log(repairQueue.length, ' structures to repair.')
       console.log(repairQueue[0].hits, 'out of ', repairQueue[0].hitsMax);
