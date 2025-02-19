@@ -38,7 +38,7 @@ module.exports.loop = function () {
     for (let roomName in Game.rooms) {
       let room = Game.rooms[roomName];
       const repairQueue = utils.getRepairQueue(room);
-      console.log(repairQueue.length, ' structures to repair.')
+      console.log(repairQueue.length, 'structures to repair.')
       console.log(`Lowest structure is ${repairQueue[0].hits} out of ${repairQueue[0].hitsMax} hits.`);
     }
   } catch (error) {
@@ -60,13 +60,13 @@ module.exports.loop = function () {
   let myExtensions = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
     filter: { structureType: STRUCTURE_EXTENSION },
   });
-  console.log('Current Extensions: ', myExtensions.length);
+  console.log('Current Extensions:', myExtensions.length);
   if (myExtensions.length > 0 ) {
     let containerStore = 0;
     for (let container of myExtensions) {
       containerStore += container.store[RESOURCE_ENERGY];
     }
-    console.log('Current Extensions Total Energy: ', containerStore);
+    console.log('Current Extensions Total Energy:', containerStore);
   }
 
   // Harvesters auto spawn
