@@ -133,10 +133,15 @@ module.exports.loop = function () {
     Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
       memory: { role: "upgrader" },
     });
-    if (Game.gcl.level >= 3 && upgraders.length < 4) {
-      Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
-        memory: { role: "upgrader" },
-      });
+    try {
+      let room = Game.rooms['E57S36'];
+      if (room && room.controller.level >= 3 && upgraders.length < 4) {
+        Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
+          memory: { role: "upgrader" },
+        });
+      }
+    } catch (e) {
+      console.error(e);
     }
   }
 
