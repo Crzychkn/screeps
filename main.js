@@ -35,9 +35,11 @@ module.exports.loop = function () {
   // console.log('CPU Tick Limit: ' + tickLimit);
   // console.log('CPU Unlocked Status: ' + cpuUnlocked)
   try {
-    const repairQueue = utils.getRepairQueue('E57S36');
-    console.log(repairQueue.length, ' structures to repair.')
-    console.log(repairQueue[0].hits, 'out of ', repairQueue[0].hitsMax);
+    for (let roomName of Game.rooms) {
+      const repairQueue = utils.getRepairQueue(roomName);
+      console.log(repairQueue.length, ' structures to repair.')
+      console.log(repairQueue[0].hits, 'out of ', repairQueue[0].hitsMax);
+    }
   } catch (error) {
     console.log(error);
   }
