@@ -135,6 +135,7 @@ module.exports.loop = function () {
     });
     try {
       let room = Game.rooms['E57S36'];
+      console.log(room.controller.level);
       if (room && room.controller.level >= 3 && upgraders.length < 4) {
         Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
           memory: { role: "upgrader" },
