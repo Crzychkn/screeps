@@ -126,7 +126,7 @@ module.exports.loop = function () {
   );
   console.log("Upgrader: " + upgraders.length);
 
-  if (harvesters.length > 3 && builders.length > 2 && upgraders.length < 2) {
+  if (harvesters.length > 3 && builders.length > 2 && upgraders.length < 3) {
     // TODO: Create function to create a creep?
     newName = "Upgrader" + Game.time;
     console.log("Spawning new upgrader: " + newName);
@@ -135,7 +135,6 @@ module.exports.loop = function () {
     });
     try {
       let room = Game.rooms['E57S36'];
-      console.log(room.controller.level);
       if (room && room.controller.level >= 3 && upgraders.length < 4) {
         Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
           memory: { role: "upgrader" },
