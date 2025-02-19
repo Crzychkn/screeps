@@ -5,6 +5,7 @@ let roleRepairer = require("role.repairer");
 let roleTractor = require("role.tractor");
 let roleScout = require("role.scout");
 let roleTower = require("role.tower");
+const utils = require("./utils");
 
 let name;
 
@@ -33,6 +34,9 @@ module.exports.loop = function () {
   // console.log('CPU Bucket: ' + bucket);
   // console.log('CPU Tick Limit: ' + tickLimit);
   // console.log('CPU Unlocked Status: ' + cpuUnlocked)
+  const repairQueue = utils.getRepairQueue('E57S36');
+  console.log(repairQueue.length, ' structures to repair.')
+  console.log(repairQueue[0].hits, 'out of ', repairQueue[0].hitsMax);
 
   // // Check closest creep to death
   // const myCreeps = Object.values(Game.creeps);
