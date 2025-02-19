@@ -34,9 +34,14 @@ module.exports.loop = function () {
   // console.log('CPU Bucket: ' + bucket);
   // console.log('CPU Tick Limit: ' + tickLimit);
   // console.log('CPU Unlocked Status: ' + cpuUnlocked)
-  const repairQueue = utils.getRepairQueue('E57S36');
-  console.log(repairQueue.length, ' structures to repair.')
-  console.log(repairQueue[0].hits, 'out of ', repairQueue[0].hitsMax);
+  try {
+    const repairQueue = utils.getRepairQueue('E57S36');
+    console.log(repairQueue.length, ' structures to repair.')
+    console.log(repairQueue[0].hits, 'out of ', repairQueue[0].hitsMax);
+  } catch (error) {
+    console.log(error);
+  }
+
 
   // // Check closest creep to death
   // const myCreeps = Object.values(Game.creeps);
