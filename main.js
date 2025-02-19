@@ -37,7 +37,7 @@ module.exports.loop = function () {
   try {
     for (let roomName in Game.rooms) {
       let room = Game.rooms[roomName];
-      const repairQueue = utils.getRepairQueue(roomName);
+      const repairQueue = utils.getRepairQueue(room);
       console.log(repairQueue.length, ' structures to repair.')
       console.log(repairQueue[0].hits, 'out of ', repairQueue[0].hitsMax);
     }
