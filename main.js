@@ -34,15 +34,15 @@ module.exports.loop = function () {
   // console.log('CPU Tick Limit: ' + tickLimit);
   // console.log('CPU Unlocked Status: ' + cpuUnlocked)
 
-  // Check closest creep to death
-  const myCreeps = Object.values(Game.creeps);
-  try {
-    let closestToDeath = myCreeps.reduce((lowest, creep) => !lowest || creep.ticksToLive < lowest.ticksToLive ? creep : lowest, null
-    );
-    console.log(`Creep ${closestToDeath} dies in ${closestToDeath.ticksToLive}.`);
-  } catch (error) {
-    console.log(error);
-  }
+  // // Check closest creep to death
+  // const myCreeps = Object.values(Game.creeps);
+  // try {
+  //   let closestToDeath = myCreeps.reduce((lowest, creep) => !lowest || creep.ticksToLive < lowest.ticksToLive ? creep : lowest, null
+  //   );
+  //   console.log(`Creep ${closestToDeath} dies in ${closestToDeath.ticksToLive}.`);
+  // } catch (error) {
+  //   console.log(error);
+  // }
 
   // Check Extensions
   let myExtensions = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
@@ -115,11 +115,17 @@ module.exports.loop = function () {
   console.log("Upgrader: " + upgraders.length);
 
   if (harvesters.length > 3 && builders.length > 2 && upgraders.length < 2) {
+    // TODO: Create function to create a creep?
     newName = "Upgrader" + Game.time;
     console.log("Spawning new upgrader: " + newName);
     Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
       memory: { role: "upgrader" },
     });
+    if (Game.gcl.level >= 3 && upgraders.length < 4) {
+      Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
+        memory: { role: "upgrader" },
+      });
+    }
   }
 
   // Repairers auto spawn
