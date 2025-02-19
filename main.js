@@ -39,7 +39,7 @@ module.exports.loop = function () {
       let room = Game.rooms[roomName];
       const repairQueue = utils.getRepairQueue(room);
       console.log(repairQueue.length, ' structures to repair.')
-      console.log(repairQueue[0].hits, 'out of ', repairQueue[0].hitsMax);
+      console.log(`Lowest structure is ${repairQueue[0].hits} out of ${repairQueue[0].hitsMax} hits.`);
     }
   } catch (error) {
     console.log(error);
