@@ -169,14 +169,14 @@ module.exports.loop = function () {
   );
   console.log("Scout: " + scout.length);
 
-  if (scout.length < 1 && Game.gcl.level > 1 && tractors.length > 0 && upgraders.length > 3) {
-    newName = "Scout" + Game.time;
-    console.log("Spawning new scout: ", newName);
-    const result = Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, CLAIM], newName, {
-      memory: { role: "scout" },
-    });
-    console.log(result);
-  }
+  // if (scout.length < 1 && Game.gcl.level > 1 && tractors.length > 0 && upgraders.length > 3) {
+  //   newName = "Scout" + Game.time;
+  //   console.log("Spawning new scout: ", newName);
+  //   const result = Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, CLAIM], newName, {
+  //     memory: { role: "scout" },
+  //   });
+  //   console.log(result);
+  // }
 
   // Tower code
     for (let roomName in Game.rooms) {
