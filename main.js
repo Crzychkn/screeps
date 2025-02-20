@@ -126,7 +126,8 @@ module.exports.loop = function () {
   );
   console.log("Upgrader: " + upgraders.length);
 
-  if (harvesters.length > 3 && builders.length > 2 && upgraders.length < 3) {
+  // TODO: This needs re-worked to make more. If upgraders.length !< 3, it won't ever run to make more in the second loop
+  if (harvesters.length > 3 && builders.length > 2 && upgraders.length <= 3) {
     // TODO: Create function to create a creep?
     newName = "Upgrader" + Game.time;
     console.log("Spawning new upgrader: " + newName);
