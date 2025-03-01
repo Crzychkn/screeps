@@ -17,7 +17,8 @@ module.exports = {
       const status = Game.map.getRoomStatus(firstRoom);
       console.log('status: ', status.status);
       try{
-        console.log(Game.map.describeExits(firstRoom["1"]))
+        const exits = Game.map.describeExits(firstRoom)
+        console.log(exits["1"])
         console.log(Object.keys(Game.map.describeExits(firstRoom)["1"]))
         console.log(Object.keys(Game.map.describeExits(firstRoom)["3"]))
         console.log(Object.keys(Game.map.describeExits(firstRoom)["5"]))
