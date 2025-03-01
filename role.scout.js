@@ -16,7 +16,12 @@ module.exports = {
       console.log('firstRoom: ', firstRoom);
       const status = Game.map.getRoomStatus(firstRoom);
       console.log('status: ', status.status);
-      console.log(Object.keys(Game.map.describeExits(firstRoom)[0]))
+      try{
+        console.log(Object.keys(Game.map.describeExits(firstRoom)[0]))
+      } catch (error) {
+        console.log(error)
+      }
+
     }
 
     // Check list of adjacent rooms to current room
