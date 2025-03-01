@@ -19,6 +19,7 @@ module.exports = {
       try{
         const exits = Game.map.describeExits(firstRoom)
         console.log(exits);
+        console.log('exits: ', {exits});
         console.log(exits["1"])
         console.log(Object.keys(Game.map.describeExits(firstRoom)["1"]))
         console.log(Object.keys(Game.map.describeExits(firstRoom)["3"]))
