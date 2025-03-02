@@ -6,6 +6,17 @@ module.exports = {
 
     const currentGcl = Game.gcl.level;
 
+    // Check if owned rooms (Game.rooms.length) is less (<) than GCL (Game.gcl.level or gclLevel)
+    // Probably do this in main instead
+
+    // Find rooms nearby
+    // Check room statuses
+    // Pick best room
+
+    // Move to chosen room
+
+    // If in chosen room, run claim function
+
     // Check that we have GCL above 1.
     if ( currentGcl > 1 ) {
       // If we do, grab the first room from our rooms
