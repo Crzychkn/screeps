@@ -19,12 +19,14 @@ module.exports = {
       try{
         const exits = Game.map.describeExits(firstRoom)
         for ( exit in exits ) {
-          console.log(exits[exit]);
+          console.log('Exits', exits[exit]);
+          console.log('Exit 1', exits["1"]);
         }
-        console.log(exits["1"])
       } catch (error) {
         console.log(error)
       }
+
+
 
     }
 
