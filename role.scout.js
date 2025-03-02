@@ -20,7 +20,10 @@ module.exports = {
         const exits = Game.map.describeExits(firstRoom)
         for ( exit in exits ) {
           console.log('Exits', exits[exit]);
-          console.log('Exit 1', exits["1"]);
+          console.log('Top Exit', exits["1"]);
+          console.log('Right Exit', exits["3"]);
+          console.log('Bottom Exit', exits["5"]);
+          console.log('Left Exit', exits["7"]);
         }
       } catch (error) {
         console.log(error)
