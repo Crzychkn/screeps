@@ -1,7 +1,5 @@
 module.exports = {
     run: function (creep) {
-        console.log("Enemies detected, man the towers!");
-
         try {
 
             if (creep.store[RESOURCE_ENERGY] === 0) {
@@ -23,8 +21,10 @@ module.exports = {
             });
             console.log("Towers: ", towers);
 
+            let lowestEnergyTower = null;
+
             if (towers.length > 0) {
-                let lowestEnergyTower = towers.reduce((lowest, tower) =>
+                lowestEnergyTower = towers.reduce((lowest, tower) =>
                     !lowest || tower.store[RESOURCE_ENERGY] < lowest.store[RESOURCE_ENERGY] ? tower : lowest, null);
                 console.log("Lowest: ", lowestEnergyTower);
             }
