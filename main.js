@@ -66,9 +66,6 @@ module.exports.loop = function () {
     myExtensions = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
       filter: { structureType: STRUCTURE_EXTENSION },
     });
-  } catch (error) {
-    console.log(error);
-  }
 
   console.log('Current Extensions:', myExtensions.length);
   if (myExtensions.length > 0 ) {
@@ -77,6 +74,9 @@ module.exports.loop = function () {
       containerStore += container.store[RESOURCE_ENERGY];
     }
     console.log('Current Extensions Total Energy:', containerStore);
+  }
+  } catch (error) {
+    console.log(error);
   }
 
   // Harvesters auto spawn
