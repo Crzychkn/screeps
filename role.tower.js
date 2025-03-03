@@ -24,7 +24,7 @@ module.exports = {
             // Nothing to attack, so repair something instead.
             towers.forEach(tower => {
                 console.log(tower.store[RESOURCE_ENERGY]);
-                if (tower.store.getFreeCapacity[RESOURCE_ENERGY] < 500) {
+                if (tower.store[RESOURCE_ENERGY] > 800) {
                     tower.repair(utils.getRepairQueue(Game.rooms[roomName])[0])
                 }
             });
