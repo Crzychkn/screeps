@@ -23,14 +23,16 @@ module.exports = {
             });
             console.log("Towers: ", towers);
 
-            let lowestEnergyTower = towers.reduce((lowest, tower) =>
-                !lowest || tower.store[RESOURCE_ENERGY] < lowest.store[RESOURCE_ENERGY] ? tower : lowest, null);
-            console.log("Lowest: ", lowestEnergyTower);
+            if (towers.length > 0) {
+                let lowestEnergyTower = towers.reduce((lowest, tower) =>
+                    !lowest || tower.store[RESOURCE_ENERGY] < lowest.store[RESOURCE_ENERGY] ? tower : lowest, null);
+                console.log("Lowest: ", lowestEnergyTower);
+            }
 
             // Withdraw from storage
             if (creep.memory.withdraw) {
-                if (creep.withdraw(storage) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(storage, {
+                if (creep.withdraw(storage[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+                    creep.moveTo(storage[0], {
                         visualizePathStyle: {stroke: "#ffffff"},
                     });
                 }
