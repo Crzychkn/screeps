@@ -61,9 +61,15 @@ module.exports.loop = function () {
   // }
 
   // Check Extensions
-  let myExtensions = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
-    filter: { structureType: STRUCTURE_EXTENSION },
-  }) || null;
+  let myExtensions;
+  try {
+    myExtensions = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
+      filter: { structureType: STRUCTURE_EXTENSION },
+    });
+  } catch (error) {
+    console.log(error);
+  }
+
   console.log('Current Extensions:', myExtensions.length);
   if (myExtensions.length > 0 ) {
     var containerStore = 0;
