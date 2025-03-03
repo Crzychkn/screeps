@@ -40,7 +40,7 @@ module.exports = {
 
             // Deposit in tower
             if (!creep.memory.withdraw) {
-                if (creep.transfer(lowestEnergyTower) === ERR_NOT_IN_RANGE) {
+                if (creep.transfer(lowestEnergyTower, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
                     creep.moveTo(lowestEnergyTower, {
                         visualizePathStyle: {stroke: "#ffffff"},
                     });
