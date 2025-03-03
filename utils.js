@@ -21,6 +21,7 @@ function getRepairQueue(room) {
   const repairSites = room.find(FIND_STRUCTURES, {
     filter: (object) => object.hits < object.hitsMax,
   }) || null;
+  console.log("Repair Queue Find");
 
   // TODO: Add weight formula here for better prioritization.
   const repairPriorities = {
