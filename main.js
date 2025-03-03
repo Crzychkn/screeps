@@ -5,7 +5,7 @@ let roleRepairer = require("role.repairer");
 let roleTractor = require("role.tractor");
 let roleScout = require("role.scout");
 let roleTower = require("role.tower");
-const roleStim = require("./role.scout");
+const roleStim = require("role.emergencyStim");
 const utils = require("./utils");
 
 
