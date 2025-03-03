@@ -7,6 +7,25 @@ module.exports = {
             filter: { structureType: STRUCTURE_TOWER }
         });
 
+        let stims = _.filter(
+            Game.creeps,
+            (creep) => creep.memory.role === "stim"
+        );
+        console.log("Stims: ", stims.length);
+
+        towers.forEach(tower => {
+            if (tower.store[RESOURCE_ENERGY] < 300 && stims.length < 1) {
+                let newName = "Stim" + Game.time;
+                Game.spawns["Spawn1"].spawnCreep(
+                    [MOVE, MOVE, CARRY, CARRY],
+                    newName,
+                    {
+                        memory: { role: "stim" },
+                    }
+                );
+            }
+        })
+
         if (!towers) {
             console.log("No towers available!");
         }
