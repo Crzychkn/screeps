@@ -5,7 +5,9 @@ let roleRepairer = require("role.repairer");
 let roleTractor = require("role.tractor");
 let roleScout = require("role.scout");
 let roleTower = require("role.tower");
+const roleStim = require("./role.scout");
 const utils = require("./utils");
+
 
 let name;
 
@@ -216,6 +218,9 @@ module.exports.loop = function () {
     }
     if (creep.memory.role === "scout") {
       roleScout.run(creep);
+    }
+    if (creep.memory.role === "stim") {
+      roleStim.run(creep);
     }
   }
 
