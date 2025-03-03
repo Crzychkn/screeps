@@ -153,7 +153,7 @@ module.exports.loop = function () {
         });
       }
     } catch (e) {
-      console.error(e);
+      console.log(e);
     }
   }
 
