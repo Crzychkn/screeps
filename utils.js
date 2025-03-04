@@ -18,9 +18,9 @@ function getEnergy(creep) {
 }
 
 function getRepairQueue(room) {
-  const repairSites = room.find(FIND_STRUCTURES, {
+  const repairSites = room?.find(FIND_STRUCTURES, {
     filter: (object) => object.hits < object.hitsMax,
-  }) || null;
+  });
 
   // TODO: Add weight formula here for better prioritization.
   const repairPriorities = {
