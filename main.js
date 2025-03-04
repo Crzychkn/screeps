@@ -162,7 +162,7 @@ module.exports.loop = function () {
     Game.creeps,
     (creep) => creep.memory.role === "repairer"
   );
-  console.log("Repairer: " + builders.length);
+  console.log("Repairer: " + repairers.length);
 
   if (harvesters.length > 3 && repairers.length < 2) {
     newName = "Repairer" + Game.time;
