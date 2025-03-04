@@ -10,26 +10,106 @@ var roleHarvester = {
       }
 
     } else {
-      let targets = creep.room.find(FIND_STRUCTURES, {
+      // let targets = creep.room.find(FIND_STRUCTURES, {
+      //   filter: (structure) => {
+      //     return (
+      //       (structure.structureType === STRUCTURE_SPAWN ||
+      //         structure.structureType === STRUCTURE_EXTENSION ||
+      //         structure.structureType === STRUCTURE_STORAGE ||
+      //         structure.structureType === STRUCTURE_CONTAINER ||
+      //           structure.structureType === STRUCTURE_TOWER) &&
+      //       structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+      //     );
+      //   },
+      // });
+
+      // Filter for spawns
+      let spawns = creep.room.find(FIND_STRUCTURES, {
         filter: (structure) => {
           return (
-            (structure.structureType === STRUCTURE_SPAWN ||
-              structure.structureType === STRUCTURE_EXTENSION ||
-              structure.structureType === STRUCTURE_STORAGE ||
-              structure.structureType === STRUCTURE_CONTAINER ||
-                structure.structureType === STRUCTURE_TOWER) &&
-            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+              structure.structureType === STRUCTURE_SPAWN &&
+                  structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
           );
-        },
-      });
+        }
+      })
+
+      // Filter for extensions
+      let extensions = creep.room.find(FIND_STRUCTURES, {
+        filter: (structure) => {
+          return (
+              structure.structureType === STRUCTURE_EXTENSION &&
+              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+          );
+        }
+      })
+
+      // Filter for storage
+      let storage = creep.room.find(FIND_STRUCTURES, {
+        filter: (structure) => {
+          return (
+              structure.structureType === STRUCTURE_STORAGE &&
+              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+          );
+        }
+      })
+
+      // Filter for containers
+      let containers = creep.room.find(FIND_STRUCTURES, {
+        filter: (structure) => {
+          return (
+              structure.structureType === STRUCTURE_CONTAINER &&
+              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+          );
+        }
+      })
+
+      // Filter for towers
+      let towers = creep.room.find(FIND_STRUCTURES, {
+        filter: (structure) => {
+          return (
+              structure.structureType === STRUCTURE_TOWER &&
+              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+          );
+        }
+      })
+
       //If spawn, extension, or tower need energy, supply them
-      if (targets.length > 0) {
-        if (creep.transfer(targets[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-          creep.moveTo(targets[0], {
+      if (spawns.length > 0) {
+        if (creep.transfer(spawns[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+          creep.moveTo(spawns[0], {
             visualizePathStyle: { stroke: "#ffffff" },
           });
         }
-      } else {
+      }
+      else if (extensions.length > 0) {
+        if (creep.transfer(extensions[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+          creep.moveTo(extensions[0], {
+            visualizePathStyle: { stroke: "#ffffff" },
+          });
+        }
+      }
+      else if (storage.length > 0) {
+        if (creep.transfer(storage[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+          creep.moveTo(storage[0], {
+            visualizePathStyle: { stroke: "#ffffff" },
+          });
+        }
+      }
+      else if (containers.length > 0) {
+        if (creep.transfer(containers[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+          creep.moveTo(containers[0], {
+            visualizePathStyle: { stroke: "#ffffff" },
+          });
+        }
+      }
+      else if (towers.length > 0) {
+        if (creep.transfer(towers[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+          creep.moveTo(towers[0], {
+            visualizePathStyle: { stroke: "#ffffff" },
+          });
+        }
+      }
+      else {
         creep.moveTo(Game.spawns.Spawn1.pos.x, Game.spawns.Spawn1.pos.y);
         creep.say('🚫 storage');
       }
