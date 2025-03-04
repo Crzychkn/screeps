@@ -5,7 +5,7 @@ module.exports = {
         // Get all towers in the room
         let towers = Game.rooms[roomName].find(FIND_MY_STRUCTURES, {
             filter: { structureType: STRUCTURE_TOWER }
-        });
+        }) ?? null;
 
         let stims = _.filter(
             Game.creeps,
