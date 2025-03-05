@@ -66,7 +66,7 @@ module.exports.loop = function () {
         let defenders = _.filter(Game.creeps, (creep) => {
             creep.memory.role === "defender"
         })
-        if (defenders.length < 3) {
+        if (defenders.length < hostilesAmount) {
             let newName = "Defender" + Game.time;
             Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, MOVE, ATTACK, ATTACK, ATTACK],
                 newName, {
