@@ -57,7 +57,6 @@ module.exports.loop = function () {
     // Defense creeps
     let hostiles
     for (let roomName in Game.rooms) {
-        let room = Game.rooms[roomName];
         hostiles = Game.rooms[roomName].find(FIND_HOSTILE_CREEPS);
     }
     let hostilesAmount = hostiles.length;
@@ -127,7 +126,7 @@ module.exports.loop = function () {
 
     // TODO: Maybe check to ensure enough energy before creating this
     // Get all containers / storage and ensure energy levels exceed 900 in total.
-    if (tractors.length < 1 && Game.gcl.level >= 3) {
+    if (tractors.length < 1 && containerStore > 1200) {
         console.log("Tractor can be made.");
         newName = "Tractor" + Game.time;
         Game.spawns["Spawn1"].spawnCreep(
@@ -139,7 +138,7 @@ module.exports.loop = function () {
         );
     }
 
-    if (tractors.length < 2 && Game.gcl.level >= 4) {
+    if (tractors.length < 2 && containerStore > 1500) {
         newName = "Tractor" + Game.time;
         Game.spawns["Spawn1"].spawnCreep(
             [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
