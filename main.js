@@ -217,14 +217,14 @@ module.exports.loop = function () {
     // If no scouts
     // and gcl level > 1
 
-    if (scout.length < 1 && Game.gcl.level > Object.keys(Game.rooms).length && tractors.length > 0 && upgraders.length > 3 && containerStore > 1200) {
-        newName = "Scout" + Game.time;
-        console.log("Spawning new scout: ", newName);
-        const result = Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, CLAIM], newName, {
-            memory: {role: "scout"},
-        });
-        console.log(result);
-    }
+    // if (scout.length < 1 && Game.gcl.level > Object.keys(Game.rooms).length && tractors.length > 0 && upgraders.length > 3 && containerStore > 1200) {
+    //     newName = "Scout" + Game.time;
+    //     console.log("Spawning new scout: ", newName);
+    //     const result = Game.spawns["Spawn1"].spawnCreep([MOVE, MOVE, CLAIM], newName, {
+    //         memory: {role: "scout"},
+    //     });
+    //     console.log(result);
+    // }
 
     // Tower code
     for (let roomName in Game.rooms) {
