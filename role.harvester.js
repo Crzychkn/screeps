@@ -110,12 +110,8 @@ var roleHarvester = {
         }
       }
       else {
-        // creep.moveTo(Game.spawns.Spawn1.pos.x, Game.spawns.Spawn1.pos.y);
+        creep.moveTo(Game.spawns.Spawn1.pos.x, Game.spawns.Spawn1.pos.y);
         creep.say('🚫 storage');
-        if (creep.upgradeController(creep.room.controller) === ERR_NOT_IN_RANGE) {
-        creep.moveTo(creep.room.controller, {
-            visualizePathStyle: { stroke: "#ffffff" },
-        })}
       }
     }
   },
