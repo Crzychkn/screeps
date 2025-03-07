@@ -14,7 +14,7 @@ module.exports = {
         console.log("Stims: ", stims.length);
 
         towers.forEach(tower => {
-            if (tower.store[RESOURCE_ENERGY] < 300 && stims.length < 1) {
+            if (tower.store[RESOURCE_ENERGY] < 400 && stims.length < 1) {
                 let newName = "Stim" + Game.time;
                 Game.spawns["Spawn1"].spawnCreep(
                     [MOVE, MOVE, CARRY, CARRY],
@@ -40,9 +40,7 @@ module.exports = {
             // Nothing to attack, so repair something instead.
             towers.forEach(tower => {
                 console.log(tower.store[RESOURCE_ENERGY]);
-                if (tower.store[RESOURCE_ENERGY] > 800) {
-                    tower.repair(utils.getRepairQueue(Game.rooms[roomName])[0])
-                }
+                tower.repair(utils.getRepairQueue(Game.rooms[roomName])[0])
             });
         }
     }

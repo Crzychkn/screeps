@@ -192,19 +192,19 @@ module.exports.loop = function () {
     }
 
     // Repairers auto spawn
-    let repairers = _.filter(
-        Game.creeps,
-        (creep) => creep.memory.role === "repairer"
-    );
-    console.log("Repairer: " + repairers.length);
-
-    if (harvesters.length > 3 && repairers.length < 2) {
-        newName = "Repairer" + Game.time;
-        console.log("Spawning new repairer: " + newName);
-        Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
-            memory: {role: "repairer"},
-        });
-    }
+    // let repairers = _.filter(
+    //     Game.creeps,
+    //     (creep) => creep.memory.role === "repairer"
+    // );
+    // console.log("Repairer: " + repairers.length);
+    //
+    // if (harvesters.length > 3 && repairers.length < 2) {
+    //     newName = "Repairer" + Game.time;
+    //     console.log("Spawning new repairer: " + newName);
+    //     Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
+    //         memory: {role: "repairer"},
+    //     });
+    // }
 
     // Scout auto spawn
     let scout = _.filter(
