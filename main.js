@@ -118,7 +118,7 @@ module.exports.loop = function () {
         });
     }
 
-    if (harvesters.length < 5 && containerStore > 900) {
+    if (harvesters.length > 4 && containerStore > 900) {
         newName = "Harvester" + Game.time;
         console.log("Spawning new harvester: " + newName);
         Game.spawns["Spawns"].spawnCreep([WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE], {
