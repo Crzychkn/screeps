@@ -21,10 +21,13 @@ module.exports.loop = function () {
     let newName;
     let rooms = Object.keys(Game.rooms);
     console.log("We own", rooms.length, "room(s).");
-    for (let room of rooms) {
-        console.log("Room:", room.name, "RCL:", room.controller.level)
+    try {
+        for (let room of rooms) {
+            console.log("Room:", room.name, "RCL:", room.controller.level)
+        }
+    } catch (error) {
+        console.log(error);
     }
-
 
     // Clear memory of dead creeps
     for (name in Memory.creeps) {
