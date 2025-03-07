@@ -21,10 +21,15 @@ module.exports.loop = function () {
     let newName;
     let rcl;
     let harvesterAmount;
+    let harvesterConfig;
     let builderAmount;
+    let builderConfig;
     let tractorAmount;
+    let tractorConfig;
     let upgraderAmount;
+    let upgraderConfig;
     let rooms = Object.keys(Game.rooms);
+    let currentRoom = rooms[0];
     console.log(rooms.length, "room(s) owned.");
     try {
         for (let room of rooms) {
@@ -42,6 +47,8 @@ module.exports.loop = function () {
             builderAmount = 1;
             upgraderAmount = 2;
             tractorAmount = 0;
+            harvesterConfig = [WORK, MOVE, CARRY];
+            builderConfig = [WORK, MOVE, CARRY];
             break;
         case 2:
             harvesterAmount = 4;
@@ -147,7 +154,7 @@ module.exports.loop = function () {
     // Check Extensions
     let myExtensions;
     try {
-        myExtensions = Game.rooms['E57S36'].find(FIND_STRUCTURES, {
+        myExtensions = Game.rooms[currentRoom].find(FIND_STRUCTURES, {
             filter: {structureType: STRUCTURE_EXTENSION},
         });
 
@@ -173,7 +180,7 @@ module.exports.loop = function () {
     if (harvesters.length < harvesterAmount) {
         newName = "Harvester" + Game.time;
         console.log("Spawning new harvester: " + newName);
-        Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
+        Game.spawns["Spawn1"].spawnCreep(harvesterConfig, newName, {
             memory: {role: "harvester"},
         });
     }
@@ -186,7 +193,7 @@ module.exports.loop = function () {
 
     // TODO: Maybe check to ensure enough energy before creating this
     // Get all containers / storage and ensure energy levels exceed 900 in total.
-    if (tractors.length < tractorAmount && containerStore > 1200) {
+    if (tractors.length <= tractorAmount && containerStore > 1200) {
         console.log("Tractor can be made.");
         newName = "Tractor" + Game.time;
         Game.spawns["Spawn1"].spawnCreep(
@@ -205,7 +212,7 @@ module.exports.loop = function () {
     );
     console.log("Builder: " + builders.length);
 
-    if (harvesters.length > harvesterAmount && builders.length < builderAmount) {
+    if (harvesters.length >= harvesterAmount && builders.length < builderAmount) {
         newName = "Builder" + Game.time;
         console.log("Spawning new builder: " + newName);
         Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
@@ -220,25 +227,12 @@ module.exports.loop = function () {
     );
     console.log("Upgrader: " + upgraders.length);
 
-    // TODO: This needs re-worked to make more. If upgraders.length !< 3, it won't ever run to make more in the second loop
-    if (harvesters.length > harvesterAmount && builders.length > builderAmount && upgraders.length <= upgraderAmount) {
-        // TODO: Create function to create a creep?
+    if (harvesters.length >= harvesterAmount && builders.length >= builderAmount && upgraders.length <= upgraderAmount) {
         newName = "Upgrader" + Game.time;
         console.log("Spawning new upgrader: " + newName);
         Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
             memory: {role: "upgrader"},
         });
-        try {
-            let room = Game.rooms['E57S36'];
-            console.log('Room variable:', room);
-            if (room.controller.level > 3 && upgraders.length < 5) {
-                Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
-                    memory: {role: "upgrader"},
-                });
-            }
-        } catch (e) {
-            console.log(e);
-        }
     }
 
     // Repairers auto spawn
