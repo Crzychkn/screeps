@@ -10,7 +10,6 @@ const roleDefender = require("role.defender");
 const utils = require("./utils");
 
 
-
 let name;
 
 module.exports.loop = function () {
@@ -21,7 +20,10 @@ module.exports.loop = function () {
     // Declare variables
     let newName;
     let rooms = Object.keys(Game.rooms);
-    console.log("We own" , rooms.length, "rooms.");
+    console.log("We own", rooms.length, "room(s).");
+    for (let room of rooms) {
+        console.log("Room:", room.name, "RCL:", room.controller.level)
+    }
 
 
     // Clear memory of dead creeps
@@ -106,7 +108,7 @@ module.exports.loop = function () {
         console.log(error);
     }
 
-    // Harvesters auto spawn
+    // Initial harvesters spawn
     let harvesters = _.filter(
         Game.creeps,
         (creep) => creep.memory.role === "harvester"
@@ -124,7 +126,7 @@ module.exports.loop = function () {
     if (harvesters.length < 8 && containerStore > 900) {
         newName = "Harvester" + Game.time;
         console.log("Spawning new harvester: " + newName);
-        Game.spawns["Spawn1"].spawnCreep([WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE], newName,{
+        Game.spawns["Spawn1"].spawnCreep([WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE], newName, {
             memory: {role: "harvester"},
         });
     }
