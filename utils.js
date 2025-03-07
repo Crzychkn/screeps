@@ -1,5 +1,6 @@
 function getEnergy(creep) {
   let storage = creep.room.storage;
+  let container = creep.room.container;
   // TODO: Check that storage has enough in it here probably.
   if (storage) {
     if (creep.withdraw(storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
@@ -7,7 +8,14 @@ function getEnergy(creep) {
         visualizePathStyle: { stroke: "#ffffff" },
       });
     }
-  } else {
+  } else if (container) {
+    if (creep.withdraw(container, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+      creep.moveTo(container, {
+        visualizePathStyle: { stroke: "#ffffff" },
+      });
+    }
+  }
+  else {
     let sources = creep.room.find(FIND_SOURCES);
     if (creep.harvest(sources[0]) === ERR_NOT_IN_RANGE) {
       creep.moveTo(sources[0], {
