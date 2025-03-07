@@ -20,6 +20,9 @@ module.exports.loop = function () {
 
     // Declare variables
     let newName;
+    let rooms = Object.keys(Game.rooms);
+    console.log("We own" , rooms.length, "rooms.");
+
 
     // Clear memory of dead creeps
     for (name in Memory.creeps) {
