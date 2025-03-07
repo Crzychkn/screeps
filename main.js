@@ -118,6 +118,14 @@ module.exports.loop = function () {
         });
     }
 
+    if (harvesters.length < 5 && containerStore > 900) {
+        newName = "Harvester" + Game.time;
+        console.log("Spawning new harvester: " + newName);
+        Game.spawns["Spawns"].spawnCreep([WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE], {
+            memory: {role: "harvester"},
+        });
+    }
+
     let tractors = _.filter(
         Game.creeps,
         (creep) => creep.memory.role === "tractor"

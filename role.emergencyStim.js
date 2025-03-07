@@ -14,12 +14,10 @@ module.exports = {
             let storage = Game.rooms["E57S36"].find(FIND_MY_STRUCTURES, {
                 filter: {structureType: STRUCTURE_STORAGE}
             });
-            console.log("Storage: ", storage);
 
             let towers = Game.rooms["E57S36"].find(FIND_MY_STRUCTURES, {
                 filter: {structureType: STRUCTURE_TOWER}
             });
-            console.log("Towers: ", towers);
 
             let lowestEnergyTower = null;
 
