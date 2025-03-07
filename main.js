@@ -193,7 +193,7 @@ module.exports.loop = function () {
 
     // TODO: Maybe check to ensure enough energy before creating this
     // Get all containers / storage and ensure energy levels exceed 900 in total.
-    if (tractors.length <= tractorAmount && containerStore > 1200) {
+    if (tractors.length < tractorAmount && containerStore > 1200) {
         console.log("Tractor can be made.");
         newName = "Tractor" + Game.time;
         Game.spawns["Spawn1"].spawnCreep(
@@ -227,7 +227,7 @@ module.exports.loop = function () {
     );
     console.log("Upgrader: " + upgraders.length);
 
-    if (harvesters.length >= harvesterAmount && builders.length >= builderAmount && upgraders.length <= upgraderAmount) {
+    if (harvesters.length >= harvesterAmount && builders.length >= builderAmount && upgraders.length < upgraderAmount) {
         newName = "Upgrader" + Game.time;
         console.log("Spawning new upgrader: " + newName);
         Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
