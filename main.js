@@ -19,10 +19,10 @@ module.exports.loop = function () {
 
     // Declare variables
     let newName;
-    let rooms = Object.keys(Game.rooms);
+    let rooms = Game.rooms;
     console.log("We own", rooms.length, "room(s).");
     try {
-        for (let room of rooms) {
+        for (let room in rooms) {
             console.log("Room:", room.name, "RCL:", room.controller.level)
         }
     } catch (error) {
