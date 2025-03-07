@@ -24,7 +24,6 @@ module.exports = {
             if (towers.length > 0) {
                 lowestEnergyTower = towers.reduce((lowest, tower) =>
                     !lowest || tower.store[RESOURCE_ENERGY] < lowest.store[RESOURCE_ENERGY] ? tower : lowest, null);
-                console.log("Lowest: ", lowestEnergyTower);
             }
 
             // Withdraw from storage
