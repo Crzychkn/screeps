@@ -26,7 +26,7 @@ function getRepairQueue(room) {
   const repairPriorities = {
     [STRUCTURE_TOWER]: 1,
     [STRUCTURE_ROAD]: 2,
-    [STRUCTURE_RAMPART]: 3,
+    // [STRUCTURE_RAMPART]: 3,
     [STRUCTURE_WALL]: 4
   };
 
