@@ -16,7 +16,7 @@ module.exports = {
             });
 
             let towers = Game.rooms["E57S36"].find(FIND_MY_STRUCTURES, {
-                filter: {structureType: STRUCTURE_TOWER || STRUCTURE_SPAWN}
+                filter: {structureType: STRUCTURE_TOWER}
             });
 
             let lowestEnergyTower = null;
