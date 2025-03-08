@@ -49,6 +49,7 @@ module.exports.loop = function () {
             tractorAmount = 0;
             harvesterConfig = [WORK, MOVE, CARRY];
             builderConfig = [WORK, MOVE, CARRY];
+            upgraderConfig = [WORK, MOVE, CARRY];
             break;
         case 2:
             harvesterAmount = 4;
@@ -56,6 +57,7 @@ module.exports.loop = function () {
             upgraderAmount = 3;
             tractorAmount = 0;
             harvesterConfig = [WORK, MOVE, CARRY];
+            upgraderConfig = [WORK, MOVE, CARRY];
             break;
         case 3:
             harvesterAmount = 5;
@@ -63,6 +65,7 @@ module.exports.loop = function () {
             upgraderAmount = 4;
             tractorAmount = 0;
             harvesterConfig = [WORK, MOVE, CARRY];
+            upgraderConfig = [WORK, MOVE, CARRY];
             break;
         case 4:
             harvesterAmount = 5;
@@ -70,6 +73,7 @@ module.exports.loop = function () {
             upgraderAmount = 4;
             tractorAmount = 1;
             harvesterConfig = [WORK, MOVE, CARRY];
+            upgraderConfig = [WORK, MOVE, CARRY];
             break;
         case 5:
             harvesterAmount = 5;
@@ -77,6 +81,7 @@ module.exports.loop = function () {
             upgraderAmount = 5;
             tractorAmount = 1;
             harvesterConfig = [WORK, MOVE, CARRY];
+            upgraderConfig = [WORK, MOVE, CARRY];
             break;
         case 6:
             harvesterAmount = 5;
@@ -84,6 +89,7 @@ module.exports.loop = function () {
             upgraderAmount = 6;
             tractorAmount = 2;
             harvesterConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
+            upgraderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
             break;
         case 7:
             harvesterAmount = 6;
@@ -91,6 +97,7 @@ module.exports.loop = function () {
             upgraderAmount = 7;
             tractorAmount = 2;
             harvesterConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
+            upgraderConfig = [WORK, MOVE, CARRY];
             break;
     }
 
@@ -236,7 +243,7 @@ module.exports.loop = function () {
     if (harvesters.length >= harvesterAmount && builders.length >= builderAmount && upgraders.length < upgraderAmount) {
         newName = "Upgrader" + Game.time;
         console.log("Spawning new upgrader: " + newName);
-        Game.spawns["Spawn1"].spawnCreep([WORK, CARRY, MOVE], newName, {
+        Game.spawns["Spawn1"].spawnCreep(upgraderConfig, newName, {
             memory: {role: "upgrader"},
         });
     }
