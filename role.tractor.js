@@ -10,8 +10,9 @@ module.exports = {
                 creep.memory.withdraw = false;
             }
 
-            creep.say("🌾 harvest.");
+
             if (creep.memory.withdraw) {
+                creep.say("🌾 harvest.");
                 var sources = creep.room.find(FIND_SOURCES);
                 if (creep.harvest(sources[1]) === ERR_NOT_IN_RANGE) {
                     creep.moveTo(sources[1], {visualizePathStyle: {stroke: "#ffaa00"}});
@@ -33,6 +34,7 @@ module.exports = {
                 });
                 //If spawn, extension, or tower need energy, supply them
                 if (targets.length > 0) {
+                    creep.say("🌾 store.");
                     if (creep.transfer(targets[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
                         creep.moveTo(targets[0], {
                             visualizePathStyle: {stroke: "#ffffff"},
