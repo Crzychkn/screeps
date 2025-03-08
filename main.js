@@ -105,12 +105,12 @@ module.exports.loop = function () {
     case 7:
       harvesterAmount = 6;
       builderAmount = 4;
-      upgraderAmount = 7;
+      upgraderAmount = 8;
       tractorAmount = 1;
-      tractorConfig = [WORK, WORK, WORK, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY];
-      harvesterConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
+      tractorConfig = [WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY];
+      harvesterConfig = [WORK, WORK, WORK, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY];
       builderConfig = [WORK, MOVE, CARRY];
-      upgraderConfig = [WORK, MOVE, CARRY];
+      upgraderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
       break;
   }
 
