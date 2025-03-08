@@ -4,7 +4,7 @@ function getEnergy(creep) {
     filter: (structure) => {
       return (
           structure.structureType === STRUCTURE_CONTAINER &&
-              structure.store[RESOURCE_ENERGY] > creep.store[RESOURCE_ENERGY]
+              structure.store[RESOURCE_ENERGY] > creep.store.getFreeCapacity(RESOURCE_ENERGY)
       )
     }
   })
