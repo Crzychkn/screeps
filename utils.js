@@ -8,6 +8,7 @@ function getEnergy(creep) {
       )
     }
   })
+  console.log("Container:" + container);
   // TODO: Check that storage has enough in it here probably.
   if (storage) {
     if (creep.withdraw(storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
