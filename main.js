@@ -47,6 +47,7 @@ module.exports.loop = function () {
             builderAmount = 1;
             upgraderAmount = 2;
             tractorAmount = 0;
+            tractorConfig = [WORK, MOVE, CARRY];
             harvesterConfig = [WORK, MOVE, CARRY];
             builderConfig = [WORK, MOVE, CARRY];
             upgraderConfig = [WORK, MOVE, CARRY];
@@ -56,7 +57,9 @@ module.exports.loop = function () {
             builderAmount = 2;
             upgraderAmount = 3;
             tractorAmount = 0;
+            tractorConfig = [WORK, MOVE, CARRY];
             harvesterConfig = [WORK, MOVE, CARRY];
+            builderConfig = [WORK, MOVE, CARRY];
             upgraderConfig = [WORK, MOVE, CARRY];
             break;
         case 3:
@@ -64,7 +67,9 @@ module.exports.loop = function () {
             builderAmount = 3;
             upgraderAmount = 4;
             tractorAmount = 0;
+            tractorConfig = [WORK, MOVE, CARRY];
             harvesterConfig = [WORK, MOVE, CARRY];
+            builderConfig = [WORK, MOVE, CARRY];
             upgraderConfig = [WORK, MOVE, CARRY];
             break;
         case 4:
@@ -72,7 +77,9 @@ module.exports.loop = function () {
             builderAmount = 3;
             upgraderAmount = 4;
             tractorAmount = 1;
+            tractorConfig = [WORK, MOVE, CARRY];
             harvesterConfig = [WORK, MOVE, CARRY];
+            builderConfig = [WORK, MOVE, CARRY];
             upgraderConfig = [WORK, MOVE, CARRY];
             break;
         case 5:
@@ -80,23 +87,29 @@ module.exports.loop = function () {
             builderAmount = 3;
             upgraderAmount = 5;
             tractorAmount = 1;
+            tractorConfig = [WORK, MOVE, CARRY];
             harvesterConfig = [WORK, MOVE, CARRY];
+            builderConfig = [WORK, MOVE, CARRY];
             upgraderConfig = [WORK, MOVE, CARRY];
             break;
         case 6:
             harvesterAmount = 5;
             builderAmount = 3;
             upgraderAmount = 6;
-            tractorAmount = 2;
+            tractorAmount = 1;
+            tractorConfig = [WORK, MOVE, CARRY];
             harvesterConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
+            builderConfig = [WORK, MOVE, CARRY];
             upgraderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
             break;
         case 7:
             harvesterAmount = 6;
             builderAmount = 4;
             upgraderAmount = 7;
-            tractorAmount = 2;
+            tractorAmount = 1;
+            tractorConfig = [WORK, WORK, WORK, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY];
             harvesterConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
+            builderConfig = [WORK, MOVE, CARRY];
             upgraderConfig = [WORK, MOVE, CARRY];
             break;
     }
