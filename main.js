@@ -223,7 +223,7 @@ module.exports.loop = function () {
         console.log("Tractor can be made.");
         newName = "Tractor" + Game.time;
         Game.spawns["Spawn1"].spawnCreep(
-            [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
+            tractorConfig,
             newName,
             {
                 memory: {role: "tractor"},
