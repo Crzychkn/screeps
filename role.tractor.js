@@ -6,7 +6,7 @@ module.exports = {
             if (creep.store[RESOURCE_ENERGY] === 0) {
                 creep.memory.withdraw = true;
             }
-            if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+            else if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
                 creep.memory.withdraw = false;
             }
 
