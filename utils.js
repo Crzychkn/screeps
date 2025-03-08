@@ -3,32 +3,34 @@ function getEnergy(creep) {
   let container = creep.room.find(FIND_STRUCTURES, {
     filter: (structure) => {
       return (
-          structure.structureType === STRUCTURE_CONTAINER &&
-              structure.store[RESOURCE_ENERGY] > creep.store.getFreeCapacity(RESOURCE_ENERGY)
+        structure.structureType === STRUCTURE_CONTAINER &&
+        structure.store[RESOURCE_ENERGY] > creep.store.getFreeCapacity(RESOURCE_ENERGY)
       )
     }
   })
 
-  // TODO: Check that storage has enough in it here probably.
-  if (storage) {
+  if (storage && storage.store[RESOURCE_ENERGY] > 0) {
     if (creep.withdraw(storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
       creep.moveTo(storage, {
-        visualizePathStyle: { stroke: "#ffffff" },
+        visualizePathStyle: {stroke: "#ffffff"},
       });
     }
-  } else if (container) {
+  } else if (container.length > 0) {
     if (creep.withdraw(container[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
       creep.moveTo(container[0], {
-        visualizePathStyle: { stroke: "#ffffff" },
+        visualizePathStyle: {stroke: "#ffffff"},
       });
     }
-  }
-  else {
+  } else {
     let sources = creep.room.find(FIND_SOURCES);
-    if (creep.harvest(sources[0]) === ERR_NOT_IN_RANGE) {
-      creep.moveTo(sources[0], {
-        visualizePathStyle: { stroke: "#ffffff" },
-      });
+    if (sources.length > 0) {
+
+
+      if (creep.harvest(sources[0]) === ERR_NOT_IN_RANGE) {
+        creep.moveTo(sources[0], {
+          visualizePathStyle: {stroke: "#ffffff"},
+        });
+      }
     }
   }
 }
