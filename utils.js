@@ -15,7 +15,7 @@ function getEnergy(creep) {
         visualizePathStyle: { stroke: "#ffffff" },
       });
     }
-  } else if (container.length > 0) {
+  } else if (container) {
     if (creep.withdraw(container[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
       creep.moveTo(container[0], {
         visualizePathStyle: { stroke: "#ffffff" },
