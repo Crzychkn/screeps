@@ -74,21 +74,21 @@ module.exports.loop = function () {
         case 5:
             harvesterAmount = 5;
             builderAmount = 3;
-            upgraderAmount = 4;
+            upgraderAmount = 5;
             tractorAmount = 1;
             harvesterConfig = [WORK, MOVE, CARRY];
             break;
         case 6:
             harvesterAmount = 5;
             builderAmount = 3;
-            upgraderAmount = 4;
+            upgraderAmount = 6;
             tractorAmount = 2;
             harvesterConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
             break;
         case 7:
             harvesterAmount = 6;
             builderAmount = 4;
-            upgraderAmount = 5;
+            upgraderAmount = 7;
             tractorAmount = 2;
             harvesterConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
             break;
