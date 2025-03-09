@@ -64,42 +64,42 @@ module.exports.loop = function () {
       break;
     case 3:
       harvesterAmount = 4;
-      builderAmount = 3;
+      builderAmount = 2;
       upgraderAmount = 4;
       tractorAmount = 0;
       tractorConfig = [WORK, MOVE, CARRY];
       harvesterConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
-      builderConfig = [WORK, MOVE, CARRY];
+      builderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
       upgraderConfig = [WORK, MOVE, CARRY];
       break;
     case 4:
-      harvesterAmount = 5;
-      builderAmount = 3;
+      harvesterAmount = 4;
+      builderAmount = 2;
       upgraderAmount = 4;
       tractorAmount = 1;
       tractorConfig = [WORK, MOVE, CARRY];
       harvesterConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
-      builderConfig = [WORK, MOVE, CARRY];
+      builderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
       upgraderConfig = [WORK, MOVE, CARRY];
       break;
     case 5:
       harvesterAmount = 5;
-      builderAmount = 3;
+      builderAmount = 2;
       upgraderAmount = 5;
       tractorAmount = 1;
       tractorConfig = [WORK, MOVE, CARRY];
       harvesterConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
-      builderConfig = [WORK, MOVE, CARRY];
+      builderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
       upgraderConfig = [WORK, MOVE, CARRY];
       break;
     case 6:
       harvesterAmount = 5;
-      builderAmount = 3;
+      builderAmount = 2;
       upgraderAmount = 6;
       tractorAmount = 1;
       tractorConfig = [WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY];
       harvesterConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
-      builderConfig = [WORK, MOVE, CARRY];
+      builderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
       upgraderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
       break;
     case 7:
@@ -109,7 +109,7 @@ module.exports.loop = function () {
       tractorAmount = 1;
       tractorConfig = [WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY];
       harvesterConfig = [WORK, WORK, WORK, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY];
-      builderConfig = [WORK, MOVE, CARRY];
+      builderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
       upgraderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
       break;
   }
