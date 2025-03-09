@@ -58,7 +58,7 @@ module.exports.loop = function () {
       upgraderAmount = 3;
       tractorAmount = 0;
       tractorConfig = [WORK, MOVE, CARRY];
-      harvesterConfig = [WORK, MOVE, CARRY];
+      harvesterConfig = [WORK, WORK, MOVE, CARRY, CARRY];
       builderConfig = [WORK, MOVE, CARRY];
       upgraderConfig = [WORK, MOVE, CARRY];
       break;
@@ -68,7 +68,7 @@ module.exports.loop = function () {
       upgraderAmount = 4;
       tractorAmount = 0;
       tractorConfig = [WORK, MOVE, CARRY];
-      harvesterConfig = [WORK, MOVE, CARRY];
+      harvesterConfig = [WORK, WORK, MOVE, CARRY, CARRY];
       builderConfig = [WORK, MOVE, CARRY];
       upgraderConfig = [WORK, MOVE, CARRY];
       break;
@@ -78,7 +78,7 @@ module.exports.loop = function () {
       upgraderAmount = 4;
       tractorAmount = 1;
       tractorConfig = [WORK, MOVE, CARRY];
-      harvesterConfig = [WORK, MOVE, CARRY];
+      harvesterConfig = [WORK, WORK, MOVE, CARRY, CARRY];
       builderConfig = [WORK, MOVE, CARRY];
       upgraderConfig = [WORK, MOVE, CARRY];
       break;
@@ -88,7 +88,7 @@ module.exports.loop = function () {
       upgraderAmount = 5;
       tractorAmount = 1;
       tractorConfig = [WORK, MOVE, CARRY];
-      harvesterConfig = [WORK, MOVE, CARRY];
+      harvesterConfig = [WORK, WORK, MOVE, CARRY, CARRY];
       builderConfig = [WORK, MOVE, CARRY];
       upgraderConfig = [WORK, MOVE, CARRY];
       break;
