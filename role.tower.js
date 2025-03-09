@@ -14,6 +14,8 @@ module.exports = {
         console.log("Stims: ", stims.length);
 
         towers.forEach(tower => {
+            // TODO: Add check here to ensure storage has energy to transfer
+            // storage && storage.store[RESOURCE_ENERGY] > 0
             if (tower.store[RESOURCE_ENERGY] < 400 && stims.length < 1) {
                 let newName = "Stim" + Game.time;
                 Game.spawns["Spawn1"].spawnCreep(
