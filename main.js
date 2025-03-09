@@ -104,7 +104,7 @@ module.exports.loop = function () {
       break;
     case 7:
       harvesterAmount = 6;
-      builderAmount = 4;
+      builderAmount = 3;
       upgraderAmount = 8;
       tractorAmount = 1;
       tractorConfig = [WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY];
