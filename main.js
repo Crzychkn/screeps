@@ -28,6 +28,8 @@ module.exports.loop = function () {
   let tractorConfig;
   let upgraderAmount;
   let upgraderConfig;
+  let scoutAmount;
+  let scoutConfig;
   let rooms = Object.keys(Game.rooms);
   let currentRoom = rooms[0];
   console.log(rooms.length, "room(s) owned.");
@@ -47,6 +49,8 @@ module.exports.loop = function () {
       builderAmount = 1;
       upgraderAmount = 2;
       tractorAmount = 0;
+      scoutAmount = 0;
+      scoutConfig = [MOVE, MOVE, MOVE, CLAIM];
       tractorConfig = [WORK, MOVE, CARRY];
       harvesterConfig = [WORK, MOVE, CARRY];
       builderConfig = [WORK, MOVE, CARRY];
@@ -95,7 +99,7 @@ module.exports.loop = function () {
     case 6:
       harvesterAmount = 5;
       builderAmount = 2;
-      upgraderAmount = 7;
+      upgraderAmount = 6;
       tractorAmount = 1;
       tractorConfig = [WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY];
       harvesterConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
@@ -105,7 +109,7 @@ module.exports.loop = function () {
     case 7:
       harvesterAmount = 5;
       builderAmount = 2;
-      upgraderAmount = 7;
+      upgraderAmount = 6;
       tractorAmount = 1;
       tractorConfig = [WORK, WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY];
       harvesterConfig = [WORK, WORK, WORK, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY];
