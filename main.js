@@ -135,7 +135,7 @@ module.exports.loop = function () {
   console.log('CPU Bucket: ' + bucket);
   console.log('CPU Tick Limit: ' + tickLimit);
   console.log('CPU Unlocked Status: ' + cpuUnlocked)
-  const storageAmount = Game.rooms.storage.energyAvailable;
+
   console.log('Storage Amount: ' + storageAmount);
 
   Game.notify(`Bucket Amount: ${bucket}`, 720);
