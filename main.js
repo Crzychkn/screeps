@@ -136,11 +136,11 @@ module.exports.loop = function () {
   console.log('CPU Tick Limit: ' + tickLimit);
   console.log('CPU Unlocked Status: ' + cpuUnlocked)
 
-  console.log('Storage Amount: ' + storageAmount);
+  // console.log('Storage Amount: ' + storageAmount);
 
   Game.notify(`Bucket Amount: ${bucket}`, 720);
   Game.notify(`CPU Tick Limit: ${tickLimit}`, 720);
-  Game.notify(`Storage Level: ${storageAmount}`);
+  // Game.notify(`Storage Level: ${storageAmount}`);
   try {
     for (let roomName in Game.rooms) {
       let room = Game.rooms[roomName];
