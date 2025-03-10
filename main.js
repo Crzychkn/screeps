@@ -141,7 +141,7 @@ module.exports.loop = function () {
 
     Game.notify(`Bucket Amount: ${bucket}`, 720);
     Game.notify(`CPU Tick Limit: ${tickLimit}`, 720);
-    Game.notify(`Storage Level: ${storageAmount}`);
+    Game.notify(`Storage Level: ${storageAmount}`, 60);
   } catch (error) {
     console.log(error);
   }
