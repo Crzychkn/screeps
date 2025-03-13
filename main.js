@@ -111,11 +111,20 @@ module.exports.loop = function () {
       builderAmount = 2;
       upgraderAmount = 5;
       tractorAmount = 1;
-      tractorConfig = [WORK, WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY];
+      tractorConfig = [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY];
       harvesterConfig = [WORK, WORK, WORK, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY];
       builderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
       upgraderConfig = [WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY];
       break;
+      case 8:
+        harvesterAmount = 5;
+        builderAmount = 2;
+        upgraderAmount = 5;
+        tractorAmount = 1;
+        tractorConfig = [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY];
+        harvesterConfig = [WORK, WORK, WORK, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY];
+        builderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
+        upgraderConfig = [WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY];
   }
 
   // Clear memory of dead creeps
