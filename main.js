@@ -42,6 +42,26 @@ module.exports.loop = function () {
     console.log(error);
   }
 
+  // Variables for stats
+  try {
+    const bucket = Game.cpu.bucket;
+    const tickLimit = Game.cpu.tickLimit;
+    const cpuUnlocked = Game.cpu.unlocked;
+    var storageAmount = Game.rooms[currentRoom].storage.store[RESOURCE_ENERGY];
+
+    // Stats to monitor
+    console.log('CPU Bucket: ' + bucket);
+    console.log('CPU Tick Limit: ' + tickLimit);
+    console.log('CPU Unlocked Status: ' + cpuUnlocked)
+    console.log('Storage Amount: ' + storageAmount);
+
+    Game.notify(`Bucket Amount: ${bucket}`, 720);
+    Game.notify(`CPU Tick Limit: ${tickLimit}`, 720);
+    Game.notify(`Storage Level: ${storageAmount}`, 360);
+  } catch (error) {
+    console.log(error);
+  }
+
   // Set amounts based on room controller level
   switch (rcl) {
     case 1:
@@ -110,6 +130,9 @@ module.exports.loop = function () {
       harvesterAmount = 5;
       builderAmount = 2;
       upgraderAmount = 5;
+      if (storageAmount > 900000) {
+        upgraderAmount = 7;
+      }
       tractorAmount = 1;
       tractorConfig = [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY];
       harvesterConfig = [WORK, WORK, WORK, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY];
@@ -120,6 +143,9 @@ module.exports.loop = function () {
         harvesterAmount = 5;
         builderAmount = 2;
         upgraderAmount = 5;
+        if (storageAmount > 900000) {
+          upgraderAmount = 7;
+        }
         tractorAmount = 1;
         tractorConfig = [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY];
         harvesterConfig = [WORK, WORK, WORK, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY];
@@ -134,27 +160,6 @@ module.exports.loop = function () {
       console.log("Clearing non-existing creep memory:", name);
     }
   }
-
-  // Variables for stats
-  try {
-    const bucket = Game.cpu.bucket;
-    const tickLimit = Game.cpu.tickLimit;
-    const cpuUnlocked = Game.cpu.unlocked;
-    const storageAmount = Game.rooms[currentRoom].storage.store[RESOURCE_ENERGY];
-
-    // Stats to monitor
-    console.log('CPU Bucket: ' + bucket);
-    console.log('CPU Tick Limit: ' + tickLimit);
-    console.log('CPU Unlocked Status: ' + cpuUnlocked)
-    console.log('Storage Amount: ' + storageAmount);
-
-    Game.notify(`Bucket Amount: ${bucket}`, 720);
-    Game.notify(`CPU Tick Limit: ${tickLimit}`, 720);
-    Game.notify(`Storage Level: ${storageAmount}`, 360);
-  } catch (error) {
-    console.log(error);
-  }
-
 
   try {
     for (let roomName in Game.rooms) {
