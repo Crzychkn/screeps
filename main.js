@@ -62,6 +62,37 @@ module.exports.loop = function () {
     console.log(error);
   }
 
+  // Creep amounts
+  let harvesters = _.filter(
+    Game.creeps,
+    (creep) => creep.memory.role === "harvester"
+  );
+  console.log("Harvesters: " + harvesters.length);
+
+  let tractors = _.filter(
+    Game.creeps,
+    (creep) => creep.memory.role === "tractor"
+  );
+  console.log("Tractors: ", tractors.length);
+
+  let builders = _.filter(
+    Game.creeps,
+    (creep) => creep.memory.role === "builder"
+  );
+  console.log("Builder: " + builders.length);
+
+  let upgraders = _.filter(
+    Game.creeps,
+    (creep) => creep.memory.role === "upgrader"
+  );
+  console.log("Upgrader: " + upgraders.length);
+
+  let scout = _.filter(
+    Game.creeps,
+    (creep) => creep.memory.role === "scout"
+  );
+  console.log("Scout: " + scout.length);
+
   // Set amounts based on room controller level
   switch (rcl) {
     case 1:
@@ -130,7 +161,7 @@ module.exports.loop = function () {
       harvesterAmount = 5;
       builderAmount = 2;
       upgraderAmount = 5;
-      if (storageAmount > 900000) {
+      if (storageAmount > 900000 && harvesters.length > harvesterAmount) {
         upgraderAmount = 7;
       }
       tractorAmount = 1;
@@ -139,18 +170,19 @@ module.exports.loop = function () {
       builderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
       upgraderConfig = [WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY];
       break;
-      case 8:
-        harvesterAmount = 5;
-        builderAmount = 2;
-        upgraderAmount = 5;
-        if (storageAmount > 900000) {
-          upgraderAmount = 7;
-        }
-        tractorAmount = 1;
-        tractorConfig = [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY];
-        harvesterConfig = [WORK, WORK, WORK, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY];
-        builderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
-        upgraderConfig = [WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY];
+    case 8:
+      harvesterAmount = 5;
+      builderAmount = 2;
+      upgraderAmount = 5;
+      if (storageAmount > 900000 && harvesters.length > harvesterAmount) {
+        upgraderAmount = 7;
+      }
+      tractorAmount = 1;
+      tractorConfig = [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY];
+      harvesterConfig = [WORK, WORK, WORK, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY];
+      builderConfig = [WORK, WORK, MOVE, MOVE, CARRY, CARRY];
+      upgraderConfig = [WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE, MOVE, CARRY, CARRY, CARRY, CARRY];
+      break;
   }
 
   // Clear memory of dead creeps
@@ -224,12 +256,6 @@ module.exports.loop = function () {
   }
 
   // Initial harvesters spawn
-  let harvesters = _.filter(
-    Game.creeps,
-    (creep) => creep.memory.role === "harvester"
-  );
-  console.log("Harvesters: " + harvesters.length);
-
   if (harvesters.length < harvesterAmount) {
     newName = "Harvester" + Game.time;
     console.log("Spawning new harvester: " + newName);
@@ -237,12 +263,6 @@ module.exports.loop = function () {
       memory: {role: "harvester"},
     });
   }
-
-  let tractors = _.filter(
-    Game.creeps,
-    (creep) => creep.memory.role === "tractor"
-  );
-  console.log("Tractors: ", tractors.length);
 
   // TODO: Maybe check to ensure enough energy before creating this
   // Get all containers / storage and ensure energy levels exceed 900 in total.
@@ -259,12 +279,6 @@ module.exports.loop = function () {
   }
 
   // Builders auto spawn
-  let builders = _.filter(
-    Game.creeps,
-    (creep) => creep.memory.role === "builder"
-  );
-  console.log("Builder: " + builders.length);
-
   if (harvesters.length >= harvesterAmount && builders.length < builderAmount) {
     newName = "Builder" + Game.time;
     console.log("Spawning new builder: " + newName);
@@ -274,12 +288,6 @@ module.exports.loop = function () {
   }
 
   // Upgraders auto spawn
-  let upgraders = _.filter(
-    Game.creeps,
-    (creep) => creep.memory.role === "upgrader"
-  );
-  console.log("Upgrader: " + upgraders.length);
-
   if (harvesters.length >= harvesterAmount && builders.length >= builderAmount && upgraders.length < upgraderAmount) {
     newName = "Upgrader" + Game.time;
     console.log("Spawning new upgrader: " + newName);
@@ -304,12 +312,6 @@ module.exports.loop = function () {
   // }
 
   // Scout auto spawn
-  let scout = _.filter(
-    Game.creeps,
-    (creep) => creep.memory.role === "scout"
-  );
-  console.log("Scout: " + scout.length);
-
   // If no scouts
   // and gcl level > 1
 
