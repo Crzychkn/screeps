@@ -161,7 +161,7 @@ module.exports.loop = function () {
       harvesterAmount = 5;
       builderAmount = 2;
       upgraderAmount = 5;
-      if (storageAmount > 900000 && harvesters.length > harvesterAmount) {
+      if (storageAmount > 900000 && harvesters.length >= harvesterAmount) {
         upgraderAmount = 7;
       }
       tractorAmount = 1;
@@ -174,7 +174,7 @@ module.exports.loop = function () {
       harvesterAmount = 5;
       builderAmount = 2;
       upgraderAmount = 5;
-      if (storageAmount > 900000 && harvesters.length > harvesterAmount) {
+      if (storageAmount > 900000 && harvesters.length >= harvesterAmount) {
         upgraderAmount = 7;
       }
       tractorAmount = 1;
