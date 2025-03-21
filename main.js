@@ -212,8 +212,11 @@ module.exports.loop = function () {
     hostiles = Game.rooms[roomName].find(FIND_HOSTILE_CREEPS);
   }
   let hostilesAmount = hostiles.length;
-  if (hostiles.length > 3) {
-    Game.notify(`${hostilesAmount} hostile(s) found in a room!`, 0);
+  if (hostiles.length > 0) {
+    if (hostiles.length > 3) {
+      Game.notify(`${hostilesAmount} hostile(s) found in a room!`, 0);
+    }
+
     let defenders = _.filter(Game.creeps, (creep) => {
       creep.memory.role === "defender"
     })
