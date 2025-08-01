@@ -43,12 +43,20 @@ module.exports.loop = function () {
     console.log(error);
   }
 
+  // At the beginning of your module.exports.loop function, 
+  // define storageAmount with a default value
+  let storageAmount = 0; // Add this line near your other variable declarations
+
   // Variables for stats
   try {
     const bucket = Game.cpu.bucket;
     const tickLimit = Game.cpu.tickLimit;
     const cpuUnlocked = Game.cpu.unlocked;
-    let storageAmount = Game.rooms[currentRoom].storage.store[RESOURCE_ENERGY];
+    
+    // Check if storage exists before trying to access it
+    if (Game.rooms[currentRoom].storage) {
+      storageAmount = Game.rooms[currentRoom].storage.store[RESOURCE_ENERGY];
+    }
 
     // Stats to monitor
     console.log('CPU Bucket: ' + bucket);
@@ -56,9 +64,12 @@ module.exports.loop = function () {
     console.log('CPU Unlocked Status: ' + cpuUnlocked);
     console.log('Storage Amount: ' + storageAmount);
 
-    Game.notify(`Bucket Amount: ${bucket}`, 1440);
-    Game.notify(`CPU Tick Limit: ${tickLimit}`, 1440);
-    Game.notify(`Storage Level: ${storageAmount}`, 1440);
+    // Only send notifications if storage exists
+    Game.notify(`Bucket Amount: ${bucket}`, 1440 * 60);
+    Game.notify(`CPU Tick Limit: ${tickLimit}`, 1440 * 60);
+    if (Game.rooms[currentRoom].storage) {
+      Game.notify(`Storage Level: ${storageAmount}`, 1440 * 60);
+    }
   } catch (error) {
     console.log(error);
   }
