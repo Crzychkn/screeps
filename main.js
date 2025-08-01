@@ -33,6 +33,7 @@ module.exports.loop = function () {
   let rooms = Object.keys(Game.rooms);
   let currentRoom = rooms[0];
   let currentGcl = Game.gcl.level;
+  let containerStore;
   console.log(rooms.length, "room(s) owned.");
   try {
     for (let room of rooms) {
@@ -260,7 +261,7 @@ module.exports.loop = function () {
 
     console.log('Current Extensions:', myExtensions.length);
     if (myExtensions.length > 0) {
-      let containerStore = 0;
+      containerStore = 0;
       for (let container of myExtensions) {
         containerStore += container.store[RESOURCE_ENERGY];
       }
