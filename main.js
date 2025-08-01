@@ -32,6 +32,7 @@ module.exports.loop = function () {
   let scoutConfig;
   let rooms = Object.keys(Game.rooms);
   let currentRoom = rooms[0];
+  let currentGcl = Game.gcl.level;
   console.log(rooms.length, "room(s) owned.");
   try {
     for (let room of rooms) {
@@ -47,17 +48,17 @@ module.exports.loop = function () {
     const bucket = Game.cpu.bucket;
     const tickLimit = Game.cpu.tickLimit;
     const cpuUnlocked = Game.cpu.unlocked;
-    var storageAmount = Game.rooms[currentRoom].storage.store[RESOURCE_ENERGY];
+    let storageAmount = Game.rooms[currentRoom].storage.store[RESOURCE_ENERGY];
 
     // Stats to monitor
     console.log('CPU Bucket: ' + bucket);
     console.log('CPU Tick Limit: ' + tickLimit);
-    console.log('CPU Unlocked Status: ' + cpuUnlocked)
+    console.log('CPU Unlocked Status: ' + cpuUnlocked);
     console.log('Storage Amount: ' + storageAmount);
 
-    Game.notify(`Bucket Amount: ${bucket}`, 720);
-    Game.notify(`CPU Tick Limit: ${tickLimit}`, 720);
-    Game.notify(`Storage Level: ${storageAmount}`, 360);
+    Game.notify(`Bucket Amount: ${bucket}`, 1440);
+    Game.notify(`CPU Tick Limit: ${tickLimit}`, 1440);
+    Game.notify(`Storage Level: ${storageAmount}`, 1440);
   } catch (error) {
     console.log(error);
   }
@@ -248,7 +249,7 @@ module.exports.loop = function () {
 
     console.log('Current Extensions:', myExtensions.length);
     if (myExtensions.length > 0) {
-      var containerStore = 0;
+      let containerStore = 0;
       for (let container of myExtensions) {
         containerStore += container.store[RESOURCE_ENERGY];
       }
