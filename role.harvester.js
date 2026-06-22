@@ -26,6 +26,97 @@ function hasLogisticsSupport(room) {
   });
 }
 
+function getRoomMemory(room) {
+  if (!Memory.rooms) {
+    Memory.rooms = {};
+  }
+
+  if (!Memory.rooms[room.name]) {
+    Memory.rooms[room.name] = {};
+  }
+
+  return Memory.rooms[room.name];
+}
+
+function getSourceSlotCount(room, source) {
+  const roomMemory = getRoomMemory(room);
+
+  if (!roomMemory.sourceSlots) {
+    roomMemory.sourceSlots = {};
+  }
+
+  if (roomMemory.sourceSlots[source.id]) {
+    return roomMemory.sourceSlots[source.id];
+  }
+
+  const terrain = room.getTerrain();
+  let slotCount = 0;
+
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      if (dx === 0 && dy === 0) {
+        continue;
+      }
+
+      const x = source.pos.x + dx;
+      const y = source.pos.y + dy;
+
+      if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
+        continue;
+      }
+
+      if (terrain.get(x, y) !== TERRAIN_MASK_WALL) {
+        slotCount++;
+      }
+    }
+  }
+
+  roomMemory.sourceSlots[source.id] = Math.max(slotCount, 1);
+  return roomMemory.sourceSlots[source.id];
+}
+
+function countAssignedHarvesters(room, creepName) {
+  const counts = {};
+
+  for (const name in Game.creeps) {
+    const other = Game.creeps[name];
+
+    if (
+      other.name === creepName ||
+      other.memory.role !== "harvester" ||
+      other.memory.homeRoom !== room.name ||
+      !other.memory.sourceId
+    ) {
+      continue;
+    }
+
+    counts[other.memory.sourceId] = (counts[other.memory.sourceId] || 0) + 1;
+  }
+
+  return counts;
+}
+
+function chooseLeastLoadedSource(creep, room, sources, assignedCounts) {
+  return sources.reduce((best, source) => {
+    if (!best) {
+      return source;
+    }
+
+    const sourceLoad =
+      (assignedCounts[source.id] || 0) / getSourceSlotCount(room, source);
+    const bestLoad =
+      (assignedCounts[best.id] || 0) / getSourceSlotCount(room, best);
+
+    if (sourceLoad !== bestLoad) {
+      return sourceLoad < bestLoad ? source : best;
+    }
+
+    return creep.pos.getRangeTo(source) < creep.pos.getRangeTo(best)
+      ? source
+      : best;
+  }, null);
+}
+
 function findClosestOwnedStructureToFill(creep, structureType) {
   return creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
     filter: (structure) => {
@@ -47,23 +138,47 @@ function findClosestOwnedStructureToFill(creep, structureType) {
 }
 
 function getAssignedSource(creep) {
-  if (creep.memory.sourceId) {
-    const source = Game.getObjectById(creep.memory.sourceId);
+  const room = getHomeRoom(creep);
+  const sources = room.find(FIND_SOURCES);
 
-    if (source) {
-      return source;
-    }
+  if (sources.length === 0) {
+    delete creep.memory.sourceId;
+    return null;
   }
 
-  const source =
-    creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE) ||
-    creep.pos.findClosestByPath(FIND_SOURCES);
+  const assignedCounts = countAssignedHarvesters(room, creep.name);
+  let currentSource = creep.memory.sourceId
+    ? Game.getObjectById(creep.memory.sourceId)
+    : null;
+  const bestSource = chooseLeastLoadedSource(creep, room, sources, assignedCounts);
 
-  if (source) {
-    creep.memory.sourceId = source.id;
+  if (!bestSource) {
+    delete creep.memory.sourceId;
+    return null;
   }
 
-  return source;
+  if (currentSource && !sources.some((source) => source.id === currentSource.id)) {
+    currentSource = null;
+  }
+
+  if (!currentSource) {
+    creep.memory.sourceId = bestSource.id;
+    return bestSource;
+  }
+
+  const currentLoad =
+    ((assignedCounts[currentSource.id] || 0) + 1) /
+    getSourceSlotCount(room, currentSource);
+  const bestLoad =
+    ((assignedCounts[bestSource.id] || 0) + 1) /
+    getSourceSlotCount(room, bestSource);
+
+  if (creep.store[RESOURCE_ENERGY] === 0 && currentLoad > bestLoad + 0.5) {
+    creep.memory.sourceId = bestSource.id;
+    return bestSource;
+  }
+
+  return currentSource;
 }
 
 function findAssignedSourceContainer(creep) {
