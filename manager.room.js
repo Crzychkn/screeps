@@ -3,10 +3,10 @@ const constructionManager = require("manager.construction");
 
 const ROLE_PRIORITY = [
   "harvester",
+  "tractor",
   "builder",
   "repairer",
   "upgrader",
-  "tractor",
 ];
 
 function bodyCost(body) {
@@ -57,6 +57,46 @@ function getStoredEnergy(room) {
   return total;
 }
 
+function isSourceContainer(container) {
+  if (container.structureType !== STRUCTURE_CONTAINER) {
+    return false;
+  }
+
+  const sources = container.pos.findInRange(FIND_SOURCES, 1);
+
+  return sources.length > 0;
+}
+
+function getLogisticsStats(room) {
+  const sources = room.find(FIND_SOURCES);
+  const constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES);
+  const containers = room.find(FIND_STRUCTURES, {
+    filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
+  });
+
+  const sourceContainers = containers.filter(isSourceContainer);
+  const sourceContainerEnergy = sourceContainers.reduce((total, container) => {
+    return total + container.store[RESOURCE_ENERGY];
+  }, 0);
+  const storedEnergy = getStoredEnergy(room);
+  const lowEnergyThreshold = Math.max(800, room.energyCapacityAvailable * 2);
+  const comfortableEnergyThreshold = Math.max(
+    1600,
+    room.energyCapacityAvailable * 3
+  );
+
+  return {
+    constructionSiteCount: constructionSites.length,
+    sourceCount: sources.length,
+    sourceContainerCount: sourceContainers.length,
+    sourceContainerEnergy: sourceContainerEnergy,
+    storedEnergy: storedEnergy,
+    hasSourceContainers: sourceContainers.length > 0,
+    lowEnergy: storedEnergy < lowEnergyThreshold,
+    comfortableEnergy: storedEnergy >= comfortableEnergyThreshold,
+  };
+}
+
 function getMaintenanceTargets(room) {
   return room.find(FIND_STRUCTURES, {
     filter: (structure) => {
@@ -81,11 +121,11 @@ function getMaintenanceTargets(room) {
 
 function getDesiredCounts(room) {
   const rcl = room.controller.level;
-  const storedEnergy = getStoredEnergy(room);
+  const logistics = getLogisticsStats(room);
 
   const desired = {
     harvester: 3,
-    builder: 1,
+    builder: logistics.constructionSiteCount > 0 ? 1 : 0,
     repairer: 0,
     upgrader: 2,
     tractor: 0,
@@ -93,32 +133,64 @@ function getDesiredCounts(room) {
 
   if (rcl >= 2) {
     desired.harvester = 4;
-    desired.builder = 2;
+    desired.builder = logistics.constructionSiteCount > 0 ? 2 : 0;
     desired.upgrader = 3;
   }
 
   if (rcl >= 3) {
     desired.harvester = 4;
-    desired.builder = 2;
+    desired.builder = logistics.constructionSiteCount > 0 ? 2 : 0;
     desired.upgrader = 4;
+
+    if (logistics.hasSourceContainers && logistics.sourceContainerEnergy > 100) {
+      desired.tractor = 1;
+    }
   }
 
   if (rcl >= 4) {
     desired.harvester = 4;
-    desired.builder = 2;
+    desired.builder = logistics.constructionSiteCount > 0 ? 2 : 0;
     desired.upgrader = 4;
-    desired.tractor = storedEnergy > 1200 ? 1 : 0;
+    desired.tractor =
+      logistics.hasSourceContainers &&
+      (logistics.sourceContainerEnergy > 100 || logistics.storedEnergy > 1200)
+        ? 1
+        : 0;
   }
 
   if (rcl >= 5) {
     desired.harvester = 5;
-    desired.builder = 2;
+    desired.builder = logistics.constructionSiteCount > 0 ? 2 : 0;
     desired.upgrader = 5;
-    desired.tractor = storedEnergy > 1200 ? 1 : 0;
+    desired.tractor =
+      logistics.hasSourceContainers &&
+      (logistics.sourceContainerEnergy > 100 || logistics.storedEnergy > 1200)
+        ? 1
+        : 0;
   }
 
-  if (rcl >= 7 && storedEnergy > 900000) {
+  if (
+    logistics.sourceContainerCount >= 2 &&
+    (logistics.sourceContainerEnergy > 800 || logistics.comfortableEnergy)
+  ) {
+    desired.tractor = Math.max(desired.tractor, 2);
+  }
+
+  if (rcl >= 4 && logistics.sourceContainerCount >= logistics.sourceCount) {
+    desired.harvester = Math.max(logistics.sourceCount, 2);
+  }
+
+  if (rcl >= 7 && logistics.storedEnergy > 900000) {
     desired.upgrader = 7;
+  }
+
+  if (logistics.lowEnergy) {
+    desired.upgrader = Math.min(desired.upgrader, 1);
+    desired.builder = Math.min(desired.builder, 1);
+
+    if (logistics.sourceContainerEnergy > 100) {
+      desired.tractor = Math.max(desired.tractor, 1);
+    }
   }
 
   const maintenanceTargets = getMaintenanceTargets(room);
