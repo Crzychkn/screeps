@@ -1,51 +1,177 @@
-function getEnergy(creep) {
-  let storage = creep.room.storage;
-  let container = creep.room.find(FIND_STRUCTURES, {
+function getHomeRoom(creep) {
+  const homeRoomName = creep.memory.homeRoom || creep.room.name;
+  return Game.rooms[homeRoomName] || creep.room;
+}
+
+function moveToTarget(creep, target) {
+  creep.moveTo(target, {
+    visualizePathStyle: {
+      stroke: "#ffffff",
+    },
+  });
+}
+
+function withdrawFromStorage(creep, room) {
+  if (!room.storage || room.storage.store[RESOURCE_ENERGY] === 0) {
+    return false;
+  }
+
+  const result = creep.withdraw(room.storage, RESOURCE_ENERGY);
+
+  if (result === OK) {
+    return true;
+  }
+
+  if (result === ERR_NOT_IN_RANGE) {
+    moveToTarget(creep, room.storage);
+    return true;
+  }
+
+  return false;
+}
+
+function withdrawFromContainer(creep, room) {
+  const containers = room.find(FIND_STRUCTURES, {
     filter: (structure) => {
       return (
         structure.structureType === STRUCTURE_CONTAINER &&
-        structure.store[RESOURCE_ENERGY] > creep.store.getFreeCapacity(RESOURCE_ENERGY)
-      )
-    }
-  })
+        structure.store[RESOURCE_ENERGY] > 0
+      );
+    },
+  });
 
-  if (storage && storage.store[RESOURCE_ENERGY] > 0) {
-    if (creep.withdraw(storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-      creep.moveTo(storage, {
-        visualizePathStyle: {stroke: "#ffffff"},
-      });
-    }
-  } else if (container.length > 0) {
-    if (creep.withdraw(container[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-      creep.moveTo(container[0], {
-        visualizePathStyle: {stroke: "#ffffff"},
-      });
-    }
-  } else {
-    let sources = creep.room.find(FIND_SOURCES);
-    if (sources.length > 0) {
-
-
-      if (creep.harvest(sources[0]) === ERR_NOT_IN_RANGE) {
-        creep.moveTo(sources[0], {
-          visualizePathStyle: {stroke: "#ffffff"},
-        });
-      }
-    }
+  if (containers.length === 0) {
+    return false;
   }
+
+  const target = creep.pos.findClosestByPath(containers);
+
+  if (!target) {
+    return false;
+  }
+
+  const result = creep.withdraw(target, RESOURCE_ENERGY);
+
+  if (result === OK) {
+    return true;
+  }
+
+  if (result === ERR_NOT_IN_RANGE) {
+    moveToTarget(creep, target);
+    return true;
+  }
+
+  return false;
+}
+
+function pickupDroppedEnergy(creep, room) {
+  const droppedEnergy = room.find(FIND_DROPPED_RESOURCES, {
+    filter: (resource) => resource.resourceType === RESOURCE_ENERGY,
+  });
+
+  if (droppedEnergy.length === 0) {
+    return false;
+  }
+
+  const target = creep.pos.findClosestByPath(droppedEnergy);
+
+  if (!target) {
+    return false;
+  }
+
+  const result = creep.pickup(target);
+
+  if (result === OK) {
+    return true;
+  }
+
+  if (result === ERR_NOT_IN_RANGE) {
+    moveToTarget(creep, target);
+    return true;
+  }
+
+  return false;
+}
+
+function harvestSource(creep, room) {
+  const sources = room.find(FIND_SOURCES);
+
+  if (sources.length === 0) {
+    return false;
+  }
+
+  const source = creep.pos.findClosestByPath(sources);
+
+  if (!source) {
+    return false;
+  }
+
+  const result = creep.harvest(source);
+
+  if (result === OK) {
+    return true;
+  }
+
+  if (result === ERR_NOT_IN_RANGE) {
+    moveToTarget(creep, source);
+    return true;
+  }
+
+  return false;
+}
+
+function getEnergy(creep) {
+  const homeRoom = getHomeRoom(creep);
+
+  if (!creep.memory.homeRoom) {
+    creep.memory.homeRoom = homeRoom.name;
+  }
+
+  if (creep.room.name !== homeRoom.name) {
+    creep.moveTo(new RoomPosition(25, 25, homeRoom.name), {
+      visualizePathStyle: {
+        stroke: "#ffffff",
+      },
+    });
+    return;
+  }
+
+  if (withdrawFromStorage(creep, homeRoom)) {
+    return;
+  }
+
+  if (withdrawFromContainer(creep, homeRoom)) {
+    return;
+  }
+
+  if (pickupDroppedEnergy(creep, homeRoom)) {
+    return;
+  }
+
+  harvestSource(creep, homeRoom);
 }
 
 function getRepairQueue(room) {
   const repairSites = room.find(FIND_STRUCTURES, {
-    filter: (object) => object.hits < object.hitsMax,
+    filter: (structure) => {
+      if (
+        structure.structureType === STRUCTURE_WALL ||
+        structure.structureType === STRUCTURE_RAMPART
+      ) {
+        return false;
+      }
+
+      return structure.hits < structure.hitsMax;
+    },
   });
 
-  // TODO: Add weight formula here for better prioritization.
   const repairPriorities = {
     [STRUCTURE_TOWER]: 1,
-    [STRUCTURE_ROAD]: 2,
-    [STRUCTURE_RAMPART]: 3,
-    [STRUCTURE_WALL]: 4
+    [STRUCTURE_SPAWN]: 2,
+    [STRUCTURE_EXTENSION]: 3,
+    [STRUCTURE_CONTAINER]: 4,
+    [STRUCTURE_ROAD]: 5,
+    [STRUCTURE_STORAGE]: 6,
   };
 
   return repairSites.sort((a, b) => {
@@ -56,11 +182,12 @@ function getRepairQueue(room) {
       return priorityA - priorityB;
     }
 
-    return (a.hits / a.hitsMax) - (b.hits / b.hitsMax);
-  })
+    return a.hits / a.hitsMax - b.hits / b.hitsMax;
+  });
 }
 
 module.exports = {
   getEnergy,
+  getHomeRoom,
   getRepairQueue,
 };

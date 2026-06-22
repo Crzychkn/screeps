@@ -1,3 +1,5 @@
+const utils = require("utils");
+
 function getHomeRoom(creep) {
   const homeRoomName = creep.memory.homeRoom || creep.room.name;
   return Game.rooms[homeRoomName] || creep.room;
@@ -13,10 +15,10 @@ function setWorkingState(creep) {
   }
 }
 
-function moveToTarget(creep, target) {
-  creep.moveTo(target, {
+function moveToHomeRoom(creep, homeRoom) {
+  creep.moveTo(new RoomPosition(25, 25, homeRoom.name), {
     visualizePathStyle: {
-      stroke: "#ffaa00",
+      stroke: "#ffffff",
     },
   });
 }
@@ -165,7 +167,7 @@ function upgradeController(creep, room) {
 
 module.exports = {
   run: function (creep) {
-    const homeRoom = getHomeRoom(creep);
+    const homeRoom = utils.getHomeRoom(creep);
 
     if (!creep.memory.homeRoom) {
       creep.memory.homeRoom = homeRoom.name;
@@ -174,7 +176,7 @@ module.exports = {
     setWorkingState(creep);
 
     if (creep.room.name !== homeRoom.name) {
-      creep.moveTo(new RoomPosition(25, 25, homeRoom.name));
+      moveToHomeRoom(creep, homeRoom);
       return;
     }
 
@@ -183,6 +185,6 @@ module.exports = {
       return;
     }
 
-    collectEnergy(creep, homeRoom);
+    utils.getEnergy(creep);
   },
 };
