@@ -32,11 +32,9 @@ function getAllowedStructureCount(room, structureType) {
 function hasConstructionCapacity(room) {
   const sites = room.find(FIND_MY_CONSTRUCTION_SITES);
 
-  if (sites.length >= MAX_CONSTRUCTION_SITES_PER_ROOM) {
-    return false;
-  }
+  return sites.length < MAX_CONSTRUCTION_SITES_PER_ROOM;
 
-  return true;
+
 }
 
 function isBuildablePosition(room, x, y) {
@@ -162,7 +160,7 @@ function placeStorage(room) {
   return placeNearAnchor(room, STRUCTURE_STORAGE, spawn.pos, 2, 5);
 }
 
-function getAdjacentBuildablePositions(pos) {
+function getAdjacentBuildablePositions(room, pos) {
   const positions = [];
 
   for (let dx = -1; dx <= 1; dx++) {
@@ -174,8 +172,8 @@ function getAdjacentBuildablePositions(pos) {
       const x = pos.x + dx;
       const y = pos.y + dy;
 
-      if (isBuildablePosition(pos.room, x, y)) {
-        positions.push(new RoomPosition(x, y, pos.roomName));
+      if (isBuildablePosition(room, x, y)) {
+        positions.push(new RoomPosition(x, y, room.name));
       }
     }
   }
@@ -214,7 +212,7 @@ function placeSourceContainers(room) {
       continue;
     }
 
-    const positions = getAdjacentBuildablePositions(source.pos);
+    const positions = getAdjacentBuildablePositions(room, source.pos);
 
     if (positions.length === 0) {
       continue;
