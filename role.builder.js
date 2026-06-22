@@ -8,8 +8,20 @@ function moveToHomeRoom(creep, homeRoom) {
   });
 }
 
+function normalizeHomeRoom(creep) {
+  if (
+    creep.room.controller &&
+    creep.room.controller.my &&
+    creep.memory.homeRoom !== creep.room.name
+  ) {
+    creep.memory.homeRoom = creep.room.name;
+  }
+}
+
 module.exports = {
   run: function (creep) {
+    normalizeHomeRoom(creep);
+
     const homeRoom = utils.getHomeRoom(creep);
 
     if (!creep.memory.homeRoom) {
