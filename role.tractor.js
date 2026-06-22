@@ -30,6 +30,18 @@ function isSourceContainer(container) {
   return sources.length > 0;
 }
 
+function isControllerContainer(container) {
+  if (container.structureType !== STRUCTURE_CONTAINER) {
+    return false;
+  }
+
+  if (!container.room.controller) {
+    return false;
+  }
+
+  return container.pos.getRangeTo(container.room.controller) <= 3;
+}
+
 function findPriorityDeliveryTarget(creep) {
   const spawnOrExtension = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
     filter: (structure) => {
@@ -65,6 +77,19 @@ function findDeliveryTarget(creep) {
     return priorityTarget;
   }
 
+  const controllerContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        isControllerContainer(structure) &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+
+  if (controllerContainer) {
+    return controllerContainer;
+  }
+
   if (creep.room.storage && hasFreeEnergyCapacity(creep.room.storage)) {
     return creep.room.storage;
   }
@@ -74,6 +99,7 @@ function findDeliveryTarget(creep) {
       return (
         structure.structureType === STRUCTURE_CONTAINER &&
         !isSourceContainer(structure) &&
+        !isControllerContainer(structure) &&
         hasFreeEnergyCapacity(structure)
       );
     },

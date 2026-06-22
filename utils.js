@@ -32,6 +32,48 @@ function withdrawFromStorage(creep, room) {
   return false;
 }
 
+function isControllerContainer(container, room) {
+  if (container.structureType !== STRUCTURE_CONTAINER || !room.controller) {
+    return false;
+  }
+
+  return container.pos.getRangeTo(room.controller) <= 3;
+}
+
+function withdrawFromControllerContainer(creep, room) {
+  const controllerContainers = room.find(FIND_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        isControllerContainer(structure, room) &&
+        structure.store[RESOURCE_ENERGY] > 0
+      );
+    },
+  });
+
+  if (controllerContainers.length === 0) {
+    return false;
+  }
+
+  const target = creep.pos.findClosestByPath(controllerContainers);
+
+  if (!target) {
+    return false;
+  }
+
+  const result = creep.withdraw(target, RESOURCE_ENERGY);
+
+  if (result === OK) {
+    return true;
+  }
+
+  if (result === ERR_NOT_IN_RANGE) {
+    moveToTarget(creep, target);
+    return true;
+  }
+
+  return false;
+}
+
 function withdrawFromContainer(creep, room) {
   const containers = room.find(FIND_STRUCTURES, {
     filter: (structure) => {
@@ -144,6 +186,13 @@ function getEnergy(creep) {
   }
 
   if (pickupDroppedEnergy(creep, homeRoom)) {
+    return;
+  }
+
+  if (
+    creep.memory.role === "upgrader" &&
+    withdrawFromControllerContainer(creep, homeRoom)
+  ) {
     return;
   }
 
