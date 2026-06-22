@@ -1,5 +1,10 @@
 const TOWER_REFILL_THRESHOLD = 700;
 
+function getHomeRoom(creep) {
+  const homeRoomName = creep.memory.homeRoom || creep.room.name;
+  return Game.rooms[homeRoomName] || creep.room;
+}
+
 function moveToTarget(creep, target, stroke) {
   creep.moveTo(target, {
     visualizePathStyle: {
@@ -13,6 +18,12 @@ function hasFreeEnergyCapacity(structure) {
     structure.store &&
     structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
   );
+}
+
+function hasLogisticsSupport(room) {
+  return _.some(Game.creeps, (creep) => {
+    return creep.memory.role === "tractor" && creep.memory.homeRoom === room.name;
+  });
 }
 
 function findClosestOwnedStructureToFill(creep, structureType) {
@@ -33,6 +44,49 @@ function findClosestOwnedStructureToFill(creep, structureType) {
       return true;
     },
   });
+}
+
+function getAssignedSource(creep) {
+  if (creep.memory.sourceId) {
+    const source = Game.getObjectById(creep.memory.sourceId);
+
+    if (source) {
+      return source;
+    }
+  }
+
+  const source =
+    creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE) ||
+    creep.pos.findClosestByPath(FIND_SOURCES);
+
+  if (source) {
+    creep.memory.sourceId = source.id;
+  }
+
+  return source;
+}
+
+function findAssignedSourceContainer(creep) {
+  const source = getAssignedSource(creep);
+
+  if (!source) {
+    return null;
+  }
+
+  const containers = source.pos.findInRange(FIND_STRUCTURES, 1, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_CONTAINER &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+
+  if (containers.length === 0) {
+    return null;
+  }
+
+  return containers[0];
 }
 
 function findNearbyContainerToFill(creep) {
@@ -64,6 +118,16 @@ function findClosestContainerToFill(creep) {
 }
 
 function findDeliveryTarget(creep) {
+  const room = getHomeRoom(creep);
+
+  if (hasLogisticsSupport(room)) {
+    const sourceContainer = findAssignedSourceContainer(creep);
+
+    if (sourceContainer) {
+      return sourceContainer;
+    }
+  }
+
   const priorityTypes = [
     STRUCTURE_SPAWN,
     STRUCTURE_EXTENSION,
@@ -92,9 +156,7 @@ function findDeliveryTarget(creep) {
 }
 
 function harvestEnergy(creep) {
-  const source =
-    creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE) ||
-    creep.pos.findClosestByPath(FIND_SOURCES);
+  const source = getAssignedSource(creep);
 
   if (!source) {
     creep.say("🚫 source");
@@ -131,6 +193,17 @@ function deliverEnergy(creep) {
 
 module.exports = {
   run: function (creep) {
+    const homeRoom = getHomeRoom(creep);
+
+    if (!creep.memory.homeRoom) {
+      creep.memory.homeRoom = homeRoom.name;
+    }
+
+    if (creep.room.name !== homeRoom.name) {
+      moveToTarget(creep, new RoomPosition(25, 25, homeRoom.name), "#ffffff");
+      return;
+    }
+
     if (creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
       harvestEnergy(creep);
       return;

@@ -1,7 +1,21 @@
 const utils = require("utils");
 
+function moveToHomeRoom(creep, homeRoom) {
+  creep.moveTo(new RoomPosition(25, 25, homeRoom.name), {
+    visualizePathStyle: {
+      stroke: "#ffffff",
+    },
+  });
+}
+
 module.exports = {
   run: function (creep) {
+    const homeRoom = utils.getHomeRoom(creep);
+
+    if (!creep.memory.homeRoom) {
+      creep.memory.homeRoom = homeRoom.name;
+    }
+
     // If the creep is currently building and is out of energy, switch to harvesting mode
     if (creep.memory.building && creep.store[RESOURCE_ENERGY] === 0) {
       creep.memory.building = false;
@@ -15,7 +29,12 @@ module.exports = {
 
     // If the creep is in building mode, find sites to build
     if (creep.memory.building) {
-      const constructionSites = creep.room.find(FIND_CONSTRUCTION_SITES);
+      if (creep.room.name !== homeRoom.name) {
+        moveToHomeRoom(creep, homeRoom);
+        return;
+      }
+
+      const constructionSites = homeRoom.find(FIND_CONSTRUCTION_SITES);
       if (constructionSites.length > 0) {
         if (creep.build(constructionSites[0]) === ERR_NOT_IN_RANGE) {
           creep.moveTo(constructionSites[0], {
@@ -25,7 +44,7 @@ module.exports = {
       } else {
           creep.say("🚧 repair");
 
-          const repairQueue = utils.getRepairQueue(creep.room);
+          const repairQueue = utils.getRepairQueue(homeRoom);
 
           if (repairQueue.length > 0 && creep.repair(repairQueue[0]) === ERR_NOT_IN_RANGE) {
             creep.moveTo(repairQueue[0]);

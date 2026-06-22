@@ -1,3 +1,5 @@
+const MIN_DROPPED_ENERGY = 25;
+
 function getHomeRoom(creep) {
   const homeRoomName = creep.memory.homeRoom || creep.room.name;
   return Game.rooms[homeRoomName] || creep.room;
@@ -66,7 +68,12 @@ function withdrawFromContainer(creep, room) {
 
 function pickupDroppedEnergy(creep, room) {
   const droppedEnergy = room.find(FIND_DROPPED_RESOURCES, {
-    filter: (resource) => resource.resourceType === RESOURCE_ENERGY,
+    filter: (resource) => {
+      return (
+        resource.resourceType === RESOURCE_ENERGY &&
+        resource.amount >= MIN_DROPPED_ENERGY
+      );
+    },
   });
 
   if (droppedEnergy.length === 0) {
@@ -94,7 +101,7 @@ function pickupDroppedEnergy(creep, room) {
 }
 
 function harvestSource(creep, room) {
-  const sources = room.find(FIND_SOURCES);
+  const sources = room.find(FIND_SOURCES_ACTIVE);
 
   if (sources.length === 0) {
     return false;
@@ -136,7 +143,7 @@ function getEnergy(creep) {
     return;
   }
 
-  if (withdrawFromStorage(creep, homeRoom)) {
+  if (pickupDroppedEnergy(creep, homeRoom)) {
     return;
   }
 
@@ -144,7 +151,7 @@ function getEnergy(creep) {
     return;
   }
 
-  if (pickupDroppedEnergy(creep, homeRoom)) {
+  if (withdrawFromStorage(creep, homeRoom)) {
     return;
   }
 
@@ -161,20 +168,35 @@ function getRepairQueue(room) {
         return false;
       }
 
-      return structure.hits < structure.hitsMax;
+      if (structure.structureType === STRUCTURE_ROAD) {
+        return structure.hits < structure.hitsMax * 0.9;
+      }
+
+      if (structure.structureType === STRUCTURE_CONTAINER) {
+        return structure.hits < structure.hitsMax * 0.85;
+      }
+
+      return structure.hits < structure.hitsMax * 0.75;
     },
   });
 
   const repairPriorities = {
-    [STRUCTURE_TOWER]: 1,
-    [STRUCTURE_SPAWN]: 2,
-    [STRUCTURE_EXTENSION]: 3,
-    [STRUCTURE_CONTAINER]: 4,
-    [STRUCTURE_ROAD]: 5,
+    [STRUCTURE_ROAD]: 1,
+    [STRUCTURE_CONTAINER]: 2,
+    [STRUCTURE_TOWER]: 3,
+    [STRUCTURE_SPAWN]: 4,
+    [STRUCTURE_EXTENSION]: 5,
     [STRUCTURE_STORAGE]: 6,
   };
 
   return repairSites.sort((a, b) => {
+    const healthA = a.hits / a.hitsMax;
+    const healthB = b.hits / b.hitsMax;
+
+    if (healthA < 0.25 || healthB < 0.25) {
+      return healthA - healthB;
+    }
+
     const priorityA = repairPriorities[a.structureType] || 99;
     const priorityB = repairPriorities[b.structureType] || 99;
 
@@ -182,7 +204,7 @@ function getRepairQueue(room) {
       return priorityA - priorityB;
     }
 
-    return a.hits / a.hitsMax - b.hits / b.hitsMax;
+    return healthA - healthB;
   });
 }
 
