@@ -1,53 +1,228 @@
-module.exports = {
-    /** @param {Creep} creep **/
-    run: function (creep) {
-        try {
-            //If creep has space, find energy and harvest
-            if (creep.store[RESOURCE_ENERGY] === 0) {
-                creep.memory.withdraw = true;
-            }
-            else if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
-                creep.memory.withdraw = false;
-            }
+const TOWER_REFILL_THRESHOLD = 700;
+const MIN_DROPPED_ENERGY = 50;
 
-
-            if (creep.memory.withdraw) {
-                creep.say("🌾 harvest.");
-                var sources = creep.room.find(FIND_SOURCES);
-                if (creep.harvest(sources[1]) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(sources[1], {visualizePathStyle: {stroke: "#ffaa00"}});
-                }
-            }
-
-            if (!creep.memory.withdraw) {
-                var targets = creep.room.find(FIND_STRUCTURES, {
-                    filter: (structure) => {
-                        return (
-                            (structure.structureType === STRUCTURE_TOWER ||
-                                structure.structureType === STRUCTURE_SPAWN ||
-                                structure.structureType === STRUCTURE_STORAGE ||
-                                structure.structureType === STRUCTURE_CONTAINER ||
-                                structure.structureType === STRUCTURE_EXTENSION) &&
-                            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
-                        );
-                    },
-                });
-                //If spawn, extension, or tower need energy, supply them
-                if (targets.length > 0) {
-                    creep.say("🌾 store.");
-                    if (creep.transfer(targets[0], RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                        creep.moveTo(targets[0], {
-                            visualizePathStyle: {stroke: "#ffffff"},
-                        });
-                    }
-                } else {
-                    creep.moveTo(Game.spawns.Spawn1.pos.x, Game.spawns.Spawn1.pos.y);
-                    creep.say("🚫 storage");
-                }
-            }
-        } catch (error) {
-            console.log(error);
-        }
+function moveToTarget(creep, target, stroke) {
+  creep.moveTo(target, {
+    visualizePathStyle: {
+      stroke: stroke,
     },
-};
+  });
+}
 
+function hasEnergy(structure) {
+  return structure.store && structure.store[RESOURCE_ENERGY] > 0;
+}
+
+function hasFreeEnergyCapacity(structure) {
+  return (
+    structure.store &&
+    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+  );
+}
+
+function isSourceContainer(container) {
+  if (container.structureType !== STRUCTURE_CONTAINER) {
+    return false;
+  }
+
+  const sources = container.pos.findInRange(FIND_SOURCES, 1);
+
+  return sources.length > 0;
+}
+
+function findPriorityDeliveryTarget(creep) {
+  const spawnOrExtension = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        (
+          structure.structureType === STRUCTURE_SPAWN ||
+          structure.structureType === STRUCTURE_EXTENSION
+        ) &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+
+  if (spawnOrExtension) {
+    return spawnOrExtension;
+  }
+
+  return creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_TOWER &&
+        structure.store[RESOURCE_ENERGY] < TOWER_REFILL_THRESHOLD &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+}
+
+function findDeliveryTarget(creep) {
+  const priorityTarget = findPriorityDeliveryTarget(creep);
+
+  if (priorityTarget) {
+    return priorityTarget;
+  }
+
+  if (creep.room.storage && hasFreeEnergyCapacity(creep.room.storage)) {
+    return creep.room.storage;
+  }
+
+  return creep.pos.findClosestByPath(FIND_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_CONTAINER &&
+        !isSourceContainer(structure) &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+}
+
+function findSourceContainer(creep) {
+  return creep.pos.findClosestByPath(FIND_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_CONTAINER &&
+        isSourceContainer(structure) &&
+        hasEnergy(structure)
+      );
+    },
+  });
+}
+
+function findDroppedEnergy(creep) {
+  return creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
+    filter: (resource) => {
+      return (
+        resource.resourceType === RESOURCE_ENERGY &&
+        resource.amount >= MIN_DROPPED_ENERGY
+      );
+    },
+  });
+}
+
+function findStorageWithdrawTarget(creep) {
+  if (!creep.room.storage || !hasEnergy(creep.room.storage)) {
+    return null;
+  }
+
+  const priorityTarget = findPriorityDeliveryTarget(creep);
+
+  if (!priorityTarget) {
+    return null;
+  }
+
+  return creep.room.storage;
+}
+
+function harvestFallback(creep) {
+  const source =
+    creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE) ||
+    creep.pos.findClosestByPath(FIND_SOURCES);
+
+  if (!source) {
+    creep.say("🚫 energy");
+    return;
+  }
+
+  const result = creep.harvest(source);
+
+  if (result === ERR_NOT_IN_RANGE) {
+    moveToTarget(creep, source, "#ffaa00");
+  }
+}
+
+function collectEnergy(creep) {
+  const sourceContainer = findSourceContainer(creep);
+
+  if (sourceContainer) {
+    creep.say("🚚 load");
+
+    const result = creep.withdraw(sourceContainer, RESOURCE_ENERGY);
+
+    if (result === ERR_NOT_IN_RANGE) {
+      moveToTarget(creep, sourceContainer, "#ffaa00");
+    }
+
+    return;
+  }
+
+  const droppedEnergy = findDroppedEnergy(creep);
+
+  if (droppedEnergy) {
+    creep.say("🚚 pickup");
+
+    const result = creep.pickup(droppedEnergy);
+
+    if (result === ERR_NOT_IN_RANGE) {
+      moveToTarget(creep, droppedEnergy, "#ffaa00");
+    }
+
+    return;
+  }
+
+  const storage = findStorageWithdrawTarget(creep);
+
+  if (storage) {
+    creep.say("🚚 storage");
+
+    const result = creep.withdraw(storage, RESOURCE_ENERGY);
+
+    if (result === ERR_NOT_IN_RANGE) {
+      moveToTarget(creep, storage, "#ffaa00");
+    }
+
+    return;
+  }
+
+  harvestFallback(creep);
+}
+
+function deliverEnergy(creep) {
+  const target = findDeliveryTarget(creep);
+
+  if (!target) {
+    const spawn = creep.pos.findClosestByPath(FIND_MY_SPAWNS);
+
+    if (spawn) {
+      moveToTarget(creep, spawn, "#ffffff");
+    }
+
+    creep.say("🚫 target");
+    return;
+  }
+
+  creep.say("🚚 fill");
+
+  const result = creep.transfer(target, RESOURCE_ENERGY);
+
+  if (result === ERR_NOT_IN_RANGE) {
+    moveToTarget(creep, target, "#ffffff");
+  }
+}
+
+module.exports = {
+  /** @param {Creep} creep **/
+  run: function (creep) {
+    try {
+      if (creep.store[RESOURCE_ENERGY] === 0) {
+        creep.memory.withdraw = true;
+      }
+
+      if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+        creep.memory.withdraw = false;
+      }
+
+      if (creep.memory.withdraw) {
+        collectEnergy(creep);
+        return;
+      }
+
+      deliverEnergy(creep);
+    } catch (error) {
+      console.log(`Error running tractor ${creep.name}:`, error);
+    }
+  },
+};
