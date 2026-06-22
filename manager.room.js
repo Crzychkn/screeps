@@ -1,4 +1,5 @@
 const roleTower = require("role.tower");
+const constructionManager = require("manager.construction");
 
 const ROLE_PRIORITY = [
   "harvester",
@@ -332,6 +333,12 @@ module.exports = {
       roleTower.run(room.name);
     } catch (error) {
       console.log(`Tower error in ${room.name}:`, error);
+    }
+
+    try {
+      constructionManager.run(room);
+    } catch (error) {
+      console.log(`Construction manager error in ${room.name}:`, error);
     }
 
     manageDefense(room);
