@@ -1,49 +1,116 @@
 const utils = require("utils");
 
+const STIM_SPAWN_THRESHOLD = 400;
+const STIM_BODY = [MOVE, MOVE, CARRY, CARRY];
+const TOWER_REPAIR_MIN_ENERGY = 600;
+
+function getAvailableSpawn(room) {
+    const spawns = room.find(FIND_MY_SPAWNS);
+    return spawns.find((spawn) => !spawn.spawning);
+}
+
+function getRoomStims(room) {
+    return _.filter(Game.creeps, (creep) => {
+        return (
+            creep.memory.role === "stim" &&
+            (creep.memory.homeRoom === room.name ||
+                (!creep.memory.homeRoom && creep.room.name === room.name))
+        );
+    });
+}
+
+function spawnStimIfNeeded(room, towers) {
+    if (!room.storage || room.storage.store[RESOURCE_ENERGY] === 0) {
+        return;
+    }
+
+    const needsStim = towers.some((tower) => {
+        return tower.store[RESOURCE_ENERGY] < STIM_SPAWN_THRESHOLD;
+    });
+
+    if (!needsStim || getRoomStims(room).length > 0) {
+        return;
+    }
+
+    const spawn = getAvailableSpawn(room);
+
+    if (!spawn) {
+        return;
+    }
+
+    const newName = "Stim" + Game.time;
+    const result = spawn.spawnCreep(STIM_BODY, newName, {
+        memory: {
+            role: "stim",
+            homeRoom: room.name,
+        },
+    });
+
+    if (result === OK) {
+        console.log(`Spawning emergency stim in ${room.name}: ${newName}`);
+    } else if (result !== ERR_NOT_ENOUGH_ENERGY && result !== ERR_BUSY) {
+        console.log(`Failed to spawn emergency stim in ${room.name}: ${result}`);
+    }
+}
+
 module.exports = {
     run: function (roomName) {
-        // Get all towers in the room
-        let towers = Game.rooms[roomName].find(FIND_MY_STRUCTURES, {
+        const room = Game.rooms[roomName];
+
+        if (!room) {
+            return;
+        }
+
+        const towers = room.find(FIND_MY_STRUCTURES, {
             filter: {structureType: STRUCTURE_TOWER}
         });
 
-        let stims = _.filter(
-            Game.creeps,
-            (creep) => creep.memory.role === "stim"
-        );
-        console.log("Stims: ", stims.length);
-
-        towers.forEach(tower => {
-            // TODO: Add check here to ensure storage has energy to transfer
-            // storage && storage.store[RESOURCE_ENERGY] > 0
-            if (tower.store[RESOURCE_ENERGY] < 400 && stims.length < 1) {
-                let newName = "Stim" + Game.time;
-                Game.spawns["Spawn1"].spawnCreep(
-                    [MOVE, MOVE, CARRY, CARRY],
-                    newName,
-                    {
-                        memory: {role: "stim"},
-                    }
-                );
-            }
-        })
-
-        if (!towers) {
-            console.log("No towers available!");
+        if (towers.length === 0) {
+            return;
         }
 
-        // Find enemy creeps in the room
-        let hostiles = Game.rooms[roomName].find(FIND_HOSTILE_CREEPS);
+        spawnStimIfNeeded(room, towers);
 
-        // If enemies exist, make towers attack
+        const hostiles = room.find(FIND_HOSTILE_CREEPS);
         if (hostiles.length > 0) {
-            towers.forEach(tower => tower.attack(hostiles[0])); // Attack first enemy found
-        } else {
-            // Nothing to attack, so repair something instead.
-            towers.forEach(tower => {
-                console.log('Tower Energy: ' + tower.store[RESOURCE_ENERGY]);
-                tower.repair(utils.getRepairQueue(Game.rooms[roomName])[0])
+            towers.forEach((tower) => {
+                const hostile = tower.pos.findClosestByRange(hostiles);
+
+                if (hostile) {
+                    tower.attack(hostile);
+                }
             });
+
+            return;
         }
+
+        const woundedFriendly = room.find(FIND_MY_CREEPS, {
+            filter: (creep) => creep.hits < creep.hitsMax,
+        });
+
+        if (woundedFriendly.length > 0) {
+            towers.forEach((tower) => {
+                const target = tower.pos.findClosestByRange(woundedFriendly);
+
+                if (target) {
+                    tower.heal(target);
+                }
+            });
+
+            return;
+        }
+
+        const repairQueue = utils.getRepairQueue(room);
+        const repairTarget = repairQueue[0];
+
+        if (!repairTarget) {
+            return;
+        }
+
+        towers.forEach((tower) => {
+            if (tower.store[RESOURCE_ENERGY] > TOWER_REPAIR_MIN_ENERGY) {
+                tower.repair(repairTarget);
+            }
+        });
     }
 };

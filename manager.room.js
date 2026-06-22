@@ -206,14 +206,22 @@ function getBodiesForRole(role, rcl) {
   if (role === "tractor") {
     if (rcl >= 7) {
       return [
-        [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
-        [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
-        [WORK, CARRY, MOVE],
+        [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+        [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
+        [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE],
+        [CARRY, CARRY, MOVE],
+      ];
+    }
+
+    if (rcl >= 4) {
+      return [
+        [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE],
+        [CARRY, CARRY, MOVE],
       ];
     }
 
     return [
-      [WORK, CARRY, MOVE],
+      [CARRY, CARRY, MOVE],
     ];
   }
 
