@@ -67,6 +67,13 @@ function getMaintenanceTargets(room) {
         return false;
       }
 
+      if (
+        structure.structureType === STRUCTURE_ROAD ||
+        structure.structureType === STRUCTURE_CONTAINER
+      ) {
+        return structure.hits < structure.hitsMax * 0.9;
+      }
+
       return structure.hits < structure.hitsMax * 0.75;
     },
   });

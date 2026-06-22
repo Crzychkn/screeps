@@ -4,7 +4,7 @@ const roleBuilder = require("role.builder");
 const roleRepairer = require("role.repairer");
 const roleTractor = require("role.tractor");
 const roleScout = require("role.scout");
-const roleStim = require("role.emergencyStim");
+const roleStim = require("role.stim");
 const roleDefender = require("role.defender");
 
 const roomManager = require("manager.room");
