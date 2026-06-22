@@ -4,6 +4,7 @@ const constructionManager = require("manager.construction");
 const ROLE_PRIORITY = [
   "harvester",
   "builder",
+  "repairer",
   "upgrader",
   "tractor",
 ];
@@ -56,6 +57,21 @@ function getStoredEnergy(room) {
   return total;
 }
 
+function getMaintenanceTargets(room) {
+  return room.find(FIND_STRUCTURES, {
+    filter: (structure) => {
+      if (
+        structure.structureType === STRUCTURE_WALL ||
+        structure.structureType === STRUCTURE_RAMPART
+      ) {
+        return false;
+      }
+
+      return structure.hits < structure.hitsMax * 0.75;
+    },
+  });
+}
+
 function getDesiredCounts(room) {
   const rcl = room.controller.level;
   const storedEnergy = getStoredEnergy(room);
@@ -63,6 +79,7 @@ function getDesiredCounts(room) {
   const desired = {
     harvester: 3,
     builder: 1,
+    repairer: 0,
     upgrader: 2,
     tractor: 0,
   };
@@ -97,6 +114,16 @@ function getDesiredCounts(room) {
     desired.upgrader = 7;
   }
 
+  const maintenanceTargets = getMaintenanceTargets(room);
+
+  if (rcl >= 2 && maintenanceTargets.length > 0) {
+    desired.repairer = 1;
+  }
+
+  if (rcl >= 5 && maintenanceTargets.length > 20) {
+    desired.repairer = 2;
+  }
+
   return desired;
 }
 
@@ -124,6 +151,19 @@ function getBodiesForRole(role, rcl) {
 
   if (role === "builder") {
     if (rcl >= 3) {
+      return [
+        [WORK, WORK, CARRY, CARRY, MOVE, MOVE],
+        [WORK, CARRY, MOVE],
+      ];
+    }
+
+    return [
+      [WORK, CARRY, MOVE],
+    ];
+  }
+
+  if (role === "repairer") {
+    if (rcl >= 4) {
       return [
         [WORK, WORK, CARRY, CARRY, MOVE, MOVE],
         [WORK, CARRY, MOVE],
@@ -254,6 +294,7 @@ function manageSpawning(room) {
   const counts = {
     harvester: getRoomCreeps(room, "harvester").length,
     builder: getRoomCreeps(room, "builder").length,
+    repairer: getRoomCreeps(room, "repairer").length,
     upgrader: getRoomCreeps(room, "upgrader").length,
     tractor: getRoomCreeps(room, "tractor").length,
   };
@@ -261,6 +302,7 @@ function manageSpawning(room) {
   console.log(
     `${room.name} creeps - Harvesters: ${counts.harvester}/${desired.harvester}, ` +
     `Builders: ${counts.builder}/${desired.builder}, ` +
+    `Repairers: ${counts.repairer}/${desired.repairer}, ` +
     `Upgraders: ${counts.upgrader}/${desired.upgrader}, ` +
     `Tractors: ${counts.tractor}/${desired.tractor}`
   );

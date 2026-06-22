@@ -5,6 +5,7 @@ const BUILD_ORDER = [
   STRUCTURE_EXTENSION,
   STRUCTURE_TOWER,
   STRUCTURE_STORAGE,
+  STRUCTURE_ROAD,
 ];
 
 function getStructureCount(room, structureType) {
@@ -33,8 +34,6 @@ function hasConstructionCapacity(room) {
   const sites = room.find(FIND_MY_CONSTRUCTION_SITES);
 
   return sites.length < MAX_CONSTRUCTION_SITES_PER_ROOM;
-
-
 }
 
 function isBuildablePosition(room, x, y) {
@@ -236,6 +235,121 @@ function placeSourceContainers(room) {
   return false;
 }
 
+function getAnchor(room) {
+  if (room.storage) {
+    return room.storage;
+  }
+
+  return findSpawn(room);
+}
+
+function isRoadBuildablePosition(room, x, y) {
+  if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
+    return false;
+  }
+
+  const terrain = room.getTerrain();
+
+  if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+    return false;
+  }
+
+  const look = room.lookAt(x, y);
+
+  for (const item of look) {
+    if (item.type === LOOK_STRUCTURES) {
+      const structure = item.structure;
+
+      if (structure.structureType === STRUCTURE_ROAD) {
+        return false;
+      }
+
+      if (structure.structureType !== STRUCTURE_RAMPART) {
+        return false;
+      }
+    }
+
+    if (item.type === LOOK_CONSTRUCTION_SITES) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function tryPlaceRoadAt(room, x, y) {
+  if (!isRoadBuildablePosition(room, x, y)) {
+    return false;
+  }
+
+  const result = room.createConstructionSite(x, y, STRUCTURE_ROAD);
+
+  if (result === OK) {
+    console.log(`Placed road construction site in ${room.name} at ${x},${y}`);
+    return true;
+  }
+
+  return false;
+}
+
+function placeRoadAlongPath(room, targetPos, range) {
+  const anchor = getAnchor(room);
+
+  if (!anchor) {
+    return false;
+  }
+
+  const path = anchor.pos.findPathTo(targetPos, {
+    range: range,
+    ignoreCreeps: true,
+    maxOps: 200,
+  });
+
+  for (const step of path) {
+    if (tryPlaceRoadAt(room, step.x, step.y)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function placeRoads(room) {
+  if (room.controller.level < 2) {
+    return false;
+  }
+
+  const anchor = getAnchor(room);
+
+  if (!anchor) {
+    return false;
+  }
+
+  const spawn = findSpawn(room);
+
+  if (spawn && anchor.id !== spawn.id) {
+    if (placeRoadAlongPath(room, spawn.pos, 1)) {
+      return true;
+    }
+  }
+
+  if (room.controller) {
+    if (placeRoadAlongPath(room, room.controller.pos, 3)) {
+      return true;
+    }
+  }
+
+  const sources = room.find(FIND_SOURCES);
+
+  for (const source of sources) {
+    if (placeRoadAlongPath(room, source.pos, 1)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function tryBuild(room, structureType) {
   if (structureType === STRUCTURE_CONTAINER) {
     return placeSourceContainers(room);
@@ -251,6 +365,10 @@ function tryBuild(room, structureType) {
 
   if (structureType === STRUCTURE_STORAGE) {
     return placeStorage(room);
+  }
+
+  if (structureType === STRUCTURE_ROAD) {
+    return placeRoads(room);
   }
 
   return false;
