@@ -41,7 +41,7 @@ module.exports = {
         } else {
             // Nothing to attack, so repair something instead.
             towers.forEach(tower => {
-                console.log(tower.store[RESOURCE_ENERGY]);
+                console.log('Tower Energy: ' + tower.store[RESOURCE_ENERGY]);
                 tower.repair(utils.getRepairQueue(Game.rooms[roomName])[0])
             });
         }
