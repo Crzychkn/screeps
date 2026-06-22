@@ -196,6 +196,22 @@ function hasContainerNear(pos) {
   return sites.length > 0;
 }
 
+function hasContainerInRange(pos, range) {
+  const structures = pos.findInRange(FIND_STRUCTURES, range, {
+    filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
+  });
+
+  if (structures.length > 0) {
+    return true;
+  }
+
+  const sites = pos.findInRange(FIND_MY_CONSTRUCTION_SITES, range, {
+    filter: (site) => site.structureType === STRUCTURE_CONTAINER,
+  });
+
+  return sites.length > 0;
+}
+
 function placeSourceContainers(room) {
   const allowed = getAllowedStructureCount(room, STRUCTURE_CONTAINER);
   const current = getStructureCount(room, STRUCTURE_CONTAINER);
@@ -233,6 +249,61 @@ function placeSourceContainers(room) {
   }
 
   return false;
+}
+
+function placeControllerContainer(room) {
+  const allowed = getAllowedStructureCount(room, STRUCTURE_CONTAINER);
+  const current = getStructureCount(room, STRUCTURE_CONTAINER);
+
+  if (current >= allowed || !room.controller) {
+    return false;
+  }
+
+  if (hasContainerInRange(room.controller.pos, 3)) {
+    return false;
+  }
+
+  const anchor = getAnchor(room);
+  const positions = [];
+
+  for (let range = 2; range <= 3; range++) {
+    for (let dx = -range; dx <= range; dx++) {
+      for (let dy = -range; dy <= range; dy++) {
+        if (Math.abs(dx) !== range && Math.abs(dy) !== range) {
+          continue;
+        }
+
+        const x = room.controller.pos.x + dx;
+        const y = room.controller.pos.y + dy;
+
+        if (isBuildablePosition(room, x, y)) {
+          positions.push(new RoomPosition(x, y, room.name));
+        }
+      }
+    }
+  }
+
+  if (positions.length === 0) {
+    return false;
+  }
+
+  if (anchor) {
+    positions.sort((a, b) => {
+      return a.getRangeTo(anchor) - b.getRangeTo(anchor);
+    });
+  }
+
+  const pos = positions[0];
+
+  return tryPlaceAt(room, STRUCTURE_CONTAINER, pos.x, pos.y);
+}
+
+function placeContainers(room) {
+  if (placeSourceContainers(room)) {
+    return true;
+  }
+
+  return placeControllerContainer(room);
 }
 
 function getAnchor(room) {
@@ -352,7 +423,7 @@ function placeRoads(room) {
 
 function tryBuild(room, structureType) {
   if (structureType === STRUCTURE_CONTAINER) {
-    return placeSourceContainers(room);
+    return placeContainers(room);
   }
 
   if (structureType === STRUCTURE_EXTENSION) {
