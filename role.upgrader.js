@@ -1,47 +1,188 @@
-const utils = require("utils");
+function getHomeRoom(creep) {
+  const homeRoomName = creep.memory.homeRoom || creep.room.name;
+  return Game.rooms[homeRoomName] || creep.room;
+}
 
-var roleUpgrader = {
-  /** @param {Creep} creep **/
+function setWorkingState(creep) {
+  if (creep.memory.upgrading && creep.store[RESOURCE_ENERGY] === 0) {
+    creep.memory.upgrading = false;
+  }
+
+  if (!creep.memory.upgrading && creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+    creep.memory.upgrading = true;
+  }
+}
+
+function moveToTarget(creep, target) {
+  creep.moveTo(target, {
+    visualizePathStyle: {
+      stroke: "#ffaa00",
+    },
+  });
+}
+
+function withdrawFromStorage(creep, room) {
+  if (!room.storage || room.storage.store[RESOURCE_ENERGY] === 0) {
+    return false;
+  }
+
+  const result = creep.withdraw(room.storage, RESOURCE_ENERGY);
+
+  if (result === OK) {
+    return true;
+  }
+
+  if (result === ERR_NOT_IN_RANGE) {
+    moveToTarget(creep, room.storage);
+    return true;
+  }
+
+  return false;
+}
+
+function withdrawFromContainer(creep, room) {
+  const containers = room.find(FIND_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_CONTAINER &&
+        structure.store[RESOURCE_ENERGY] > 0
+      );
+    },
+  });
+
+  if (containers.length === 0) {
+    return false;
+  }
+
+  const target = creep.pos.findClosestByPath(containers);
+
+  if (!target) {
+    return false;
+  }
+
+  const result = creep.withdraw(target, RESOURCE_ENERGY);
+
+  if (result === OK) {
+    return true;
+  }
+
+  if (result === ERR_NOT_IN_RANGE) {
+    moveToTarget(creep, target);
+    return true;
+  }
+
+  return false;
+}
+
+function pickupDroppedEnergy(creep, room) {
+  const droppedEnergy = room.find(FIND_DROPPED_RESOURCES, {
+    filter: (resource) => resource.resourceType === RESOURCE_ENERGY,
+  });
+
+  if (droppedEnergy.length === 0) {
+    return false;
+  }
+
+  const target = creep.pos.findClosestByPath(droppedEnergy);
+
+  if (!target) {
+    return false;
+  }
+
+  const result = creep.pickup(target);
+
+  if (result === OK) {
+    return true;
+  }
+
+  if (result === ERR_NOT_IN_RANGE) {
+    moveToTarget(creep, target);
+    return true;
+  }
+
+  return false;
+}
+
+function harvestSource(creep, room) {
+  const sources = room.find(FIND_SOURCES);
+
+  if (sources.length === 0) {
+    return false;
+  }
+
+  const source = creep.pos.findClosestByPath(sources);
+
+  if (!source) {
+    return false;
+  }
+
+  const result = creep.harvest(source);
+
+  if (result === OK) {
+    return true;
+  }
+
+  if (result === ERR_NOT_IN_RANGE) {
+    moveToTarget(creep, source);
+    return true;
+  }
+
+  return false;
+}
+
+function collectEnergy(creep, room) {
+  if (withdrawFromStorage(creep, room)) {
+    return;
+  }
+
+  if (withdrawFromContainer(creep, room)) {
+    return;
+  }
+
+  if (pickupDroppedEnergy(creep, room)) {
+    return;
+  }
+
+  harvestSource(creep, room);
+}
+
+function upgradeController(creep, room) {
+  if (!room.controller || !room.controller.my) {
+    return;
+  }
+
+  const result = creep.upgradeController(room.controller);
+
+  if (result === ERR_NOT_IN_RANGE) {
+    creep.moveTo(room.controller, {
+      range: 3,
+      visualizePathStyle: {
+        stroke: "#ffffff",
+      },
+    });
+  }
+}
+
+module.exports = {
   run: function (creep) {
+    const homeRoom = getHomeRoom(creep);
 
-    // Check for sign
-    const controller = creep.room.controller;
-
-    if (controller) {
-      const newSign = "New player learning and having fun.";
-
-      // Check existing sign
-      if (!controller.sign || controller.sign.text !== newSign) {
-        if (creep.signController(controller, newSign) === ERR_NOT_IN_RANGE) {
-          creep.moveTo(controller);
-        }
-      }
+    if (!creep.memory.homeRoom) {
+      creep.memory.homeRoom = homeRoom.name;
     }
 
-    //If creep is set to upgrade, but has no energy, change memory to harvest energy.
-    if (creep.memory.upgrading && creep.store[RESOURCE_ENERGY] === 0) {
-      creep.memory.upgrading = false;
-      creep.say("🔄 harvest");
+    setWorkingState(creep);
+
+    if (creep.room.name !== homeRoom.name) {
+      creep.moveTo(new RoomPosition(25, 25, homeRoom.name));
+      return;
     }
 
-    //If creep is not set to upgrade, but has full energy, set to upgrade.
-    if (!creep.memory.upgrading && creep.store.getFreeCapacity() === 0) {
-      creep.memory.upgrading = true;
-      creep.say("⚡ upgrade");
-    }
-
-    //If creep is set to upgrade, find controller and move to it.
     if (creep.memory.upgrading) {
-      if (creep.upgradeController(creep.room.controller) === ERR_NOT_IN_RANGE) {
-        creep.moveTo(creep.room.controller, {
-          visualizePathStyle: { stroke: "#ffffff" },
-        });
-      }
-    } else {
-      //Find sources to harvest and move to them
-      utils.getEnergy(creep);
+      upgradeController(creep, homeRoom);
+      return;
     }
+
+    collectEnergy(creep, homeRoom);
   },
 };
-
-module.exports = roleUpgrader;
