@@ -1,6 +1,8 @@
 const roleTower = require("role.tower");
 const constructionManager = require("manager.construction");
 
+const EXPANSION_BLOCK_TTL = 50000;
+
 const ROLE_PRIORITY = [
   "harvester",
   "tractor",
@@ -446,6 +448,33 @@ function getExpansionMemory() {
   return Memory.expansion;
 }
 
+function pruneBlockedExpansionRooms() {
+  const expansion = getExpansionMemory();
+
+  if (!expansion.blockedRooms) {
+    expansion.blockedRooms = {};
+    return;
+  }
+
+  for (const roomName in expansion.blockedRooms) {
+    const block = expansion.blockedRooms[roomName];
+
+    if (!block.time || Game.time - block.time > EXPANSION_BLOCK_TTL) {
+      delete expansion.blockedRooms[roomName];
+    }
+  }
+}
+
+function isExpansionBlocked(roomName) {
+  const expansion = getExpansionMemory();
+
+  if (!expansion.blockedRooms) {
+    return false;
+  }
+
+  return !!expansion.blockedRooms[roomName];
+}
+
 function getOwnedRoomCount() {
   return Object.values(Game.rooms).filter((room) => {
     return room.controller && room.controller.my;
@@ -457,6 +486,12 @@ function hasExpansionCapacity() {
 }
 
 function isValidExpansionTarget(roomName) {
+  pruneBlockedExpansionRooms();
+
+  if (isExpansionBlocked(roomName)) {
+    return false;
+  }
+
   const status = Game.map.getRoomStatus(roomName);
 
   if (status.status !== "normal") {

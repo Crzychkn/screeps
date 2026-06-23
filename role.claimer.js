@@ -6,6 +6,26 @@ function moveToTargetRoom(creep) {
   });
 }
 
+function blockExpansionTarget(creep, reason) {
+  if (!Memory.expansion) {
+    Memory.expansion = {};
+  }
+
+  if (!Memory.expansion.blockedRooms) {
+    Memory.expansion.blockedRooms = {};
+  }
+
+  Memory.expansion.blockedRooms[creep.memory.targetRoom] = {
+    reason: reason,
+    time: Game.time,
+  };
+
+  if (Memory.expansion.targetRoom === creep.memory.targetRoom) {
+    delete Memory.expansion.targetRoom;
+    delete Memory.expansion.sourceRoom;
+  }
+}
+
 module.exports = {
   run: function (creep) {
     if (!creep.memory.targetRoom) {
@@ -22,6 +42,7 @@ module.exports = {
 
     if (!controller) {
       creep.say("no ctrl");
+      blockExpansionTarget(creep, "no_controller");
       return;
     }
 
@@ -32,6 +53,15 @@ module.exports = {
 
     if (controller.owner && controller.owner.username !== creep.owner.username) {
       creep.say("owned");
+      blockExpansionTarget(creep, `owned_by_${controller.owner.username}`);
+      return;
+    }
+
+    const hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
+
+    if (hostiles.length > 0) {
+      creep.say("hostile");
+      blockExpansionTarget(creep, "hostiles");
       return;
     }
 
