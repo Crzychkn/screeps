@@ -1,3 +1,6 @@
+const CONTROLLER_DANGER_TICKS = 3000;
+const CONTROLLER_SAFE_TICKS = 5000;
+
 function moveToTarget(creep, target, stroke) {
   creep.moveTo(target, {
     visualizePathStyle: {
@@ -101,21 +104,9 @@ function findBuildTarget(room) {
   return sites[0];
 }
 
-function work(creep, room) {
-  const buildTarget = findBuildTarget(room);
-
-  if (buildTarget) {
-    const result = creep.build(buildTarget);
-
-    if (result === ERR_NOT_IN_RANGE) {
-      moveToTarget(creep, buildTarget, "#ffffff");
-    }
-
-    return;
-  }
-
+function upgradeController(creep, room) {
   if (!room.controller || !room.controller.my) {
-    return;
+    return false;
   }
 
   const result = creep.upgradeController(room.controller);
@@ -128,6 +119,46 @@ function work(creep, room) {
       },
     });
   }
+
+  return true;
+}
+
+function updateControllerSafetyMode(creep, room) {
+  if (!room.controller || !room.controller.my) {
+    return;
+  }
+
+  if (room.controller.ticksToDowngrade < CONTROLLER_DANGER_TICKS) {
+    creep.memory.savingController = true;
+  }
+
+  if (room.controller.ticksToDowngrade > CONTROLLER_SAFE_TICKS) {
+    creep.memory.savingController = false;
+  }
+}
+
+function work(creep, room) {
+  updateControllerSafetyMode(creep, room);
+
+  if (creep.memory.savingController) {
+    creep.say("save ctrl");
+    upgradeController(creep, room);
+    return;
+  }
+
+  const buildTarget = findBuildTarget(room);
+
+  if (buildTarget) {
+    const result = creep.build(buildTarget);
+
+    if (result === ERR_NOT_IN_RANGE) {
+      moveToTarget(creep, buildTarget, "#ffffff");
+    }
+
+    return;
+  }
+
+  upgradeController(creep, room);
 }
 
 module.exports = {
