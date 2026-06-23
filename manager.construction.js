@@ -8,6 +8,22 @@ const BUILD_ORDER = [
   STRUCTURE_ROAD,
 ];
 
+const WALKABLE_STRUCTURE_TYPES = [
+  STRUCTURE_CONTAINER,
+  STRUCTURE_ROAD,
+  STRUCTURE_RAMPART,
+];
+
+const TRAFFIC_SAFE_STRUCTURE_TYPES = [
+  STRUCTURE_CONTAINER,
+  STRUCTURE_ROAD,
+  STRUCTURE_RAMPART,
+];
+
+function getPositionKey(x, y) {
+  return `${x},${y}`;
+}
+
 function getStructureCount(room, structureType) {
   const existing = room.find(FIND_MY_STRUCTURES, {
     filter: (structure) => structure.structureType === structureType,
@@ -62,8 +78,177 @@ function isBuildablePosition(room, x, y) {
   return true;
 }
 
+function getAnchor(room) {
+  if (room.storage) {
+    return room.storage;
+  }
+
+  return findSpawn(room);
+}
+
+function getTrafficReservedPositions(room) {
+  if (room._trafficReservedPositions) {
+    return room._trafficReservedPositions;
+  }
+
+  const reserved = {};
+  const anchor = getAnchor(room);
+
+  if (!anchor) {
+    room._trafficReservedPositions = reserved;
+    return room._trafficReservedPositions;
+  }
+
+  const targets = [];
+
+  if (room.controller) {
+    targets.push({
+      pos: room.controller.pos,
+      range: 3,
+    });
+  }
+
+  const sources = room.find(FIND_SOURCES);
+
+  for (const source of sources) {
+    targets.push({
+      pos: source.pos,
+      range: 1,
+    });
+  }
+
+  for (const target of targets) {
+    const path = anchor.pos.findPathTo(target.pos, {
+      range: target.range,
+      ignoreCreeps: true,
+      maxOps: 200,
+    });
+
+    for (const step of path) {
+      reserved[getPositionKey(step.x, step.y)] = true;
+    }
+  }
+
+  room._trafficReservedPositions = reserved;
+  return room._trafficReservedPositions;
+}
+
+function isWalkableStructure(structure) {
+  return WALKABLE_STRUCTURE_TYPES.indexOf(structure.structureType) !== -1;
+}
+
+function isWalkableConstructionSite(site) {
+  return TRAFFIC_SAFE_STRUCTURE_TYPES.indexOf(site.structureType) !== -1;
+}
+
+function getBaseTrafficCostMatrix(room) {
+  if (room._baseTrafficCostMatrix) {
+    return room._baseTrafficCostMatrix;
+  }
+
+  const costs = new PathFinder.CostMatrix();
+
+  const structures = room.find(FIND_STRUCTURES);
+
+  for (const structure of structures) {
+    if (!isWalkableStructure(structure)) {
+      costs.set(structure.pos.x, structure.pos.y, 255);
+    }
+  }
+
+  const sites = room.find(FIND_CONSTRUCTION_SITES);
+
+  for (const site of sites) {
+    if (!isWalkableConstructionSite(site)) {
+      costs.set(site.pos.x, site.pos.y, 255);
+    }
+  }
+
+  room._baseTrafficCostMatrix = costs;
+  return room._baseTrafficCostMatrix;
+}
+
+function getTrafficCostMatrix(room, blockedX, blockedY) {
+  const costs = getBaseTrafficCostMatrix(room).clone();
+
+  costs.set(blockedX, blockedY, 255);
+
+  return costs;
+}
+
+function wouldBlockCriticalPaths(room, x, y) {
+  const spawns = room.find(FIND_MY_SPAWNS);
+
+  if (spawns.length === 0) {
+    return false;
+  }
+
+  const goals = [];
+
+  if (room.controller) {
+    goals.push({
+      pos: room.controller.pos,
+      range: 3,
+    });
+  }
+
+  const sources = room.find(FIND_SOURCES);
+
+  for (const source of sources) {
+    goals.push({
+      pos: source.pos,
+      range: 1,
+    });
+  }
+
+  if (goals.length === 0) {
+    return false;
+  }
+
+  const costs = getTrafficCostMatrix(room, x, y);
+
+  for (const spawn of spawns) {
+    for (const goal of goals) {
+      const result = PathFinder.search(spawn.pos, goal, {
+        maxOps: 1000,
+        roomCallback: (roomName) => {
+          if (roomName !== room.name) {
+            return false;
+          }
+
+          return costs;
+        },
+      });
+
+      if (result.incomplete) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function isTrafficSafePlacement(room, structureType, x, y) {
+  if (TRAFFIC_SAFE_STRUCTURE_TYPES.indexOf(structureType) !== -1) {
+    return true;
+  }
+
+  const reserved = getTrafficReservedPositions(room);
+
+  if (reserved[getPositionKey(x, y)]) {
+    return false;
+  }
+
+  return !wouldBlockCriticalPaths(room, x, y);
+}
+
 function tryPlaceAt(room, structureType, x, y) {
   if (!isBuildablePosition(room, x, y)) {
+    return false;
+  }
+
+  if (!isTrafficSafePlacement(room, structureType, x, y)) {
     return false;
   }
 
@@ -304,14 +489,6 @@ function placeContainers(room) {
   }
 
   return placeControllerContainer(room);
-}
-
-function getAnchor(room) {
-  if (room.storage) {
-    return room.storage;
-  }
-
-  return findSpawn(room);
 }
 
 function isRoadBuildablePosition(room, x, y) {
