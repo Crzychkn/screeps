@@ -33,6 +33,15 @@ function getPioneersForTarget(targetRoomName) {
   });
 }
 
+function getClaimersForTarget(targetRoomName) {
+  return _.filter(Game.creeps, (creep) => {
+    return (
+      creep.memory.role === "claimer" &&
+      creep.memory.targetRoom === targetRoomName
+    );
+  });
+}
+
 function adoptLocalCreeps(room) {
   for (const name in Game.creeps) {
     const creep = Game.creeps[name];
@@ -216,6 +225,12 @@ function getDesiredCounts(room) {
 }
 
 function getBodiesForRole(role, rcl) {
+  if (role === "claimer") {
+    return [
+      [CLAIM, MOVE],
+    ];
+  }
+
   if (role === "pioneer") {
     if (rcl >= 4) {
       return [
@@ -394,6 +409,173 @@ function spawnPioneer(room, body, targetRoomName) {
   return result;
 }
 
+function spawnClaimer(room, body, targetRoomName) {
+  const spawn = getAvailableSpawn(room);
+
+  if (!spawn) {
+    return ERR_BUSY;
+  }
+
+  if (!body || bodyCost(body) > room.energyAvailable) {
+    return ERR_NOT_ENOUGH_ENERGY;
+  }
+
+  const name = "Claimer" + Game.time;
+  const result = spawn.spawnCreep(body, name, {
+    memory: {
+      role: "claimer",
+      homeRoom: room.name,
+      targetRoom: targetRoomName,
+    },
+  });
+
+  if (result === OK) {
+    console.log(`Spawning claimer from ${room.name} to ${targetRoomName}: ${name}`);
+  } else {
+    console.log(`Failed to spawn claimer from ${room.name} to ${targetRoomName}: ${result}`);
+  }
+
+  return result;
+}
+
+function getExpansionMemory() {
+  if (!Memory.expansion) {
+    Memory.expansion = {};
+  }
+
+  return Memory.expansion;
+}
+
+function getOwnedRoomCount() {
+  return Object.values(Game.rooms).filter((room) => {
+    return room.controller && room.controller.my;
+  }).length;
+}
+
+function hasExpansionCapacity() {
+  return Game.gcl.level > getOwnedRoomCount();
+}
+
+function isValidExpansionTarget(roomName) {
+  const status = Game.map.getRoomStatus(roomName);
+
+  if (status.status !== "normal") {
+    return false;
+  }
+
+  const room = Game.rooms[roomName];
+
+  if (!room) {
+    return true;
+  }
+
+  if (!room.controller || room.controller.my) {
+    return false;
+  }
+
+  if (room.controller.owner) {
+    return false;
+  }
+
+  const hostiles = room.find(FIND_HOSTILE_CREEPS);
+
+  return hostiles.length === 0;
+}
+
+function getExpansionCandidateScore(sourceRoom, roomName) {
+  const room = Game.rooms[roomName];
+
+  if (!room) {
+    return 100;
+  }
+
+  const sources = room.find(FIND_SOURCES);
+  const sourceScore = Math.max(0, 3 - sources.length) * 20;
+  const range = Game.map.getRoomLinearDistance(sourceRoom.name, roomName);
+
+  return sourceScore + range;
+}
+
+function chooseExpansionTarget(sourceRoom) {
+  const exits = Game.map.describeExits(sourceRoom.name);
+
+  if (!exits) {
+    return null;
+  }
+
+  const candidates = Object.values(exits).filter(isValidExpansionTarget);
+
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  candidates.sort((a, b) => {
+    return getExpansionCandidateScore(sourceRoom, a) - getExpansionCandidateScore(sourceRoom, b);
+  });
+
+  return candidates[0];
+}
+
+function getExpansionTarget(room) {
+  if (!hasExpansionCapacity()) {
+    delete Memory.expansion;
+    return null;
+  }
+
+  const expansion = getExpansionMemory();
+
+  if (
+    expansion.targetRoom &&
+    expansion.sourceRoom &&
+    isValidExpansionTarget(expansion.targetRoom)
+  ) {
+    return expansion;
+  }
+
+  const targetRoom = chooseExpansionTarget(room);
+
+  if (!targetRoom) {
+    delete Memory.expansion;
+    return null;
+  }
+
+  Memory.expansion = {
+    sourceRoom: room.name,
+    targetRoom: targetRoom,
+  };
+
+  console.log(`Selected expansion target ${targetRoom} from ${room.name}`);
+
+  return Memory.expansion;
+}
+
+function manageClaimingSupport(room, counts, desired) {
+  if (counts.harvester < desired.harvester) {
+    return false;
+  }
+
+  const expansion = getExpansionTarget(room);
+
+  if (!expansion || expansion.sourceRoom !== room.name) {
+    return false;
+  }
+
+  const claimers = getClaimersForTarget(expansion.targetRoom);
+
+  if (claimers.length > 0) {
+    return false;
+  }
+
+  const body = chooseBody(room, "claimer");
+
+  if (!body) {
+    return false;
+  }
+
+  spawnClaimer(room, body, expansion.targetRoom);
+  return true;
+}
+
 function getBootstrapTargets(sourceRoom) {
   return Object.values(Game.rooms).filter((room) => {
     if (room.name === sourceRoom.name) {
@@ -500,6 +682,10 @@ function manageSpawning(room) {
   }
 
   if (manageExpansionSupport(room, counts, desired)) {
+    return;
+  }
+
+  if (manageClaimingSupport(room, counts, desired)) {
     return;
   }
 
