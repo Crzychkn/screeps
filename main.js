@@ -6,6 +6,7 @@ const roleTractor = require("role.tractor");
 const roleScout = require("role.scout");
 const roleStim = require("role.stim");
 const roleDefender = require("role.defender");
+const rolePioneer = require("role.pioneer");
 
 const roomManager = require("manager.room");
 
@@ -18,6 +19,7 @@ const roles = {
   scout: roleScout,
   stim: roleStim,
   defender: roleDefender,
+  pioneer: rolePioneer,
 };
 
 function cleanDeadCreepMemory() {

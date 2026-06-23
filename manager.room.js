@@ -24,6 +24,15 @@ function getRoomCreeps(room, role) {
   });
 }
 
+function getPioneersForTarget(targetRoomName) {
+  return _.filter(Game.creeps, (creep) => {
+    return (
+      creep.memory.role === "pioneer" &&
+      creep.memory.targetRoom === targetRoomName
+    );
+  });
+}
+
 function adoptLocalCreeps(room) {
   for (const name in Game.creeps) {
     const creep = Game.creeps[name];
@@ -207,6 +216,19 @@ function getDesiredCounts(room) {
 }
 
 function getBodiesForRole(role, rcl) {
+  if (role === "pioneer") {
+    if (rcl >= 4) {
+      return [
+        [WORK, WORK, CARRY, CARRY, MOVE, MOVE],
+        [WORK, CARRY, MOVE],
+      ];
+    }
+
+    return [
+      [WORK, CARRY, MOVE],
+    ];
+  }
+
   if (role === "harvester") {
     if (rcl >= 7) {
       return [
@@ -343,6 +365,78 @@ function spawnRole(room, role, body) {
   return result;
 }
 
+function spawnPioneer(room, body, targetRoomName) {
+  const spawn = getAvailableSpawn(room);
+
+  if (!spawn) {
+    return ERR_BUSY;
+  }
+
+  if (!body || bodyCost(body) > room.energyAvailable) {
+    return ERR_NOT_ENOUGH_ENERGY;
+  }
+
+  const name = "Pioneer" + Game.time;
+  const result = spawn.spawnCreep(body, name, {
+    memory: {
+      role: "pioneer",
+      homeRoom: room.name,
+      targetRoom: targetRoomName,
+    },
+  });
+
+  if (result === OK) {
+    console.log(`Spawning pioneer from ${room.name} to ${targetRoomName}: ${name}`);
+  } else {
+    console.log(`Failed to spawn pioneer from ${room.name} to ${targetRoomName}: ${result}`);
+  }
+
+  return result;
+}
+
+function getBootstrapTargets(sourceRoom) {
+  return Object.values(Game.rooms).filter((room) => {
+    if (room.name === sourceRoom.name) {
+      return false;
+    }
+
+    if (!room.controller || !room.controller.my) {
+      return false;
+    }
+
+    const spawns = room.find(FIND_MY_SPAWNS);
+
+    return spawns.length === 0;
+  });
+}
+
+function manageExpansionSupport(room, counts, desired) {
+  if (counts.harvester < desired.harvester) {
+    return false;
+  }
+
+  const targets = getBootstrapTargets(room);
+
+  for (const target of targets) {
+    const pioneers = getPioneersForTarget(target.name);
+
+    if (pioneers.length >= 2) {
+      continue;
+    }
+
+    const body = chooseBody(room, "pioneer");
+
+    if (!body) {
+      continue;
+    }
+
+    spawnPioneer(room, body, target.name);
+    return true;
+  }
+
+  return false;
+}
+
 function manageDefense(room) {
   const hostiles = room.find(FIND_HOSTILE_CREEPS);
 
@@ -402,6 +496,10 @@ function manageSpawning(room) {
       spawnRole(room, "harvester", emergencyBody);
     }
 
+    return;
+  }
+
+  if (manageExpansionSupport(room, counts, desired)) {
     return;
   }
 

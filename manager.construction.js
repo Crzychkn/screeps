@@ -1,6 +1,7 @@
 const MAX_CONSTRUCTION_SITES_PER_ROOM = 5;
 
 const BUILD_ORDER = [
+  STRUCTURE_SPAWN,
   STRUCTURE_CONTAINER,
   STRUCTURE_EXTENSION,
   STRUCTURE_TOWER,
@@ -291,6 +292,64 @@ function placeNearAnchor(room, structureType, anchorPos, minRange, maxRange) {
   }
 
   return false;
+}
+
+function placeSpawn(room) {
+  const allowed = getAllowedStructureCount(room, STRUCTURE_SPAWN);
+  const current = getStructureCount(room, STRUCTURE_SPAWN);
+
+  if (current >= allowed || !room.controller) {
+    return false;
+  }
+
+  const sources = room.find(FIND_SOURCES);
+  const positions = [];
+
+  for (let range = 4; range <= 8; range++) {
+    for (let dx = -range; dx <= range; dx++) {
+      for (let dy = -range; dy <= range; dy++) {
+        if (Math.abs(dx) !== range && Math.abs(dy) !== range) {
+          continue;
+        }
+
+        const x = room.controller.pos.x + dx;
+        const y = room.controller.pos.y + dy;
+
+        if (isBuildablePosition(room, x, y)) {
+          positions.push(new RoomPosition(x, y, room.name));
+        }
+      }
+    }
+  }
+
+  if (positions.length === 0) {
+    return false;
+  }
+
+  positions.sort((a, b) => {
+    const scoreA = getSpawnPlacementScore(a, room.controller, sources);
+    const scoreB = getSpawnPlacementScore(b, room.controller, sources);
+
+    return scoreA - scoreB;
+  });
+
+  for (const pos of positions) {
+    if (tryPlaceAt(room, STRUCTURE_SPAWN, pos.x, pos.y)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function getSpawnPlacementScore(pos, controller, sources) {
+  let score = pos.getRangeTo(controller) * 2;
+
+  for (const source of sources) {
+    score += pos.getRangeTo(source);
+  }
+
+  return score;
 }
 
 function placeExtensions(room) {
@@ -665,6 +724,10 @@ function placeRoads(room) {
 }
 
 function tryBuild(room, structureType) {
+  if (structureType === STRUCTURE_SPAWN) {
+    return placeSpawn(room);
+  }
+
   if (structureType === STRUCTURE_CONTAINER) {
     return placeContainers(room);
   }
