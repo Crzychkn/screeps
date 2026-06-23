@@ -5,7 +5,7 @@ function setWorkingState(creep) {
     creep.memory.upgrading = false;
   }
 
-  if (!creep.memory.upgrading && creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+  if (!creep.memory.upgrading && creep.store[RESOURCE_ENERGY] > 0) {
     creep.memory.upgrading = true;
   }
 }
