@@ -26,10 +26,23 @@ function blockExpansionTarget(creep, reason) {
   }
 }
 
+function isActiveExpansionTarget(creep) {
+  return (
+    Memory.expansion &&
+    Memory.expansion.targetRoom === creep.memory.targetRoom
+  );
+}
+
 module.exports = {
   run: function (creep) {
     if (!creep.memory.targetRoom) {
       creep.say("no target");
+      return;
+    }
+
+    if (!isActiveExpansionTarget(creep)) {
+      creep.say("stand down");
+      creep.suicide();
       return;
     }
 

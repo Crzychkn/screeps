@@ -295,10 +295,12 @@ function placeNearAnchor(room, structureType, anchorPos, minRange, maxRange) {
 }
 
 function placeSpawn(room) {
-  const allowed = getAllowedStructureCount(room, STRUCTURE_SPAWN);
-  const current = getStructureCount(room, STRUCTURE_SPAWN);
+  const spawns = room.find(FIND_MY_SPAWNS);
+  const spawnSites = room.find(FIND_MY_CONSTRUCTION_SITES, {
+    filter: (site) => site.structureType === STRUCTURE_SPAWN,
+  });
 
-  if (current >= allowed || !room.controller) {
+  if (spawns.length > 0 || spawnSites.length > 0 || !room.controller) {
     return false;
   }
 

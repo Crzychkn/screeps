@@ -501,7 +501,7 @@ function isValidExpansionTarget(roomName) {
   const room = Game.rooms[roomName];
 
   if (!room) {
-    return true;
+    return false;
   }
 
   if (!room.controller || room.controller.my) {
