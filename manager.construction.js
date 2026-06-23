@@ -397,6 +397,48 @@ function hasContainerInRange(pos, range) {
   return sites.length > 0;
 }
 
+function isSourceContainer(container) {
+  if (container.structureType !== STRUCTURE_CONTAINER) {
+    return false;
+  }
+
+  const sources = container.pos.findInRange(FIND_SOURCES, 1);
+
+  return sources.length > 0;
+}
+
+function isControllerContainer(container) {
+  if (container.structureType !== STRUCTURE_CONTAINER || !container.room.controller) {
+    return false;
+  }
+
+  return container.pos.getRangeTo(container.room.controller) <= 3;
+}
+
+function findContainerTargets(room, filter) {
+  const targets = room.find(FIND_STRUCTURES, {
+    filter: (structure) => {
+      return structure.structureType === STRUCTURE_CONTAINER && filter(structure);
+    },
+  });
+
+  const sites = room.find(FIND_MY_CONSTRUCTION_SITES, {
+    filter: (site) => {
+      return site.structureType === STRUCTURE_CONTAINER && filter(site);
+    },
+  });
+
+  return targets.concat(sites);
+}
+
+function findSourceContainerTargets(room) {
+  return findContainerTargets(room, isSourceContainer);
+}
+
+function findControllerContainerTargets(room) {
+  return findContainerTargets(room, isControllerContainer);
+}
+
 function placeSourceContainers(room) {
   const allowed = getAllowedStructureCount(room, STRUCTURE_CONTAINER);
   const current = getStructureCount(room, STRUCTURE_CONTAINER);
@@ -562,6 +604,14 @@ function placeRoadAlongPath(room, targetPos, range) {
   return false;
 }
 
+function placeRoadToTarget(room, target, range) {
+  if (!target) {
+    return false;
+  }
+
+  return placeRoadAlongPath(room, target.pos, range);
+}
+
 function placeRoads(room) {
   if (room.controller.level < 2) {
     return false;
@@ -577,6 +627,22 @@ function placeRoads(room) {
 
   if (spawn && anchor.id !== spawn.id) {
     if (placeRoadAlongPath(room, spawn.pos, 1)) {
+      return true;
+    }
+  }
+
+  const controllerContainers = findControllerContainerTargets(room);
+
+  for (const container of controllerContainers) {
+    if (placeRoadToTarget(room, container, 1)) {
+      return true;
+    }
+  }
+
+  const sourceContainers = findSourceContainerTargets(room);
+
+  for (const container of sourceContainers) {
+    if (placeRoadToTarget(room, container, 1)) {
       return true;
     }
   }
