@@ -285,17 +285,55 @@ function harvestEnergy(creep) {
   }
 }
 
+function findBuildTarget(creep) {
+  const spawnSite = creep.room.find(FIND_MY_CONSTRUCTION_SITES, {
+    filter: (site) => site.structureType === STRUCTURE_SPAWN,
+  })[0];
+
+  if (spawnSite) {
+    return spawnSite;
+  }
+
+  const sites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
+
+  return sites[0];
+}
+
+function fallbackWork(creep) {
+  const buildTarget = findBuildTarget(creep);
+
+  if (buildTarget) {
+    const result = creep.build(buildTarget);
+
+    if (result === ERR_NOT_IN_RANGE) {
+      moveToTarget(creep, buildTarget, "#ffffff");
+    }
+
+    return;
+  }
+
+  if (!creep.room.controller || !creep.room.controller.my) {
+    creep.say("🚫 target");
+    return;
+  }
+
+  const result = creep.upgradeController(creep.room.controller);
+
+  if (result === ERR_NOT_IN_RANGE) {
+    creep.moveTo(creep.room.controller, {
+      range: 3,
+      visualizePathStyle: {
+        stroke: "#ffffff",
+      },
+    });
+  }
+}
+
 function deliverEnergy(creep) {
   const target = findDeliveryTarget(creep);
 
   if (!target) {
-    const spawn = creep.pos.findClosestByPath(FIND_MY_SPAWNS);
-
-    if (spawn) {
-      moveToTarget(creep, spawn, "#ffffff");
-    }
-
-    creep.say("🚫 storage");
+    fallbackWork(creep);
     return;
   }
 
