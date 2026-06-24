@@ -63,6 +63,8 @@ function getMilitaryIntel(room) {
     hostileCount: hostiles.length,
     invaderCount: hostileOwners.Invader || 0,
     sourceKeeperCount: hostileOwners["Source Keeper"] || 0,
+    blockingHostileCount:
+      hostiles.length - (hostileOwners["Source Keeper"] || 0),
     towerCount: countStructures(room, STRUCTURE_TOWER),
     spawnCount: countStructures(room, STRUCTURE_SPAWN),
     rampartCount: countStructures(room, STRUCTURE_RAMPART),
@@ -75,7 +77,7 @@ function isClaimable(controllerIntel, militaryIntel) {
     return false;
   }
 
-  if (militaryIntel.hostileCount > 0) {
+  if (militaryIntel.blockingHostileCount > 0) {
     return false;
   }
 

@@ -1,5 +1,6 @@
 const roleTower = require("role.tower");
 const constructionManager = require("manager.construction");
+const signConfig = require("config.sign");
 
 const EXPANSION_BLOCK_TTL = 50000;
 const EXPANSION_INTEL_MAX_AGE = 10000;
@@ -59,6 +60,15 @@ function getDefendersForTarget(targetRoomName) {
   return _.filter(Game.creeps, (creep) => {
     return (
       creep.memory.role === "defender" &&
+      creep.memory.targetRoom === targetRoomName
+    );
+  });
+}
+
+function getSignersForTarget(targetRoomName) {
+  return _.filter(Game.creeps, (creep) => {
+    return (
+      creep.memory.role === "signer" &&
       creep.memory.targetRoom === targetRoomName
     );
   });
@@ -248,6 +258,12 @@ function getDesiredCounts(room) {
 
 function getBodiesForRole(role, rcl) {
   if (role === "scout") {
+    return [
+      [MOVE],
+    ];
+  }
+
+  if (role === "signer") {
     return [
       [MOVE],
     ];
@@ -547,6 +563,104 @@ function spawnScout(room, targetRoomName, purpose) {
   return result;
 }
 
+function spawnSigner(room, targetRoomName) {
+  const spawn = getAvailableSpawn(room);
+  const body = [MOVE];
+
+  if (!spawn) {
+    return ERR_BUSY;
+  }
+
+  if (bodyCost(body) > room.energyAvailable) {
+    return ERR_NOT_ENOUGH_ENERGY;
+  }
+
+  const name = "Signer" + Game.time;
+  const result = spawn.spawnCreep(body, name, {
+    memory: {
+      role: "signer",
+      homeRoom: room.name,
+      targetRoom: targetRoomName,
+    },
+  });
+
+  if (result === OK) {
+    console.log(`Spawning signer from ${room.name} to ${targetRoomName}: ${name}`);
+  } else {
+    console.log(`Failed to spawn signer from ${room.name} to ${targetRoomName}: ${result}`);
+  }
+
+  return result;
+}
+
+function getSignText() {
+  return (Memory.sign && Memory.sign.text) || signConfig.text;
+}
+
+function getSignRoomSettings() {
+  if (Memory.sign && Memory.sign.rooms) {
+    return Memory.sign.rooms;
+  }
+
+  return signConfig.rooms;
+}
+
+function shouldSignRoom(room) {
+  const signText = getSignText();
+  const signRooms = getSignRoomSettings();
+
+  if (!signText || !room.controller || !room.controller.my) {
+    return false;
+  }
+
+  if (signRooms && signRooms[room.name] === false) {
+    return false;
+  }
+
+  if (
+    signRooms &&
+    Object.keys(signRooms).length > 0 &&
+    signRooms[room.name] !== true
+  ) {
+    return false;
+  }
+
+  if (
+    room.controller.sign &&
+    room.controller.sign.username === room.controller.owner.username &&
+    room.controller.sign.text === signText
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function manageSigningSupport(room, counts, desired) {
+  if (!getSignText()) {
+    return false;
+  }
+
+  if (counts.harvester < desired.harvester) {
+    return false;
+  }
+
+  const target = Object.values(Game.rooms).find((visibleRoom) => {
+    return shouldSignRoom(visibleRoom);
+  });
+
+  if (!target) {
+    return false;
+  }
+
+  if (getSignersForTarget(target.name).length > 0) {
+    return false;
+  }
+
+  spawnSigner(room, target.name);
+  return true;
+}
+
 function getMilitaryMemory() {
   if (!Memory.military) {
     Memory.military = {};
@@ -769,6 +883,14 @@ function hasDangerousExpansionStructures(intel) {
   );
 }
 
+function getBlockingHostileCount(intel) {
+  if (intel.military.blockingHostileCount !== undefined) {
+    return intel.military.blockingHostileCount;
+  }
+
+  return intel.military.hostileCount - (intel.military.sourceKeeperCount || 0);
+}
+
 function isClaimableExpansionIntel(roomName) {
   if (isExpansionBlocked(roomName) || !isNormalRoom(roomName)) {
     return false;
@@ -832,7 +954,7 @@ function isExpansionScoutCandidate(roomName) {
     return false;
   }
 
-  return intel.military.hostileCount === 0 && !intel.claimableNow;
+  return getBlockingHostileCount(intel) === 0 && !intel.claimableNow;
 }
 
 function getExpansionCandidateScore(sourceRoom, roomName) {
@@ -1090,6 +1212,10 @@ function manageSpawning(room) {
   }
 
   if (manageExpansionScouting(room, counts, desired)) {
+    return;
+  }
+
+  if (manageSigningSupport(room, counts, desired)) {
     return;
   }
 

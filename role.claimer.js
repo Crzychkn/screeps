@@ -1,3 +1,5 @@
+const signConfig = require("config.sign");
+
 function moveToTargetRoom(creep) {
   creep.moveTo(new RoomPosition(25, 25, creep.memory.targetRoom), {
     visualizePathStyle: {
@@ -33,6 +35,57 @@ function isActiveExpansionTarget(creep) {
   );
 }
 
+function getSignText() {
+  if (
+    (Memory.sign && Memory.sign.signNewRooms === false) ||
+    (!Memory.sign && signConfig.signNewRooms === false)
+  ) {
+    return null;
+  }
+
+  return (Memory.sign && Memory.sign.text) || signConfig.text;
+}
+
+function signControllerIfNeeded(creep, controller) {
+  const signText = getSignText();
+
+  if (!signText) {
+    return false;
+  }
+
+  if (
+    controller.sign &&
+    controller.sign.username === creep.owner.username &&
+    controller.sign.text === signText
+  ) {
+    return false;
+  }
+
+  const result = creep.signController(controller, signText);
+
+  if (result === ERR_NOT_IN_RANGE) {
+    creep.moveTo(controller, {
+      range: 1,
+      visualizePathStyle: {
+        stroke: "#ffffff",
+      },
+    });
+    return true;
+  }
+
+  return result === OK;
+}
+
+function isSourceKeeper(creep) {
+  return creep.owner && creep.owner.username === "Source Keeper";
+}
+
+function findBlockingHostiles(room) {
+  return room.find(FIND_HOSTILE_CREEPS, {
+    filter: (creep) => !isSourceKeeper(creep),
+  });
+}
+
 module.exports = {
   run: function (creep) {
     if (!creep.memory.targetRoom) {
@@ -40,13 +93,13 @@ module.exports = {
       return;
     }
 
-    if (!isActiveExpansionTarget(creep)) {
-      creep.say("stand down");
-      creep.suicide();
-      return;
-    }
-
     if (creep.room.name !== creep.memory.targetRoom) {
+      if (!isActiveExpansionTarget(creep)) {
+        creep.say("stand down");
+        creep.suicide();
+        return;
+      }
+
       moveToTargetRoom(creep);
       return;
     }
@@ -60,7 +113,18 @@ module.exports = {
     }
 
     if (controller.my) {
+      if (signControllerIfNeeded(creep, controller)) {
+        creep.say("sign");
+        return;
+      }
+
       creep.say("claimed");
+      return;
+    }
+
+    if (!isActiveExpansionTarget(creep)) {
+      creep.say("stand down");
+      creep.suicide();
       return;
     }
 
@@ -70,7 +134,7 @@ module.exports = {
       return;
     }
 
-    const hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
+    const hostiles = findBlockingHostiles(creep.room);
 
     if (hostiles.length > 0) {
       creep.say("hostile");
