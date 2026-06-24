@@ -8,20 +8,8 @@ function moveToHomeRoom(creep, homeRoom) {
   });
 }
 
-function normalizeHomeRoom(creep) {
-  if (
-    creep.room.controller &&
-    creep.room.controller.my &&
-    creep.memory.homeRoom !== creep.room.name
-  ) {
-    creep.memory.homeRoom = creep.room.name;
-  }
-}
-
 module.exports = {
   run: function (creep) {
-    normalizeHomeRoom(creep);
-
     const homeRoom = utils.getHomeRoom(creep);
 
     if (!creep.memory.homeRoom) {
@@ -43,6 +31,10 @@ module.exports = {
     if (creep.memory.building) {
       if (creep.room.name !== homeRoom.name) {
         moveToHomeRoom(creep, homeRoom);
+        return;
+      }
+
+      if (utils.moveOffRoomEdge(creep)) {
         return;
       }
 

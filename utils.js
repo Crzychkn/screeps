@@ -13,6 +13,24 @@ function moveToTarget(creep, target) {
   });
 }
 
+function moveOffRoomEdge(creep) {
+  const x = creep.pos.x;
+  const y = creep.pos.y;
+
+  if (x > 0 && x < 49 && y > 0 && y < 49) {
+    return false;
+  }
+
+  creep.moveTo(new RoomPosition(25, 25, creep.room.name), {
+    reusePath: 0,
+    visualizePathStyle: {
+      stroke: "#ffaa00",
+    },
+  });
+
+  return true;
+}
+
 function withdrawFromStorage(creep, room) {
   if (!room.storage || room.storage.store[RESOURCE_ENERGY] === 0) {
     return false;
@@ -185,6 +203,10 @@ function getEnergy(creep) {
     return;
   }
 
+  if (moveOffRoomEdge(creep)) {
+    return;
+  }
+
   if (pickupDroppedEnergy(creep, homeRoom)) {
     return;
   }
@@ -260,5 +282,6 @@ function getRepairQueue(room) {
 module.exports = {
   getEnergy,
   getHomeRoom,
+  moveOffRoomEdge,
   getRepairQueue,
 };

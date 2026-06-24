@@ -32,6 +32,10 @@ module.exports = {
       return;
     }
 
+    if (creep.room.name === homeRoom.name && utils.moveOffRoomEdge(creep)) {
+      return;
+    }
+
     const repairQueue = utils.getRepairQueue(homeRoom);
 
     // If the creep is in repair mode, find sites to repair

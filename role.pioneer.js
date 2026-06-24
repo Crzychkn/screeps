@@ -1,3 +1,5 @@
+const utils = require("utils");
+
 const CONTROLLER_DANGER_TICKS = 3000;
 const CONTROLLER_SAFE_TICKS = 5000;
 
@@ -183,6 +185,10 @@ module.exports = {
 
     if (!targetRoom || creep.room.name !== creep.memory.targetRoom) {
       moveToTargetRoom(creep);
+      return;
+    }
+
+    if (utils.moveOffRoomEdge(creep)) {
       return;
     }
 

@@ -50,6 +50,10 @@ module.exports = {
       return;
     }
 
+    if (utils.moveOffRoomEdge(creep)) {
+      return;
+    }
+
     if (creep.memory.upgrading) {
       upgradeController(creep, homeRoom);
       return;
