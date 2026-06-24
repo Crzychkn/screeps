@@ -357,7 +357,18 @@ module.exports = {
       return;
     }
 
-    if (creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+    if (creep.memory.delivering && creep.store[RESOURCE_ENERGY] === 0) {
+      creep.memory.delivering = false;
+    }
+
+    if (
+      !creep.memory.delivering &&
+      creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0
+    ) {
+      creep.memory.delivering = true;
+    }
+
+    if (!creep.memory.delivering) {
       harvestEnergy(creep);
       return;
     }
