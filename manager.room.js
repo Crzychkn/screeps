@@ -2,6 +2,7 @@ const roleTower = require("role.tower");
 const constructionManager = require("manager.construction");
 
 const EXPANSION_BLOCK_TTL = 50000;
+const MILITARY_INTEL_MAX_AGE = 1500;
 
 const ROLE_PRIORITY = [
   "harvester",
@@ -41,6 +42,12 @@ function getClaimersForTarget(targetRoomName) {
       creep.memory.role === "claimer" &&
       creep.memory.targetRoom === targetRoomName
     );
+  });
+}
+
+function getScoutsForTarget(targetRoomName) {
+  return _.filter(Game.creeps, (creep) => {
+    return creep.memory.role === "scout" && creep.memory.targetRoom === targetRoomName;
   });
 }
 
@@ -227,6 +234,12 @@ function getDesiredCounts(room) {
 }
 
 function getBodiesForRole(role, rcl) {
+  if (role === "scout") {
+    return [
+      [MOVE],
+    ];
+  }
+
   if (role === "claimer") {
     return [
       [CLAIM, MOVE],
@@ -438,6 +451,87 @@ function spawnClaimer(room, body, targetRoomName) {
   }
 
   return result;
+}
+
+function spawnScout(room, targetRoomName) {
+  const spawn = getAvailableSpawn(room);
+  const body = [MOVE];
+
+  if (!spawn) {
+    return ERR_BUSY;
+  }
+
+  if (bodyCost(body) > room.energyAvailable) {
+    return ERR_NOT_ENOUGH_ENERGY;
+  }
+
+  const name = "Scout" + Game.time;
+  const result = spawn.spawnCreep(body, name, {
+    memory: {
+      role: "scout",
+      homeRoom: room.name,
+      targetRoom: targetRoomName,
+    },
+  });
+
+  if (result === OK) {
+    console.log(`Spawning scout from ${room.name} to ${targetRoomName}: ${name}`);
+  } else {
+    console.log(`Failed to spawn scout from ${room.name} to ${targetRoomName}: ${result}`);
+  }
+
+  return result;
+}
+
+function getMilitaryMemory() {
+  if (!Memory.military) {
+    Memory.military = {};
+  }
+
+  return Memory.military;
+}
+
+function getRoomIntel(roomName) {
+  if (!Memory.rooms || !Memory.rooms[roomName]) {
+    return null;
+  }
+
+  return Memory.rooms[roomName].intel || null;
+}
+
+function needsMilitaryScout(targetRoomName) {
+  const intel = getRoomIntel(targetRoomName);
+
+  if (!intel) {
+    return true;
+  }
+
+  return Game.time - intel.lastScouted > MILITARY_INTEL_MAX_AGE;
+}
+
+function manageMilitaryScouting(room, counts, desired) {
+  const military = getMilitaryMemory();
+
+  if (!military.attackTarget) {
+    return false;
+  }
+
+  if (counts.harvester < desired.harvester) {
+    return false;
+  }
+
+  if (!needsMilitaryScout(military.attackTarget)) {
+    return false;
+  }
+
+  const scouts = getScoutsForTarget(military.attackTarget);
+
+  if (scouts.length > 0) {
+    return false;
+  }
+
+  spawnScout(room, military.attackTarget);
+  return true;
 }
 
 function getExpansionMemory() {
@@ -721,6 +815,10 @@ function manageSpawning(room) {
   }
 
   if (manageClaimingSupport(room, counts, desired)) {
+    return;
+  }
+
+  if (manageMilitaryScouting(room, counts, desired)) {
     return;
   }
 

@@ -10,6 +10,7 @@ const rolePioneer = require("role.pioneer");
 const roleClaimer = require("role.claimer");
 
 const roomManager = require("manager.room");
+const intelManager = require("manager.intel");
 
 const roles = {
   harvester: roleHarvester,
@@ -74,6 +75,12 @@ module.exports.loop = function () {
 
   console.log(`${ownedRooms.length} owned room(s).`);
   console.log(`GCL: ${Game.gcl.level}`);
+
+  try {
+    intelManager.run();
+  } catch (error) {
+    console.log("Intel manager error:", error);
+  }
 
   for (const room of ownedRooms) {
     try {
