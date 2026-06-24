@@ -1,20 +1,44 @@
-module.exports = {
-    run: function (creep) {
-        try {
-            // Find hostiles in room
-            let hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
-            let hostilesAmount = hostiles.length;
-
-            // Attack if in range
-            if (hostilesAmount > 0) {
-                if (creep.attack(hostiles[0]) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(hostiles[0], {
-                        visualizePathStyle: {stroke: "#ffffff"}
-                    });
-                }
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    }
+function moveToTargetRoom(creep) {
+  creep.moveTo(new RoomPosition(25, 25, creep.memory.targetRoom), {
+    visualizePathStyle: {
+      stroke: "#ff0000",
+    },
+  });
 }
+
+function getAttackTarget(creep) {
+  const hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
+
+  if (hostiles.length > 0) {
+    return creep.pos.findClosestByPath(hostiles) || hostiles[0];
+  }
+
+  return null;
+}
+
+module.exports = {
+  run: function (creep) {
+    try {
+      if (creep.memory.targetRoom && creep.room.name !== creep.memory.targetRoom) {
+        moveToTargetRoom(creep);
+        return;
+      }
+
+      const target = getAttackTarget(creep);
+
+      if (!target) {
+        return;
+      }
+
+      if (creep.attack(target) === ERR_NOT_IN_RANGE) {
+        creep.moveTo(target, {
+          visualizePathStyle: {
+            stroke: "#ff0000",
+          },
+        });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  },
+};

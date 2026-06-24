@@ -51,6 +51,15 @@ function getScoutsForTarget(targetRoomName) {
   });
 }
 
+function getDefendersForTarget(targetRoomName) {
+  return _.filter(Game.creeps, (creep) => {
+    return (
+      creep.memory.role === "defender" &&
+      creep.memory.targetRoom === targetRoomName
+    );
+  });
+}
+
 function adoptLocalCreeps(room) {
   for (const name in Game.creeps) {
     const creep = Game.creeps[name];
@@ -259,6 +268,27 @@ function getBodiesForRole(role, rcl) {
     ];
   }
 
+  if (role === "defender") {
+    if (rcl >= 6) {
+      return [
+        [MOVE, MOVE, MOVE, MOVE, ATTACK, ATTACK, ATTACK, ATTACK],
+        [MOVE, MOVE, MOVE, ATTACK, ATTACK, ATTACK],
+        [MOVE, ATTACK],
+      ];
+    }
+
+    if (rcl >= 3) {
+      return [
+        [MOVE, MOVE, MOVE, ATTACK, ATTACK, ATTACK],
+        [MOVE, ATTACK],
+      ];
+    }
+
+    return [
+      [MOVE, ATTACK],
+    ];
+  }
+
   if (role === "harvester") {
     if (rcl >= 7) {
       return [
@@ -390,6 +420,35 @@ function spawnRole(room, role, body) {
     console.log(`Spawning ${role} in ${room.name}: ${name}`);
   } else {
     console.log(`Failed to spawn ${role} in ${room.name}: ${result}`);
+  }
+
+  return result;
+}
+
+function spawnTargetedDefender(room, body, targetRoomName) {
+  const spawn = getAvailableSpawn(room);
+
+  if (!spawn) {
+    return ERR_BUSY;
+  }
+
+  if (!body || bodyCost(body) > room.energyAvailable) {
+    return ERR_NOT_ENOUGH_ENERGY;
+  }
+
+  const name = "Defender" + Game.time;
+  const result = spawn.spawnCreep(body, name, {
+    memory: {
+      role: "defender",
+      homeRoom: room.name,
+      targetRoom: targetRoomName,
+    },
+  });
+
+  if (result === OK) {
+    console.log(`Spawning defender from ${room.name} to ${targetRoomName}: ${name}`);
+  } else {
+    console.log(`Failed to spawn defender from ${room.name} to ${targetRoomName}: ${result}`);
   }
 
   return result;
@@ -531,6 +590,52 @@ function manageMilitaryScouting(room, counts, desired) {
   }
 
   spawnScout(room, military.attackTarget);
+  return true;
+}
+
+function manageMilitaryAttackers(room, counts, desired) {
+  const military = getMilitaryMemory();
+  const operation = military.operation;
+
+  if (!operation || operation.status !== "ready") {
+    return false;
+  }
+
+  if (operation.type !== "invader_clear") {
+    return false;
+  }
+
+  if (counts.harvester < desired.harvester) {
+    return false;
+  }
+
+  if (room.controller.level < 3) {
+    return false;
+  }
+
+  if (getLogisticsStats(room).lowEnergy) {
+    return false;
+  }
+
+  const neededAttackers = operation.requiredRoles.attacker || 0;
+
+  if (neededAttackers <= 0) {
+    return false;
+  }
+
+  const defenders = getDefendersForTarget(operation.targetRoom);
+
+  if (defenders.length >= neededAttackers) {
+    return false;
+  }
+
+  const body = chooseBody(room, "defender");
+
+  if (!body) {
+    return false;
+  }
+
+  spawnTargetedDefender(room, body, operation.targetRoom);
   return true;
 }
 
@@ -761,7 +866,9 @@ function manageDefense(room) {
     Game.notify(`${hostiles.length} hostile(s) found in ${room.name}`, 0);
   }
 
-  const defenders = getRoomCreeps(room, "defender");
+  const defenders = getRoomCreeps(room, "defender").filter((creep) => {
+    return !creep.memory.targetRoom;
+  });
 
   if (defenders.length >= hostiles.length) {
     return;
@@ -819,6 +926,10 @@ function manageSpawning(room) {
   }
 
   if (manageMilitaryScouting(room, counts, desired)) {
+    return;
+  }
+
+  if (manageMilitaryAttackers(room, counts, desired)) {
     return;
   }
 
