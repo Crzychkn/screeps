@@ -11,6 +11,7 @@ const roleClaimer = require("role.claimer");
 
 const roomManager = require("manager.room");
 const intelManager = require("manager.intel");
+const militaryManager = require("manager.military");
 
 const roles = {
   harvester: roleHarvester,
@@ -80,6 +81,12 @@ module.exports.loop = function () {
     intelManager.run();
   } catch (error) {
     console.log("Intel manager error:", error);
+  }
+
+  try {
+    militaryManager.run();
+  } catch (error) {
+    console.log("Military manager error:", error);
   }
 
   for (const room of ownedRooms) {
