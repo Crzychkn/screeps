@@ -1498,6 +1498,14 @@ function manageSpawning(room) {
     repairer: getRoomCreeps(room, "repairer").length,
     upgrader: getRoomCreeps(room, "upgrader").length,
     tractor: getRoomCreeps(room, "tractor").length,
+    claimer: getRoomCreeps(room, "claimer").length,
+    scout: getRoomCreeps(room, "scout").length,
+    supplier: getRoomCreeps(room, "supplier").length,
+    pioneer: getRoomCreeps(room, "pioneer").length,
+    bootstrapEscort: getRoomCreeps(room, "bootstrapEscort").length,
+    defender: getRoomCreeps(room, "defender").length,
+    stim: getRoomCreeps(room, "stim").length,
+    signer: getRoomCreeps(room, "signer").length,
   };
 
   console.log(
@@ -1505,7 +1513,15 @@ function manageSpawning(room) {
     `Builders: ${counts.builder}/${desired.builder}, ` +
     `Repairers: ${counts.repairer}/${desired.repairer}, ` +
     `Upgraders: ${counts.upgrader}/${desired.upgrader}, ` +
-    `Tractors: ${counts.tractor}/${desired.tractor}`
+    `Tractors: ${counts.tractor}/${desired.tractor}, ` +
+    `Claimers: ${counts.claimer}, ` +
+    `Scouts: ${counts.scout}, ` +
+    `Suppliers: ${counts.supplier}, ` +
+    `Pioneers: ${counts.pioneer}, ` +
+    `Escorts: ${counts.bootstrapEscort}, ` +
+    `Defenders: ${counts.defender}, ` +
+    `Stims: ${counts.stim}, ` +
+    `Signers: ${counts.signer}`
   );
 
   // Emergency recovery: if the room has no harvesters, prioritize the cheapest viable worker.
