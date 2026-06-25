@@ -23,6 +23,7 @@ function moveOffRoomEdge(creep) {
 
   creep.moveTo(new RoomPosition(25, 25, creep.room.name), {
     reusePath: 0,
+    maxRooms: 1,
     visualizePathStyle: {
       stroke: "#ffaa00",
     },

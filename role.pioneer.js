@@ -5,6 +5,8 @@ const CONTROLLER_SAFE_TICKS = 5000;
 
 function moveToTarget(creep, target, stroke) {
   creep.moveTo(target, {
+    maxRooms: 1,
+    reusePath: 5,
     visualizePathStyle: {
       stroke: stroke,
     },
@@ -52,6 +54,7 @@ function collectEnergy(creep, room) {
         !isNearHostile(resource.pos, 5)
       );
     },
+    maxRooms: 1,
   });
 
   if (droppedEnergy) {
@@ -72,6 +75,7 @@ function collectEnergy(creep, room) {
         !isNearHostile(structure.pos, 5)
       );
     },
+    maxRooms: 1,
   });
 
   if (container && withdrawFromStructure(creep, container)) {
@@ -87,9 +91,11 @@ function collectEnergy(creep, room) {
   const source =
     creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE, {
       filter: (target) => !isNearHostile(target.pos, 5),
+      maxRooms: 1,
     }) ||
     creep.pos.findClosestByPath(FIND_SOURCES, {
       filter: (target) => !isNearHostile(target.pos, 5),
+      maxRooms: 1,
     });
 
   if (!source) {
@@ -128,6 +134,8 @@ function upgradeController(creep, room) {
   if (result === ERR_NOT_IN_RANGE) {
     creep.moveTo(room.controller, {
       range: 3,
+      maxRooms: 1,
+      reusePath: 5,
       visualizePathStyle: {
         stroke: "#ffffff",
       },
