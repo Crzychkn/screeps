@@ -183,9 +183,19 @@ function isMoveOnly(creep) {
   );
 }
 
+function rememberPioneerStatus(creep, status) {
+  creep.memory.lastStatus = status;
+  creep.memory.lastStatusTick = Game.time;
+}
+
 module.exports = {
   run: function (creep) {
     if (isMoveOnly(creep)) {
+      rememberPioneerStatus(creep, "retiring_move_only");
+      console.log(
+        `${creep.name} retiring as move-only pioneer in ${creep.room.name} ` +
+        `target=${creep.memory.targetRoom || "none"} ttl=${creep.ticksToLive}`
+      );
       creep.say("retire");
       creep.suicide();
       return;
@@ -210,19 +220,23 @@ module.exports = {
     const targetRoom = getTargetRoom(creep);
 
     if (!targetRoom || creep.room.name !== creep.memory.targetRoom) {
+      rememberPioneerStatus(creep, "traveling");
       moveToTargetRoom(creep);
       return;
     }
 
     if (utils.moveOffRoomEdge(creep)) {
+      rememberPioneerStatus(creep, "moving_off_edge");
       return;
     }
 
     if (creep.memory.working) {
+      rememberPioneerStatus(creep, "working");
       work(creep, targetRoom);
       return;
     }
 
+    rememberPioneerStatus(creep, "collecting_energy");
     collectEnergy(creep, targetRoom);
   },
 };

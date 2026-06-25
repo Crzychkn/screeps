@@ -34,9 +34,47 @@ const roles = {
 function cleanDeadCreepMemory() {
   for (const name in Memory.creeps) {
     if (!Game.creeps[name]) {
+      const memory = Memory.creeps[name];
+      const details = [
+        `role=${memory.role || "unknown"}`,
+        `home=${memory.homeRoom || "unknown"}`,
+        `target=${memory.targetRoom || "none"}`,
+        `lastRoom=${memory.lastRoom || "unknown"}`,
+        `lastStatus=${memory.lastStatus || "unknown"}`,
+        `ttl=${memory.lastTicksToLive || "unknown"}`,
+      ];
+
+      if (memory.lastActiveParts) {
+        details.push(`parts=${JSON.stringify(memory.lastActiveParts)}`);
+      }
+
       delete Memory.creeps[name];
-      console.log("Clearing non-existing creep memory:", name);
+      console.log(`Clearing non-existing creep memory: ${name} (${details.join(", ")})`);
     }
+  }
+}
+
+function countActiveParts(creep) {
+  const parts = {};
+
+  for (const bodyPart of creep.body) {
+    if (bodyPart.hits <= 0) {
+      continue;
+    }
+
+    parts[bodyPart.type] = (parts[bodyPart.type] || 0) + 1;
+  }
+
+  return parts;
+}
+
+function rememberCreepState() {
+  for (const name in Game.creeps) {
+    const creep = Game.creeps[name];
+
+    creep.memory.lastRoom = creep.room.name;
+    creep.memory.lastTicksToLive = creep.ticksToLive;
+    creep.memory.lastActiveParts = countActiveParts(creep);
   }
 }
 
@@ -75,6 +113,7 @@ module.exports.loop = function () {
   console.log("*********************");
 
   cleanDeadCreepMemory();
+  rememberCreepState();
   logCpuStats();
 
   const ownedRooms = getOwnedRooms();
