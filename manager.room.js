@@ -268,8 +268,12 @@ function getDesiredCounts(room) {
     desired.harvester = Math.max(logistics.sourceCount, 2);
   }
 
-  if (rcl >= 7 && logistics.storedEnergy > 900000) {
+  if (rcl === 7 && logistics.storedEnergy > 900000) {
     desired.upgrader = 7;
+  }
+
+  if (rcl >= 8) {
+    desired.upgrader = logistics.comfortableEnergy ? 2 : 1;
   }
 
   if (logistics.lowEnergy) {
