@@ -2,6 +2,7 @@ const INTEL_MAX_AGE = 1500;
 const MIN_STABLE_ROOMS = 2;
 const MIN_WAR_RCL = 6;
 const MIN_STORAGE_ENERGY = 100000;
+const LOG_INTERVAL = 100;
 
 function getWarMemory() {
   if (!Memory.war) {
@@ -77,6 +78,47 @@ function makeOperation(targetRoom, mode, status, sourceRooms, requiredRoles, rea
     targetType: targetType,
     updated: Game.time,
   };
+}
+
+function getOperationSignature(operation) {
+  if (!operation) {
+    return "none";
+  }
+
+  return [
+    operation.targetRoom,
+    operation.mode,
+    operation.status,
+    operation.targetType,
+    operation.reason,
+    operation.sourceRooms.join(","),
+    JSON.stringify(operation.requiredRoles),
+  ].join("|");
+}
+
+function logOperation(war) {
+  const operation = war.operation;
+
+  if (!operation) {
+    return;
+  }
+
+  const signature = getOperationSignature(operation);
+  const changed = war.lastLogSignature !== signature;
+  const staleLog =
+    !war.lastLogTime || Game.time - war.lastLogTime >= LOG_INTERVAL;
+
+  if (!changed && !staleLog) {
+    return;
+  }
+
+  console.log(
+    `War plan ${operation.targetRoom || "none"}: ${operation.status} ` +
+    `(${operation.targetType}, ${operation.mode}) - ${operation.reason}`
+  );
+
+  war.lastLogSignature = signature;
+  war.lastLogTime = Game.time;
 }
 
 function emptyRoles() {
@@ -195,6 +237,7 @@ module.exports = {
         "No Memory.war.targetRoom configured.",
         "none"
       );
+      logOperation(war);
       return;
     }
 
@@ -213,6 +256,7 @@ module.exports = {
         readinessBlock,
         "unknown"
       );
+      logOperation(war);
       return;
     }
 
@@ -228,6 +272,7 @@ module.exports = {
         "No intel recorded for target room.",
         "unknown"
       );
+      logOperation(war);
       return;
     }
 
@@ -241,6 +286,7 @@ module.exports = {
         "Target intel is stale.",
         "unknown"
       );
+      logOperation(war);
       return;
     }
 
@@ -260,5 +306,6 @@ module.exports = {
       target.reason,
       target.targetType
     );
+    logOperation(war);
   },
 };
