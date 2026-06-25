@@ -48,6 +48,7 @@ function moveToRoom(creep, roomName, stroke) {
 
 function withdrawEnergy(creep) {
   const homeRoom = getHomeRoom(creep);
+  const targetRoom = getTargetRoom(creep);
 
   if (!homeRoom || !homeRoom.storage) {
     creep.say("no source");
@@ -62,6 +63,12 @@ function withdrawEnergy(creep) {
 
   if (utils.moveOffRoomEdge(creep)) {
     setStatus(creep, "home_edge");
+    return;
+  }
+
+  if (targetRoom && !findDeliveryTarget(targetRoom)) {
+    creep.say("wait");
+    setStatus(creep, "target_full");
     return;
   }
 
@@ -146,8 +153,9 @@ function deliverEnergy(creep) {
   const target = findDeliveryTarget(targetRoom);
 
   if (!target) {
-    creep.say("no target");
-    setStatus(creep, "no_target");
+    creep.say("return");
+    creep.memory.delivering = false;
+    setStatus(creep, "target_full_returning");
     return;
   }
 
