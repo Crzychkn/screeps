@@ -46,6 +46,33 @@ function moveToRoom(creep, roomName, stroke) {
   setStatus(creep, "traveling");
 }
 
+function returnCarriedEnergy(creep, storage) {
+  if (creep.store[RESOURCE_ENERGY] === 0) {
+    return false;
+  }
+
+  const result = creep.transfer(storage, RESOURCE_ENERGY);
+
+  if (result === OK) {
+    setStatus(creep, "returned_energy");
+    return true;
+  }
+
+  if (result === ERR_NOT_IN_RANGE) {
+    setStatus(creep, "returning_energy");
+    creep.moveTo(storage, {
+      maxRooms: 1,
+      reusePath: 5,
+      visualizePathStyle: {
+        stroke: "#ffaa00",
+      },
+    });
+    return true;
+  }
+
+  return false;
+}
+
 function withdrawEnergy(creep) {
   const homeRoom = getHomeRoom(creep);
   const targetRoom = getTargetRoom(creep);
@@ -67,6 +94,10 @@ function withdrawEnergy(creep) {
   }
 
   if (targetRoom && !findDeliveryTarget(targetRoom)) {
+    if (returnCarriedEnergy(creep, homeRoom.storage)) {
+      return;
+    }
+
     creep.say("wait");
     setStatus(creep, "target_full");
     return;
