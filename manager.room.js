@@ -9,6 +9,8 @@ const MAX_EXPANSION_SCOUTS = 2;
 const MAX_BOOTSTRAP_ROOMS = 2;
 const MAX_PIONEERS_PER_BOOTSTRAP_ROOM = 4;
 const DESIRED_FUNCTIONAL_PIONEERS_PER_BOOTSTRAP_ROOM = 2;
+const SUPPORT_STORAGE_RESERVE = 200000;
+const SUPPORT_TARGET_MAX_RCL = 4;
 const MILITARY_INTEL_MAX_AGE = 1500;
 
 const ROLE_PRIORITY = [
@@ -107,6 +109,15 @@ function getSignersForTarget(targetRoomName) {
   return _.filter(Game.creeps, (creep) => {
     return (
       creep.memory.role === "signer" &&
+      creep.memory.targetRoom === targetRoomName
+    );
+  });
+}
+
+function getSuppliersForTarget(targetRoomName) {
+  return _.filter(Game.creeps, (creep) => {
+    return (
+      creep.memory.role === "supplier" &&
       creep.memory.targetRoom === targetRoomName
     );
   });
@@ -462,6 +473,20 @@ function getBodiesForRole(role, rcl) {
     ];
   }
 
+  if (role === "supplier") {
+    if (rcl >= 7) {
+      return [
+        [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+        [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
+        [CARRY, CARRY, MOVE, MOVE],
+      ];
+    }
+
+    return [
+      [CARRY, CARRY, MOVE, MOVE],
+    ];
+  }
+
   return [
     [WORK, CARRY, MOVE],
   ];
@@ -680,6 +705,35 @@ function spawnSigner(room, targetRoomName) {
     console.log(`Spawning signer from ${room.name} to ${targetRoomName}: ${name}`);
   } else {
     console.log(`Failed to spawn signer from ${room.name} to ${targetRoomName}: ${result}`);
+  }
+
+  return result;
+}
+
+function spawnSupplier(room, body, targetRoomName) {
+  const spawn = getAvailableSpawn(room);
+
+  if (!spawn) {
+    return ERR_BUSY;
+  }
+
+  if (!body || bodyCost(body) > room.energyAvailable) {
+    return ERR_NOT_ENOUGH_ENERGY;
+  }
+
+  const name = "Supplier" + Game.time;
+  const result = spawn.spawnCreep(body, name, {
+    memory: {
+      role: "supplier",
+      homeRoom: room.name,
+      targetRoom: targetRoomName,
+    },
+  });
+
+  if (result === OK) {
+    console.log(`Spawning supplier from ${room.name} to ${targetRoomName}: ${name}`);
+  } else {
+    console.log(`Failed to spawn supplier from ${room.name} to ${targetRoomName}: ${result}`);
   }
 
   return result;
@@ -1275,6 +1329,92 @@ function manageBootstrapEscorts(room, counts, desired) {
   return false;
 }
 
+function isSupplierSourceRoom(room, counts, desired) {
+  return (
+    room.controller.level >= 8 &&
+    room.storage &&
+    room.storage.store[RESOURCE_ENERGY] > SUPPORT_STORAGE_RESERVE &&
+    counts.harvester >= desired.harvester &&
+    !getLogisticsStats(room).lowEnergy
+  );
+}
+
+function getSupportTargetRooms(sourceRoom) {
+  return Object.values(Game.rooms).filter((room) => {
+    if (room.name === sourceRoom.name) {
+      return false;
+    }
+
+    if (!room.controller || !room.controller.my) {
+      return false;
+    }
+
+    if (room.controller.level > SUPPORT_TARGET_MAX_RCL) {
+      return false;
+    }
+
+    const spawns = room.find(FIND_MY_SPAWNS);
+
+    if (spawns.length === 0) {
+      return false;
+    }
+
+    if (room.energyAvailable < room.energyCapacityAvailable) {
+      return true;
+    }
+
+    if (room.storage && room.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+      return true;
+    }
+
+    return room.find(FIND_STRUCTURES, {
+      filter: (structure) => {
+        return (
+          structure.structureType === STRUCTURE_CONTAINER &&
+          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+        );
+      },
+    }).length > 0;
+  });
+}
+
+function getSupportTargetScore(room) {
+  return room.controller.level * 100 + room.energyAvailable;
+}
+
+function manageEnergySupport(room, counts, desired) {
+  if (!isSupplierSourceRoom(room, counts, desired)) {
+    return false;
+  }
+
+  const targets = getSupportTargetRooms(room);
+
+  if (targets.length === 0) {
+    return false;
+  }
+
+  targets.sort((a, b) => {
+    return getSupportTargetScore(a) - getSupportTargetScore(b);
+  });
+
+  for (const target of targets) {
+    if (getSuppliersForTarget(target.name).length > 0) {
+      continue;
+    }
+
+    const body = chooseBody(room, "supplier");
+
+    if (!body) {
+      continue;
+    }
+
+    spawnSupplier(room, body, target.name);
+    return true;
+  }
+
+  return false;
+}
+
 function manageExpansionSupport(room, counts, desired) {
   if (counts.harvester < desired.harvester) {
     return false;
@@ -1380,6 +1520,10 @@ function manageSpawning(room) {
   }
 
   if (manageBootstrapEscorts(room, counts, desired)) {
+    return;
+  }
+
+  if (manageEnergySupport(room, counts, desired)) {
     return;
   }
 

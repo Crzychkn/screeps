@@ -10,6 +10,7 @@ const rolePioneer = require("role.pioneer");
 const roleClaimer = require("role.claimer");
 const roleSigner = require("role.signer");
 const roleBootstrapEscort = require("role.bootstrapEscort");
+const roleSupplier = require("role.supplier");
 
 const roomManager = require("manager.room");
 const intelManager = require("manager.intel");
@@ -29,6 +30,7 @@ const roles = {
   claimer: roleClaimer,
   signer: roleSigner,
   bootstrapEscort: roleBootstrapEscort,
+  supplier: roleSupplier,
 };
 
 function cleanDeadCreepMemory() {
