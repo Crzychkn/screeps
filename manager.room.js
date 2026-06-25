@@ -7,6 +7,8 @@ const EXPANSION_INTEL_MAX_AGE = 10000;
 const EXPANSION_SCOUT_RETRY_TICKS = 3000;
 const MAX_EXPANSION_SCOUTS = 2;
 const MAX_BOOTSTRAP_ROOMS = 2;
+const MAX_PIONEERS_PER_BOOTSTRAP_ROOM = 4;
+const DESIRED_FUNCTIONAL_PIONEERS_PER_BOOTSTRAP_ROOM = 2;
 const MILITARY_INTEL_MAX_AGE = 1500;
 
 const ROLE_PRIORITY = [
@@ -1284,9 +1286,15 @@ function manageExpansionSupport(room, counts, desired) {
       continue;
     }
 
+    const totalPioneers = getPioneersForTarget(target.name);
+
+    if (totalPioneers.length >= MAX_PIONEERS_PER_BOOTSTRAP_ROOM) {
+      continue;
+    }
+
     const pioneers = getFunctionalPioneersForTarget(target.name);
 
-    if (pioneers.length >= 2) {
+    if (pioneers.length >= DESIRED_FUNCTIONAL_PIONEERS_PER_BOOTSTRAP_ROOM) {
       continue;
     }
 

@@ -71,8 +71,25 @@ function getSafeRoomRouteOptions(destinationRoomName) {
 }
 
 function moveToRoom(creep, roomName, stroke) {
-  creep.moveTo(new RoomPosition(25, 25, roomName), {
-    reusePath: 10,
+  const routeOptions = getSafeRoomRouteOptions(roomName);
+  let destination = new RoomPosition(25, 25, roomName);
+
+  if (creep.room.name !== roomName) {
+    const route = Game.map.findRoute(creep.room.name, roomName, routeOptions);
+
+    if (route === ERR_NO_PATH) {
+      creep.say("no route");
+      return ERR_NO_PATH;
+    }
+
+    if (route.length > 0) {
+      destination = new RoomPosition(25, 25, route[0].room);
+    }
+  }
+
+  return creep.moveTo(destination, {
+    reusePath: 0,
+    maxRooms: 2,
     routeCallback: getSafeRoomRouteOptions(roomName).routeCallback,
     visualizePathStyle: {
       stroke: stroke || "#ffffff",
