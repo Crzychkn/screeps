@@ -14,6 +14,7 @@ const roleBootstrapEscort = require("role.bootstrapEscort");
 const roomManager = require("manager.room");
 const intelManager = require("manager.intel");
 const militaryManager = require("manager.military");
+const warManager = require("manager.war");
 
 const roles = {
   harvester: roleHarvester,
@@ -91,6 +92,12 @@ module.exports.loop = function () {
     militaryManager.run();
   } catch (error) {
     console.log("Military manager error:", error);
+  }
+
+  try {
+    warManager.run();
+  } catch (error) {
+    console.log("War manager error:", error);
   }
 
   for (const room of ownedRooms) {
