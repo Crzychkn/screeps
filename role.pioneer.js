@@ -175,8 +175,22 @@ function work(creep, room) {
   upgradeController(creep, room);
 }
 
+function isMoveOnly(creep) {
+  return (
+    creep.getActiveBodyparts(MOVE) > 0 &&
+    creep.getActiveBodyparts(WORK) === 0 &&
+    creep.getActiveBodyparts(CARRY) === 0
+  );
+}
+
 module.exports = {
   run: function (creep) {
+    if (isMoveOnly(creep)) {
+      creep.say("retire");
+      creep.suicide();
+      return;
+    }
+
     if (!creep.memory.targetRoom) {
       creep.say("no target");
       return;
