@@ -1,11 +1,7 @@
 const utils = require("utils");
 
 function moveToHomeRoom(creep, homeRoom) {
-  creep.moveTo(new RoomPosition(25, 25, homeRoom.name), {
-    visualizePathStyle: {
-      stroke: "#ffffff",
-    },
-  });
+  utils.moveToRoom(creep, homeRoom.name, "#ffffff");
 }
 
 module.exports = {

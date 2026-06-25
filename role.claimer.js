@@ -1,11 +1,8 @@
 const signConfig = require("config.sign");
+const utils = require("utils");
 
 function moveToTargetRoom(creep) {
-  creep.moveTo(new RoomPosition(25, 25, creep.memory.targetRoom), {
-    visualizePathStyle: {
-      stroke: "#ffffff",
-    },
-  });
+  utils.moveToRoom(creep, creep.memory.targetRoom, "#ffffff");
 }
 
 function blockExpansionTarget(creep, reason) {

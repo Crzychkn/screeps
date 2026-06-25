@@ -1,11 +1,7 @@
 const utils = require("utils");
 
 function moveToTargetRoom(creep) {
-  creep.moveTo(new RoomPosition(25, 25, creep.memory.targetRoom), {
-    visualizePathStyle: {
-      stroke: "#ff0000",
-    },
-  });
+  utils.moveToRoom(creep, creep.memory.targetRoom, "#ff0000");
 }
 
 function getClosestHostile(creep) {

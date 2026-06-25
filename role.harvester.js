@@ -1,4 +1,5 @@
 const TOWER_REFILL_THRESHOLD = 700;
+const utils = require("utils");
 
 function getHomeRoom(creep) {
   const homeRoomName = creep.memory.homeRoom || creep.room.name;
@@ -353,7 +354,7 @@ module.exports = {
     }
 
     if (creep.room.name !== homeRoom.name) {
-      moveToTarget(creep, new RoomPosition(25, 25, homeRoom.name), "#ffffff");
+      utils.moveToRoom(creep, homeRoom.name, "#ffffff");
       return;
     }
 

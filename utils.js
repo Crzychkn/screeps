@@ -31,6 +31,55 @@ function moveOffRoomEdge(creep) {
   return true;
 }
 
+function getRoomIntel(roomName) {
+  if (!Memory.rooms || !Memory.rooms[roomName]) {
+    return null;
+  }
+
+  return Memory.rooms[roomName].intel || null;
+}
+
+function isDangerousTransitRoom(roomName, destinationRoomName) {
+  if (roomName === destinationRoomName) {
+    return false;
+  }
+
+  const intel = getRoomIntel(roomName);
+
+  if (!intel || !intel.military) {
+    return false;
+  }
+
+  return (
+    intel.military.sourceKeeperCount > 0 ||
+    intel.military.invaderCount > 0 ||
+    (intel.military.blockingHostileCount || 0) > 0 ||
+    intel.military.towerCount > 0
+  );
+}
+
+function getSafeRoomRouteOptions(destinationRoomName) {
+  return {
+    routeCallback: function (roomName) {
+      if (isDangerousTransitRoom(roomName, destinationRoomName)) {
+        return Infinity;
+      }
+
+      return 1;
+    },
+  };
+}
+
+function moveToRoom(creep, roomName, stroke) {
+  creep.moveTo(new RoomPosition(25, 25, roomName), {
+    reusePath: 10,
+    routeCallback: getSafeRoomRouteOptions(roomName).routeCallback,
+    visualizePathStyle: {
+      stroke: stroke || "#ffffff",
+    },
+  });
+}
+
 function withdrawFromStorage(creep, room) {
   if (!room.storage || room.storage.store[RESOURCE_ENERGY] === 0) {
     return false;
@@ -195,11 +244,7 @@ function getEnergy(creep) {
   }
 
   if (creep.room.name !== homeRoom.name) {
-    creep.moveTo(new RoomPosition(25, 25, homeRoom.name), {
-      visualizePathStyle: {
-        stroke: "#ffffff",
-      },
-    });
+    moveToRoom(creep, homeRoom.name, "#ffffff");
     return;
   }
 
@@ -282,6 +327,7 @@ function getRepairQueue(room) {
 module.exports = {
   getEnergy,
   getHomeRoom,
+  moveToRoom,
   moveOffRoomEdge,
   getRepairQueue,
 };

@@ -11,11 +11,7 @@ function setWorkingState(creep) {
 }
 
 function moveToHomeRoom(creep, homeRoom) {
-  creep.moveTo(new RoomPosition(25, 25, homeRoom.name), {
-    visualizePathStyle: {
-      stroke: "#ffffff",
-    },
-  });
+  utils.moveToRoom(creep, homeRoom.name, "#ffffff");
 }
 
 function upgradeController(creep, room) {
