@@ -42,9 +42,20 @@ function withdrawFromStructure(creep, structure) {
   return false;
 }
 
+function isNearHostile(position, range) {
+  const hostiles = position.findInRange(FIND_HOSTILE_CREEPS, range);
+
+  return hostiles.length > 0;
+}
+
 function collectEnergy(creep, room) {
   const droppedEnergy = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
-    filter: (resource) => resource.resourceType === RESOURCE_ENERGY,
+    filter: (resource) => {
+      return (
+        resource.resourceType === RESOURCE_ENERGY &&
+        !isNearHostile(resource.pos, 5)
+      );
+    },
   });
 
   if (droppedEnergy) {
@@ -61,7 +72,8 @@ function collectEnergy(creep, room) {
     filter: (structure) => {
       return (
         structure.structureType === STRUCTURE_CONTAINER &&
-        structure.store[RESOURCE_ENERGY] > 0
+        structure.store[RESOURCE_ENERGY] > 0 &&
+        !isNearHostile(structure.pos, 5)
       );
     },
   });
@@ -77,11 +89,15 @@ function collectEnergy(creep, room) {
   }
 
   const source =
-    creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE) ||
-    creep.pos.findClosestByPath(FIND_SOURCES);
+    creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE, {
+      filter: (target) => !isNearHostile(target.pos, 5),
+    }) ||
+    creep.pos.findClosestByPath(FIND_SOURCES, {
+      filter: (target) => !isNearHostile(target.pos, 5),
+    });
 
   if (!source) {
-    creep.say("no energy");
+    creep.say("unsafe energy");
     return;
   }
 

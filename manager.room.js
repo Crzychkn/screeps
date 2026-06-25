@@ -41,6 +41,18 @@ function getPioneersForTarget(targetRoomName) {
   });
 }
 
+function isFunctionalPioneer(creep) {
+  return (
+    creep.getActiveBodyparts(WORK) > 0 &&
+    creep.getActiveBodyparts(CARRY) > 0 &&
+    creep.getActiveBodyparts(MOVE) > 0
+  );
+}
+
+function getFunctionalPioneersForTarget(targetRoomName) {
+  return getPioneersForTarget(targetRoomName).filter(isFunctionalPioneer);
+}
+
 function getClaimersForTarget(targetRoomName) {
   return _.filter(Game.creeps, (creep) => {
     return (
@@ -63,6 +75,30 @@ function getDefendersForTarget(targetRoomName) {
       creep.memory.targetRoom === targetRoomName
     );
   });
+}
+
+function getBootstrapEscortsForTarget(targetRoomName) {
+  return _.filter(Game.creeps, (creep) => {
+    return (
+      creep.memory.role === "bootstrapEscort" &&
+      creep.memory.targetRoom === targetRoomName
+    );
+  });
+}
+
+function isFunctionalBootstrapEscort(creep) {
+  return (
+    creep.getActiveBodyparts(MOVE) > 0 &&
+    (
+      creep.getActiveBodyparts(RANGED_ATTACK) > 0 ||
+      creep.getActiveBodyparts(ATTACK) > 0 ||
+      creep.getActiveBodyparts(HEAL) > 0
+    )
+  );
+}
+
+function getFunctionalBootstrapEscortsForTarget(targetRoomName) {
+  return getBootstrapEscortsForTarget(targetRoomName).filter(isFunctionalBootstrapEscort);
 }
 
 function getSignersForTarget(targetRoomName) {
@@ -309,6 +345,27 @@ function getBodiesForRole(role, rcl) {
     ];
   }
 
+  if (role === "bootstrapEscort") {
+    if (rcl >= 6) {
+      return [
+        [TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, HEAL],
+        [MOVE, MOVE, RANGED_ATTACK, HEAL],
+        [MOVE, RANGED_ATTACK],
+      ];
+    }
+
+    if (rcl >= 4) {
+      return [
+        [MOVE, MOVE, RANGED_ATTACK, HEAL],
+        [MOVE, RANGED_ATTACK],
+      ];
+    }
+
+    return [
+      [MOVE, RANGED_ATTACK],
+    ];
+  }
+
   if (role === "harvester") {
     if (rcl >= 7) {
       return [
@@ -469,6 +526,35 @@ function spawnTargetedDefender(room, body, targetRoomName) {
     console.log(`Spawning defender from ${room.name} to ${targetRoomName}: ${name}`);
   } else {
     console.log(`Failed to spawn defender from ${room.name} to ${targetRoomName}: ${result}`);
+  }
+
+  return result;
+}
+
+function spawnBootstrapEscort(room, body, targetRoomName) {
+  const spawn = getAvailableSpawn(room);
+
+  if (!spawn) {
+    return ERR_BUSY;
+  }
+
+  if (!body || bodyCost(body) > room.energyAvailable) {
+    return ERR_NOT_ENOUGH_ENERGY;
+  }
+
+  const name = "BootstrapEscort" + Game.time;
+  const result = spawn.spawnCreep(body, name, {
+    memory: {
+      role: "bootstrapEscort",
+      homeRoom: room.name,
+      targetRoom: targetRoomName,
+    },
+  });
+
+  if (result === OK) {
+    console.log(`Spawning bootstrapEscort from ${room.name} to ${targetRoomName}: ${name}`);
+  } else {
+    console.log(`Failed to spawn bootstrapEscort from ${room.name} to ${targetRoomName}: ${result}`);
   }
 
   return result;
@@ -1112,6 +1198,77 @@ function getBootstrapTargets(sourceRoom) {
   });
 }
 
+function getBootstrapIntel(roomName) {
+  return getExpansionIntel(roomName);
+}
+
+function getBootstrapThreat(roomName) {
+  const intel = getBootstrapIntel(roomName);
+
+  if (!intel || !intel.military) {
+    return {
+      dangerous: false,
+      requiredEscorts: 0,
+    };
+  }
+
+  if (intel.military.sourceKeeperCount > 0) {
+    return {
+      dangerous: true,
+      requiredEscorts: 2,
+    };
+  }
+
+  if (getBlockingHostileCount(intel) > 0) {
+    return {
+      dangerous: true,
+      requiredEscorts: 1,
+    };
+  }
+
+  return {
+    dangerous: false,
+    requiredEscorts: 0,
+  };
+}
+
+function manageBootstrapEscorts(room, counts, desired) {
+  if (counts.harvester < desired.harvester) {
+    return false;
+  }
+
+  if (getLogisticsStats(room).lowEnergy) {
+    return false;
+  }
+
+  const targets = getBootstrapTargets(room);
+
+  for (const target of targets) {
+    const threat = getBootstrapThreat(target.name);
+
+    if (!threat.dangerous) {
+      continue;
+    }
+
+    const escorts = getFunctionalBootstrapEscortsForTarget(target.name);
+
+    if (escorts.length >= threat.requiredEscorts) {
+      continue;
+    }
+
+    const body = chooseBody(room, "bootstrapEscort");
+
+    if (!body) {
+      continue;
+    }
+
+    spawnBootstrapEscort(room, body, target.name);
+    return true;
+  }
+
+  return false;
+}
+
 function manageExpansionSupport(room, counts, desired) {
   if (counts.harvester < desired.harvester) {
     return false;
@@ -1120,7 +1277,14 @@ function manageExpansionSupport(room, counts, desired) {
   const targets = getBootstrapTargets(room);
 
   for (const target of targets) {
-    const pioneers = getPioneersForTarget(target.name);
+    const threat = getBootstrapThreat(target.name);
+    const escorts = getFunctionalBootstrapEscortsForTarget(target.name);
+
+    if (threat.dangerous && escorts.length < threat.requiredEscorts) {
+      continue;
+    }
+
+    const pioneers = getFunctionalPioneersForTarget(target.name);
 
     if (pioneers.length >= 2) {
       continue;
@@ -1200,6 +1364,10 @@ function manageSpawning(room) {
       spawnRole(room, "harvester", emergencyBody);
     }
 
+    return;
+  }
+
+  if (manageBootstrapEscorts(room, counts, desired)) {
     return;
   }
 
