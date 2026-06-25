@@ -25,28 +25,63 @@ function hasFreeEnergyCapacity(structure) {
   );
 }
 
+function setStatus(creep, status) {
+  creep.memory.lastStatus = status;
+  creep.memory.lastStatusTick = Game.time;
+}
+
+function moveToRoom(creep, roomName, stroke) {
+  if (utils.moveOffRoomEdge(creep)) {
+    setStatus(creep, "leaving_edge");
+    return;
+  }
+
+  const result = utils.moveToRoom(creep, roomName, stroke);
+
+  if (result === ERR_NO_PATH) {
+    setStatus(creep, "no_route");
+    return;
+  }
+
+  setStatus(creep, "traveling");
+}
+
 function withdrawEnergy(creep) {
   const homeRoom = getHomeRoom(creep);
 
   if (!homeRoom || !homeRoom.storage) {
     creep.say("no source");
+    setStatus(creep, "no_source");
     return;
   }
 
   if (creep.room.name !== homeRoom.name) {
-    utils.moveToRoom(creep, homeRoom.name, "#ffaa00");
+    moveToRoom(creep, homeRoom.name, "#ffaa00");
+    return;
+  }
+
+  if (utils.moveOffRoomEdge(creep)) {
+    setStatus(creep, "home_edge");
     return;
   }
 
   if (homeRoom.storage.store[RESOURCE_ENERGY] <= SOURCE_RESERVE) {
     creep.say("reserve");
+    setStatus(creep, "reserve");
     return;
   }
 
   const result = creep.withdraw(homeRoom.storage, RESOURCE_ENERGY);
 
+  if (result === OK) {
+    setStatus(creep, "withdrawing");
+  }
+
   if (result === ERR_NOT_IN_RANGE) {
+    setStatus(creep, "moving_to_storage");
     creep.moveTo(homeRoom.storage, {
+      maxRooms: 1,
+      reusePath: 5,
       visualizePathStyle: {
         stroke: "#ffaa00",
       },
@@ -99,11 +134,12 @@ function deliverEnergy(creep) {
   const targetRoom = getTargetRoom(creep);
 
   if (!targetRoom || creep.room.name !== creep.memory.targetRoom) {
-    utils.moveToRoom(creep, creep.memory.targetRoom, "#ffffff");
+    moveToRoom(creep, creep.memory.targetRoom, "#ffffff");
     return;
   }
 
   if (utils.moveOffRoomEdge(creep)) {
+    setStatus(creep, "target_edge");
     return;
   }
 
@@ -111,14 +147,21 @@ function deliverEnergy(creep) {
 
   if (!target) {
     creep.say("no target");
+    setStatus(creep, "no_target");
     return;
   }
 
   const result = creep.transfer(target, RESOURCE_ENERGY);
 
+  if (result === OK) {
+    setStatus(creep, "delivering");
+  }
+
   if (result === ERR_NOT_IN_RANGE) {
+    setStatus(creep, "moving_to_target");
     creep.moveTo(target, {
       maxRooms: 1,
+      reusePath: 5,
       visualizePathStyle: {
         stroke: "#ffffff",
       },
@@ -130,6 +173,7 @@ module.exports = {
   run: function (creep) {
     if (!creep.memory.targetRoom || !creep.memory.homeRoom) {
       creep.say("no route");
+      setStatus(creep, "missing_route");
       return;
     }
 
