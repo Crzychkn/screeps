@@ -1619,6 +1619,7 @@ module.exports = {
 
     console.log(`Managing room ${room.name}, RCL ${room.controller.level}`);
     console.log(`Energy: ${room.energyAvailable}/${room.energyCapacityAvailable}`);
+    console.log('Comfortable Energy: ' + room.comfortableEnergy);
 
     try {
       roleTower.run(room.name);
