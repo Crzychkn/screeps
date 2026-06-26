@@ -1,0 +1,6 @@
+{
+  "email": "you@example.com",
+  "token": "your-screeps-auth-token",
+  "server": "season",
+  "branch": "default"
+}
