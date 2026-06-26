@@ -182,7 +182,7 @@ function getAssignedSource(creep) {
   return currentSource;
 }
 
-function findAssignedSourceContainer(creep) {
+function findAssignedSourceContainer(creep, requireFreeCapacity) {
   const source = getAssignedSource(creep);
 
   if (!source) {
@@ -193,7 +193,7 @@ function findAssignedSourceContainer(creep) {
     filter: (structure) => {
       return (
         structure.structureType === STRUCTURE_CONTAINER &&
-        hasFreeEnergyCapacity(structure)
+        (!requireFreeCapacity || hasFreeEnergyCapacity(structure))
       );
     },
   });
@@ -237,7 +237,7 @@ function findDeliveryTarget(creep) {
   const room = getHomeRoom(creep);
 
   if (hasLogisticsSupport(room)) {
-    const sourceContainer = findAssignedSourceContainer(creep);
+    const sourceContainer = findAssignedSourceContainer(creep, false);
 
     if (sourceContainer) {
       return sourceContainer;
@@ -342,6 +342,15 @@ function deliverEnergy(creep) {
 
   if (result === ERR_NOT_IN_RANGE) {
     moveToTarget(creep, target, "#ffffff");
+    return;
+  }
+
+  if (
+    result === ERR_FULL &&
+    hasLogisticsSupport(getHomeRoom(creep)) &&
+    target.structureType === STRUCTURE_CONTAINER
+  ) {
+    creep.drop(RESOURCE_ENERGY);
   }
 }
 

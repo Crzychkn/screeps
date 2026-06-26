@@ -12,6 +12,7 @@ const DESIRED_FUNCTIONAL_PIONEERS_PER_BOOTSTRAP_ROOM = 2;
 const SUPPORT_STORAGE_RESERVE = 200000;
 const SUPPORT_TARGET_MAX_RCL = 4;
 const MILITARY_INTEL_MAX_AGE = 1500;
+const INCOME_LOG_INTERVAL = 100;
 
 const ROLE_PRIORITY = [
   "harvester",
@@ -196,6 +197,104 @@ function getLogisticsStats(room) {
   };
 }
 
+function getSourceContainerForSource(source) {
+  return source.pos.findInRange(FIND_STRUCTURES, 1, {
+    filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
+  })[0];
+}
+
+function getDroppedEnergyNearSource(source) {
+  return source.pos.findInRange(FIND_DROPPED_RESOURCES, 1, {
+    filter: (resource) => resource.resourceType === RESOURCE_ENERGY,
+  }).reduce((total, resource) => total + resource.amount, 0);
+}
+
+function getAssignedHarvesterWork(room, source) {
+  return _.filter(Game.creeps, (creep) => {
+    return (
+      creep.memory.role === "harvester" &&
+      creep.memory.homeRoom === room.name &&
+      creep.memory.sourceId === source.id
+    );
+  }).reduce((total, creep) => {
+    return total + creep.getActiveBodyparts(WORK);
+  }, 0);
+}
+
+function getRoomMemory(room) {
+  if (!Memory.rooms) {
+    Memory.rooms = {};
+  }
+
+  if (!Memory.rooms[room.name]) {
+    Memory.rooms[room.name] = {};
+  }
+
+  return Memory.rooms[room.name];
+}
+
+function formatEnergyDelta(delta) {
+  if (delta > 0) {
+    return "+" + delta;
+  }
+
+  return String(delta);
+}
+
+function logIncomeEfficiency(room) {
+  const roomMemory = getRoomMemory(room);
+  const previous = roomMemory.incomeSample;
+
+  if (
+    previous &&
+    previous.tick &&
+    Game.time - previous.tick < INCOME_LOG_INTERVAL
+  ) {
+    return;
+  }
+
+  const storedEnergy = getStoredEnergy(room);
+  const delta =
+    previous && previous.storedEnergy !== undefined
+      ? storedEnergy - previous.storedEnergy
+      : 0;
+  const ticks =
+    previous && previous.tick
+      ? Game.time - previous.tick
+      : INCOME_LOG_INTERVAL;
+  const deltaPerTick = ticks > 0 ? (delta / ticks).toFixed(1) : "0.0";
+  const sources = room.find(FIND_SOURCES);
+  const sourceDetails = sources.map((source, index) => {
+    const container = getSourceContainerForSource(source);
+    const containerEnergy = container ? container.store[RESOURCE_ENERGY] : 0;
+    const containerCapacity = container
+      ? container.store.getCapacity(RESOURCE_ENERGY)
+      : 0;
+    const droppedEnergy = getDroppedEnergyNearSource(source);
+    const assignedWork = getAssignedHarvesterWork(room, source);
+
+    return (
+      "S" + (index + 1) +
+      " e:" + source.energy + "/" + source.energyCapacity +
+      " regen:" + source.ticksToRegeneration +
+      " cont:" + containerEnergy + "/" + containerCapacity +
+      " drop:" + droppedEnergy +
+      " work:" + assignedWork + "/5"
+    );
+  });
+
+  console.log(
+    `${room.name} income - stored: ${storedEnergy} ` +
+    `delta/${ticks}: ${formatEnergyDelta(delta)} (${deltaPerTick}/tick), ` +
+    `sources: ${sourceDetails.join(" | ")}`
+  );
+
+  roomMemory.incomeSample = {
+    tick: Game.time,
+    storedEnergy: storedEnergy,
+  };
+}
+
 function getMaintenanceTargets(room) {
   return room.find(FIND_STRUCTURES, {
     filter: (structure) => {
@@ -309,7 +408,7 @@ function getDesiredCounts(room) {
   return desired;
 }
 
-function getBodiesForRole(role, rcl) {
+function getBodiesForRole(role, rcl, room) {
   if (role === "scout") {
     return [
       [MOVE],
@@ -384,6 +483,29 @@ function getBodiesForRole(role, rcl) {
   }
 
   if (role === "harvester") {
+    const logistics = room ? getLogisticsStats(room) : null;
+    const hasContainerMining =
+      logistics &&
+      rcl >= 4 &&
+      logistics.sourceContainerCount >= logistics.sourceCount;
+
+    if (hasContainerMining && rcl >= 7) {
+      return [
+        [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE],
+        [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE],
+        [WORK, WORK, WORK, CARRY, MOVE],
+        [WORK, CARRY, MOVE],
+      ];
+    }
+
+    if (hasContainerMining) {
+      return [
+        [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE],
+        [WORK, WORK, WORK, CARRY, MOVE],
+        [WORK, CARRY, MOVE],
+      ];
+    }
+
     if (rcl >= 7) {
       return [
         [WORK, WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
@@ -493,7 +615,7 @@ function getBodiesForRole(role, rcl) {
 }
 
 function chooseBody(room, role) {
-  const bodies = getBodiesForRole(role, room.controller.level);
+  const bodies = getBodiesForRole(role, room.controller.level, room);
 
   for (const body of bodies) {
     if (bodyCost(body) <= room.energyAvailable) {
@@ -1620,6 +1742,7 @@ module.exports = {
     console.log(`Managing room ${room.name}, RCL ${room.controller.level}`);
     console.log(`Energy: ${room.energyAvailable}/${room.energyCapacityAvailable}`);
     console.log('Comfortable Energy Amount: ' + room.energyCapacityAvailable * 3);
+    logIncomeEfficiency(room);
 
     try {
       roleTower.run(room.name);
