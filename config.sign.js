@@ -1,5 +1,5 @@
 module.exports = {
-  text: "New player learning and having fun.",
+  text: "Rawr",
   signNewRooms: true,
   rooms: null,
 };
