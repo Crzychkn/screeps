@@ -31,11 +31,6 @@ function setStatus(creep, status) {
 }
 
 function moveToRoom(creep, roomName, stroke) {
-  if (utils.moveOffRoomEdge(creep)) {
-    setStatus(creep, "leaving_edge");
-    return;
-  }
-
   const result = utils.moveToRoom(creep, roomName, stroke);
 
   if (result === ERR_NO_PATH) {
@@ -43,7 +38,7 @@ function moveToRoom(creep, roomName, stroke) {
     return;
   }
 
-  setStatus(creep, "traveling");
+  setStatus(creep, "traveling_to_" + roomName);
 }
 
 function returnCarriedEnergy(creep, storage) {
