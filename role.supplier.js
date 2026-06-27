@@ -41,6 +41,16 @@ function moveToRoom(creep, roomName, stroke) {
   setStatus(creep, "traveling_to_" + roomName);
 }
 
+function setTrip(creep, trip) {
+  if (creep.memory.supplierTrip !== trip) {
+    delete creep.memory.routeDestination;
+    delete creep.memory.routeFromRoom;
+    delete creep.memory.routeNextRoom;
+  }
+
+  creep.memory.supplierTrip = trip;
+}
+
 function returnCarriedEnergy(creep, storage) {
   if (creep.store[RESOURCE_ENERGY] === 0) {
     return false;
@@ -79,6 +89,7 @@ function withdrawEnergy(creep) {
   }
 
   if (creep.room.name !== homeRoom.name) {
+    setTrip(creep, "to_home");
     moveToRoom(creep, homeRoom.name, "#ffaa00");
     return;
   }
@@ -93,8 +104,15 @@ function withdrawEnergy(creep) {
       return;
     }
 
+    setTrip(creep, "waiting");
     creep.say("wait");
     setStatus(creep, "target_full");
+    return;
+  }
+
+  if (creep.store[RESOURCE_ENERGY] > 0) {
+    setTrip(creep, "to_target");
+    moveToRoom(creep, creep.memory.targetRoom, "#ffffff");
     return;
   }
 
@@ -107,6 +125,10 @@ function withdrawEnergy(creep) {
   const result = creep.withdraw(homeRoom.storage, RESOURCE_ENERGY);
 
   if (result === OK) {
+    if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+      setTrip(creep, "to_target");
+    }
+
     setStatus(creep, "withdrawing");
   }
 
@@ -167,6 +189,7 @@ function deliverEnergy(creep) {
   const targetRoom = getTargetRoom(creep);
 
   if (!targetRoom || creep.room.name !== creep.memory.targetRoom) {
+    setTrip(creep, "to_target");
     moveToRoom(creep, creep.memory.targetRoom, "#ffffff");
     return;
   }
@@ -180,7 +203,7 @@ function deliverEnergy(creep) {
 
   if (!target) {
     creep.say("return");
-    creep.memory.delivering = false;
+    setTrip(creep, "to_home");
     setStatus(creep, "target_full_returning");
     return;
   }
@@ -188,6 +211,10 @@ function deliverEnergy(creep) {
   const result = creep.transfer(target, RESOURCE_ENERGY);
 
   if (result === OK) {
+    if (creep.store[RESOURCE_ENERGY] === 0) {
+      setTrip(creep, "to_home");
+    }
+
     setStatus(creep, "delivering");
   }
 
@@ -211,18 +238,27 @@ module.exports = {
       return;
     }
 
-    if (creep.memory.delivering && creep.store[RESOURCE_ENERGY] === 0) {
-      creep.memory.delivering = false;
+    if (!creep.memory.supplierTrip) {
+      creep.memory.supplierTrip =
+        creep.store[RESOURCE_ENERGY] > 0 ? "to_target" : "to_home";
     }
 
     if (
-      !creep.memory.delivering &&
-      creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0
+      creep.memory.supplierTrip === "to_target" &&
+      creep.store[RESOURCE_ENERGY] === 0
     ) {
-      creep.memory.delivering = true;
+      setTrip(creep, "to_home");
     }
 
-    if (creep.memory.delivering) {
+    if (
+      creep.memory.supplierTrip === "to_home" &&
+      creep.room.name === creep.memory.homeRoom &&
+      creep.store[RESOURCE_ENERGY] === 0
+    ) {
+      setTrip(creep, "waiting");
+    }
+
+    if (creep.memory.supplierTrip === "to_target") {
       deliverEnergy(creep);
       return;
     }
