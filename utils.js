@@ -78,16 +78,31 @@ function moveToRoom(creep, roomName, stroke) {
   let destination = new RoomPosition(25, 25, roomName);
 
   if (creep.room.name !== roomName) {
-    const route = Game.map.findRoute(creep.room.name, roomName, routeOptions);
+    if (
+      creep.memory.routeDestination !== roomName ||
+      creep.memory.routeFromRoom !== creep.room.name ||
+      !creep.memory.routeNextRoom
+    ) {
+      const route = Game.map.findRoute(creep.room.name, roomName, routeOptions);
 
-    if (route === ERR_NO_PATH) {
-      creep.say("no route");
-      return ERR_NO_PATH;
+      if (route === ERR_NO_PATH) {
+        delete creep.memory.routeDestination;
+        delete creep.memory.routeFromRoom;
+        delete creep.memory.routeNextRoom;
+        creep.say("no route");
+        return ERR_NO_PATH;
+      }
+
+      creep.memory.routeDestination = roomName;
+      creep.memory.routeFromRoom = creep.room.name;
+      creep.memory.routeNextRoom = route.length > 0 ? route[0].room : roomName;
     }
 
-    if (route.length > 0) {
-      destination = new RoomPosition(25, 25, route[0].room);
-    }
+    destination = new RoomPosition(25, 25, creep.memory.routeNextRoom);
+  } else {
+    delete creep.memory.routeDestination;
+    delete creep.memory.routeFromRoom;
+    delete creep.memory.routeNextRoom;
   }
 
   return creep.moveTo(destination, {
