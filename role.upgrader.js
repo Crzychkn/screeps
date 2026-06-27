@@ -24,6 +24,8 @@ function upgradeController(creep, room) {
   if (result === ERR_NOT_IN_RANGE) {
     creep.moveTo(room.controller, {
       range: 3,
+      maxRooms: 1,
+      reusePath: 5,
       visualizePathStyle: {
         stroke: "#ffffff",
       },

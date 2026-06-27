@@ -45,6 +45,8 @@ module.exports = {
       if (creep.repair(repairTarget) === ERR_NOT_IN_RANGE) {
         creep.say("🚧 repair");
         creep.moveTo(repairTarget, {
+          maxRooms: 1,
+          reusePath: 5,
           visualizePathStyle: { stroke: "#ffffff" },
         });
       }

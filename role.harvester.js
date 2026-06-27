@@ -8,6 +8,8 @@ function getHomeRoom(creep) {
 
 function moveToTarget(creep, target, stroke) {
   creep.moveTo(target, {
+    maxRooms: 1,
+    reusePath: 5,
     visualizePathStyle: {
       stroke: stroke,
     },
@@ -323,6 +325,8 @@ function fallbackWork(creep) {
   if (result === ERR_NOT_IN_RANGE) {
     creep.moveTo(creep.room.controller, {
       range: 3,
+      maxRooms: 1,
+      reusePath: 5,
       visualizePathStyle: {
         stroke: "#ffffff",
       },

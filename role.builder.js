@@ -38,6 +38,8 @@ module.exports = {
       if (constructionSites.length > 0) {
         if (creep.build(constructionSites[0]) === ERR_NOT_IN_RANGE) {
           creep.moveTo(constructionSites[0], {
+            maxRooms: 1,
+            reusePath: 5,
             visualizePathStyle: { stroke: "#ffffff" },
           });
         }
@@ -47,7 +49,10 @@ module.exports = {
           const repairQueue = utils.getRepairQueue(homeRoom);
 
           if (repairQueue.length > 0 && creep.repair(repairQueue[0]) === ERR_NOT_IN_RANGE) {
-            creep.moveTo(repairQueue[0]);
+            creep.moveTo(repairQueue[0], {
+              maxRooms: 1,
+              reusePath: 5,
+            });
           }
       }
     }

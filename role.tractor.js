@@ -3,6 +3,8 @@ const MIN_DROPPED_ENERGY = 50;
 
 function moveToTarget(creep, target, stroke) {
   creep.moveTo(target, {
+    maxRooms: 1,
+    reusePath: 5,
     visualizePathStyle: {
       stroke: stroke,
     },

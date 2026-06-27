@@ -7,6 +7,8 @@ function getHomeRoom(creep) {
 
 function moveToTarget(creep, target) {
   creep.moveTo(target, {
+    maxRooms: 1,
+    reusePath: 5,
     visualizePathStyle: {
       stroke: "#ffffff",
     },
