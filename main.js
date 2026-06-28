@@ -21,6 +21,41 @@ const CPU_LOG_INTERVAL = 100;
 const CREEP_STATE_INTERVAL = 25;
 const DEAD_MEMORY_CLEANUP_INTERVAL = 25;
 const MAIN_LOG_INTERVAL = 100;
+const LOW_BUCKET_LIMIT = 3000;
+const CRITICAL_BUCKET_LIMIT = 1000;
+const INTEL_MANAGER_INTERVAL = 5;
+const PLANNING_MANAGER_INTERVAL = 10;
+const OPTIONAL_CREEP_CPU_LIMIT = 18;
+const OPTIONAL_CREEP_CPU_BUCKET_LIMIT = 5000;
+
+const CRITICAL_CREEP_ROLES = {
+  harvester: true,
+  tractor: true,
+  defender: true,
+  bootstrapEscort: true,
+  stim: true,
+  claimer: true,
+  pioneer: true,
+};
+
+const LOW_BUCKET_ROLE_INTERVALS = {
+  upgrader: 2,
+  builder: 2,
+  repairer: 3,
+  supplier: 2,
+  scout: 5,
+  signer: 10,
+};
+
+const CRITICAL_BUCKET_ROLE_INTERVALS = {
+  upgrader: 5,
+  builder: 5,
+  repairer: 10,
+  supplier: 4,
+  scout: 10,
+  signer: 20,
+  pioneer: 2,
+};
 
 const roles = {
   harvester: roleHarvester,
@@ -105,22 +140,77 @@ function logCpuStats() {
   console.log("CPU Unlocked Status:", Game.cpu.unlocked);
 }
 
+function getCreepCpuOffset(creep) {
+  if (creep.memory.cpuOffset === undefined) {
+    creep.memory.cpuOffset = Game.time % 20;
+  }
+
+  return creep.memory.cpuOffset;
+}
+
+function shouldRunStaggered(creep, interval) {
+  return (Game.time + getCreepCpuOffset(creep)) % interval === 0;
+}
+
+function shouldRunCreep(creep) {
+  const roleName = creep.memory.role;
+
+  if (Game.cpu.bucket < CRITICAL_BUCKET_LIMIT) {
+    const interval = CRITICAL_BUCKET_ROLE_INTERVALS[roleName];
+    return !interval || shouldRunStaggered(creep, interval);
+  }
+
+  if (Game.cpu.bucket < LOW_BUCKET_LIMIT) {
+    const interval = LOW_BUCKET_ROLE_INTERVALS[roleName];
+    return !interval || shouldRunStaggered(creep, interval);
+  }
+
+  return true;
+}
+
+function runCreep(creep) {
+  const roleName = creep.memory.role;
+  const role = roles[roleName];
+
+  if (!role) {
+    console.log(`${creep.name} has unknown role: ${roleName}`);
+    return;
+  }
+
+  if (!shouldRunCreep(creep)) {
+    return;
+  }
+
+  try {
+    role.run(creep);
+  } catch (error) {
+    console.log(`Error running ${roleName} for ${creep.name}:`, error);
+  }
+}
+
 function runCreeps() {
+  const optionalCreeps = [];
+
   for (const name in Game.creeps) {
     const creep = Game.creeps[name];
-    const roleName = creep.memory.role;
-    const role = roles[roleName];
 
-    if (!role) {
-      console.log(`${creep.name} has unknown role: ${roleName}`);
+    if (CRITICAL_CREEP_ROLES[creep.memory.role]) {
+      runCreep(creep);
       continue;
     }
 
-    try {
-      role.run(creep);
-    } catch (error) {
-      console.log(`Error running ${roleName} for ${creep.name}:`, error);
+    optionalCreeps.push(creep);
+  }
+
+  for (const creep of optionalCreeps) {
+    if (
+      Game.cpu.bucket < OPTIONAL_CREEP_CPU_BUCKET_LIMIT &&
+      Game.cpu.getUsed() > OPTIONAL_CREEP_CPU_LIMIT
+    ) {
+      return;
     }
+
+    runCreep(creep);
   }
 }
 
@@ -141,22 +231,28 @@ module.exports.loop = function () {
     console.log(`GCL: ${Game.gcl.level}`);
   }
 
-  try {
-    intelManager.run();
-  } catch (error) {
-    console.log("Intel manager error:", error);
+  if (Game.time % INTEL_MANAGER_INTERVAL === 0) {
+    try {
+      intelManager.run();
+    } catch (error) {
+      console.log("Intel manager error:", error);
+    }
   }
 
-  try {
-    militaryManager.run();
-  } catch (error) {
-    console.log("Military manager error:", error);
+  if (Game.time % PLANNING_MANAGER_INTERVAL === 0) {
+    try {
+      militaryManager.run();
+    } catch (error) {
+      console.log("Military manager error:", error);
+    }
   }
 
-  try {
-    warManager.run();
-  } catch (error) {
-    console.log("War manager error:", error);
+  if (Game.time % PLANNING_MANAGER_INTERVAL === 0) {
+    try {
+      warManager.run();
+    } catch (error) {
+      console.log("War manager error:", error);
+    }
   }
 
   for (const room of ownedRooms) {

@@ -18,6 +18,10 @@ const CONSTRUCTION_RUN_INTERVAL = 25;
 const SPAWNLESS_CONSTRUCTION_RUN_INTERVAL = 5;
 const LOW_BUCKET_CONSTRUCTION_LIMIT = 2000;
 const LOW_BUCKET_VISUAL_LIMIT = 5000;
+const LOW_BUCKET_SPAWN_LIMIT = 3000;
+const CRITICAL_BUCKET_SPAWN_LIMIT = 1000;
+const LOW_BUCKET_SPAWN_INTERVAL = 3;
+const CRITICAL_BUCKET_SPAWN_INTERVAL = 5;
 
 const ROLE_PRIORITY = [
   "harvester",
@@ -1779,6 +1783,28 @@ function shouldRunConstruction(room) {
   return true;
 }
 
+function getRoomCpuOffset(room) {
+  const roomMemory = getRoomMemory(room);
+
+  if (roomMemory.cpuOffset === undefined) {
+    roomMemory.cpuOffset = Game.time % 20;
+  }
+
+  return roomMemory.cpuOffset;
+}
+
+function shouldRunSpawning(room) {
+  if (Game.cpu.bucket >= LOW_BUCKET_SPAWN_LIMIT) {
+    return true;
+  }
+
+  const interval = Game.cpu.bucket < CRITICAL_BUCKET_SPAWN_LIMIT
+    ? CRITICAL_BUCKET_SPAWN_INTERVAL
+    : LOW_BUCKET_SPAWN_INTERVAL;
+
+  return (Game.time + getRoomCpuOffset(room)) % interval === 0;
+}
+
 module.exports = {
   run: function (room) {
     if (!room.controller || !room.controller.my) {
@@ -1809,7 +1835,10 @@ module.exports = {
     }
 
     manageDefense(room);
-    manageSpawning(room);
+
+    if (shouldRunSpawning(room)) {
+      manageSpawning(room);
+    }
 
     if (Game.cpu.bucket >= LOW_BUCKET_VISUAL_LIMIT) {
       showSpawnVisual(room);

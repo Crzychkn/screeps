@@ -3,6 +3,8 @@ const utils = require("utils");
 const STIM_SPAWN_THRESHOLD = 400;
 const STIM_BODY = [MOVE, MOVE, CARRY, CARRY];
 const TOWER_REPAIR_MIN_ENERGY = 600;
+const TOWER_REPAIR_INTERVAL = 10;
+const LOW_BUCKET_REPAIR_LIMIT = 3000;
 
 function getAvailableSpawn(room) {
     const spawns = room.find(FIND_MY_SPAWNS);
@@ -97,6 +99,13 @@ module.exports = {
                 }
             });
 
+            return;
+        }
+
+        if (
+            Game.cpu.bucket < LOW_BUCKET_REPAIR_LIMIT ||
+            Game.time % TOWER_REPAIR_INTERVAL !== 0
+        ) {
             return;
         }
 
