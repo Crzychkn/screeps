@@ -13,6 +13,11 @@ const SUPPORT_STORAGE_RESERVE = 200000;
 const SUPPORT_TARGET_MAX_RCL = 4;
 const MILITARY_INTEL_MAX_AGE = 1500;
 const INCOME_LOG_INTERVAL = 100;
+const ROOM_LOG_INTERVAL = 100;
+const CONSTRUCTION_RUN_INTERVAL = 25;
+const SPAWNLESS_CONSTRUCTION_RUN_INTERVAL = 5;
+const LOW_BUCKET_CONSTRUCTION_LIMIT = 2000;
+const LOW_BUCKET_VISUAL_LIMIT = 5000;
 
 const ROLE_PRIORITY = [
   "harvester",
@@ -35,6 +40,52 @@ function getRoomCreeps(room, role) {
   return _.filter(Game.creeps, (creep) => {
     return creep.memory.role === role && creep.memory.homeRoom === room.name;
   });
+}
+
+function getRoomCreepCounts(room) {
+  const counts = {
+    harvester: 0,
+    builder: 0,
+    repairer: 0,
+    upgrader: 0,
+    tractor: 0,
+    claimer: 0,
+    scout: 0,
+    supplier: 0,
+    pioneer: 0,
+    bootstrapEscort: 0,
+    defender: 0,
+    stim: 0,
+    signer: 0,
+  };
+
+  for (const name in Game.creeps) {
+    const creep = Game.creeps[name];
+
+    if (creep.memory.homeRoom !== room.name) {
+      continue;
+    }
+
+    if (counts[creep.memory.role] === undefined) {
+      counts[creep.memory.role] = 0;
+    }
+
+    counts[creep.memory.role]++;
+  }
+
+  return counts;
+}
+
+function getRoomMemory(room) {
+  if (!Memory.rooms) {
+    Memory.rooms = {};
+  }
+
+  if (!Memory.rooms[room.name]) {
+    Memory.rooms[room.name] = {};
+  }
+
+  return Memory.rooms[room.name];
 }
 
 function getPioneersForTarget(targetRoomName) {
@@ -219,18 +270,6 @@ function getAssignedHarvesterWork(room, source) {
   }).reduce((total, creep) => {
     return total + creep.getActiveBodyparts(WORK);
   }, 0);
-}
-
-function getRoomMemory(room) {
-  if (!Memory.rooms) {
-    Memory.rooms = {};
-  }
-
-  if (!Memory.rooms[room.name]) {
-    Memory.rooms[room.name] = {};
-  }
-
-  return Memory.rooms[room.name];
 }
 
 function formatEnergyDelta(delta) {
@@ -1613,38 +1652,25 @@ function manageSpawning(room) {
   }
 
   const desired = getDesiredCounts(room);
+  const counts = getRoomCreepCounts(room);
 
-  const counts = {
-    harvester: getRoomCreeps(room, "harvester").length,
-    builder: getRoomCreeps(room, "builder").length,
-    repairer: getRoomCreeps(room, "repairer").length,
-    upgrader: getRoomCreeps(room, "upgrader").length,
-    tractor: getRoomCreeps(room, "tractor").length,
-    claimer: getRoomCreeps(room, "claimer").length,
-    scout: getRoomCreeps(room, "scout").length,
-    supplier: getRoomCreeps(room, "supplier").length,
-    pioneer: getRoomCreeps(room, "pioneer").length,
-    bootstrapEscort: getRoomCreeps(room, "bootstrapEscort").length,
-    defender: getRoomCreeps(room, "defender").length,
-    stim: getRoomCreeps(room, "stim").length,
-    signer: getRoomCreeps(room, "signer").length,
-  };
-
-  console.log(
-    `${room.name} creeps - Harvesters: ${counts.harvester}/${desired.harvester}, ` +
-    `Builders: ${counts.builder}/${desired.builder}, ` +
-    `Repairers: ${counts.repairer}/${desired.repairer}, ` +
-    `Upgraders: ${counts.upgrader}/${desired.upgrader}, ` +
-    `Tractors: ${counts.tractor}/${desired.tractor}, ` +
-    `Claimers: ${counts.claimer}, ` +
-    `Scouts: ${counts.scout}, ` +
-    `Suppliers: ${counts.supplier}, ` +
-    `Pioneers: ${counts.pioneer}, ` +
-    `Escorts: ${counts.bootstrapEscort}, ` +
-    `Defenders: ${counts.defender}, ` +
-    `Stims: ${counts.stim}, ` +
-    `Signers: ${counts.signer}`
-  );
+  if (Game.time % ROOM_LOG_INTERVAL === 0) {
+    console.log(
+      `${room.name} creeps - Harvesters: ${counts.harvester}/${desired.harvester}, ` +
+      `Builders: ${counts.builder}/${desired.builder}, ` +
+      `Repairers: ${counts.repairer}/${desired.repairer}, ` +
+      `Upgraders: ${counts.upgrader}/${desired.upgrader}, ` +
+      `Tractors: ${counts.tractor}/${desired.tractor}, ` +
+      `Claimers: ${counts.claimer}, ` +
+      `Scouts: ${counts.scout}, ` +
+      `Suppliers: ${counts.supplier}, ` +
+      `Pioneers: ${counts.pioneer}, ` +
+      `Escorts: ${counts.bootstrapEscort}, ` +
+      `Defenders: ${counts.defender}, ` +
+      `Stims: ${counts.stim}, ` +
+      `Signers: ${counts.signer}`
+    );
+  }
 
   // Emergency recovery: if the room has no harvesters, prioritize the cheapest viable worker.
   if (counts.harvester === 0) {
@@ -1731,6 +1757,28 @@ function showSpawnVisual(room) {
   }
 }
 
+function shouldRunConstruction(room) {
+  if (Game.cpu.bucket < LOW_BUCKET_CONSTRUCTION_LIMIT) {
+    return false;
+  }
+
+  const roomMemory = getRoomMemory(room);
+  const hasSpawn = room.find(FIND_MY_SPAWNS).length > 0;
+  const interval = hasSpawn
+    ? CONSTRUCTION_RUN_INTERVAL
+    : SPAWNLESS_CONSTRUCTION_RUN_INTERVAL;
+
+  if (
+    roomMemory.lastConstructionRun &&
+    Game.time - roomMemory.lastConstructionRun < interval
+  ) {
+    return false;
+  }
+
+  roomMemory.lastConstructionRun = Game.time;
+  return true;
+}
+
 module.exports = {
   run: function (room) {
     if (!room.controller || !room.controller.my) {
@@ -1739,8 +1787,11 @@ module.exports = {
 
     adoptLocalCreeps(room);
 
-    console.log(`Managing room ${room.name}, RCL ${room.controller.level}`);
-    console.log(`Energy: ${room.energyAvailable}/${room.energyCapacityAvailable}`);
+    if (Game.time % ROOM_LOG_INTERVAL === 0) {
+      console.log(`Managing room ${room.name}, RCL ${room.controller.level}`);
+      console.log(`Energy: ${room.energyAvailable}/${room.energyCapacityAvailable}`);
+    }
+
     logIncomeEfficiency(room);
 
     try {
@@ -1749,14 +1800,19 @@ module.exports = {
       console.log(`Tower error in ${room.name}:`, error);
     }
 
-    try {
-      constructionManager.run(room);
-    } catch (error) {
-      console.log(`Construction manager error in ${room.name}:`, error);
+    if (shouldRunConstruction(room)) {
+      try {
+        constructionManager.run(room);
+      } catch (error) {
+        console.log(`Construction manager error in ${room.name}:`, error);
+      }
     }
 
     manageDefense(room);
     manageSpawning(room);
-    showSpawnVisual(room);
+
+    if (Game.cpu.bucket >= LOW_BUCKET_VISUAL_LIMIT) {
+      showSpawnVisual(room);
+    }
   },
 };

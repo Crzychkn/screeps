@@ -1,3 +1,5 @@
+const INTEL_RECORD_INTERVAL = 10;
+
 function countBodyParts(creep) {
   const counts = {};
 
@@ -98,6 +100,14 @@ function ensureRoomMemory(roomName) {
 
 function recordRoom(room) {
   const roomMemory = ensureRoomMemory(room.name);
+
+  if (
+    roomMemory.intel &&
+    Game.time - roomMemory.intel.lastScouted < INTEL_RECORD_INTERVAL
+  ) {
+    return;
+  }
+
   const controller = getControllerIntel(room);
   const military = getMilitaryIntel(room);
 

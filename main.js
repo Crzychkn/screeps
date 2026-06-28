@@ -17,6 +17,11 @@ const intelManager = require("manager.intel");
 const militaryManager = require("manager.military");
 const warManager = require("manager.war");
 
+const CPU_LOG_INTERVAL = 100;
+const CREEP_STATE_INTERVAL = 25;
+const DEAD_MEMORY_CLEANUP_INTERVAL = 25;
+const MAIN_LOG_INTERVAL = 100;
+
 const roles = {
   harvester: roleHarvester,
   upgrader: roleUpgrader,
@@ -71,6 +76,10 @@ function countActiveParts(creep) {
 }
 
 function rememberCreepState() {
+  if (Game.time % CREEP_STATE_INTERVAL !== 0) {
+    return;
+  }
+
   for (const name in Game.creeps) {
     const creep = Game.creeps[name];
 
@@ -87,6 +96,10 @@ function getOwnedRooms() {
 }
 
 function logCpuStats() {
+  if (Game.time % CPU_LOG_INTERVAL !== 0) {
+    return;
+  }
+
   console.log("CPU Bucket:", Game.cpu.bucket);
   console.log("CPU Tick Limit:", Game.cpu.tickLimit);
   console.log("CPU Unlocked Status:", Game.cpu.unlocked);
@@ -112,16 +125,21 @@ function runCreeps() {
 }
 
 module.exports.loop = function () {
-  console.log("*********************");
+  const shouldLogMain = Game.time % MAIN_LOG_INTERVAL === 0;
 
-  cleanDeadCreepMemory();
+  if (Game.time % DEAD_MEMORY_CLEANUP_INTERVAL === 0) {
+    cleanDeadCreepMemory();
+  }
+
   rememberCreepState();
   logCpuStats();
 
   const ownedRooms = getOwnedRooms();
 
-  console.log(`${ownedRooms.length} owned room(s).`);
-  console.log(`GCL: ${Game.gcl.level}`);
+  if (shouldLogMain) {
+    console.log(`${ownedRooms.length} owned room(s).`);
+    console.log(`GCL: ${Game.gcl.level}`);
+  }
 
   try {
     intelManager.run();
@@ -150,7 +168,4 @@ module.exports.loop = function () {
   }
 
   runCreeps();
-
-  console.log("*********************");
-  console.log("\n");
 };
