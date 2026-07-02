@@ -1,6 +1,8 @@
 const utils = require("utils");
 
 const SOURCE_RESERVE = 200000;
+const PARKING_MIN_RANGE = 4;
+const PARKING_MAX_RANGE = 7;
 
 function getTargetRoom(creep) {
   if (!creep.memory.targetRoom) {
@@ -35,6 +37,13 @@ function moveToRoom(creep, roomName, stroke) {
 
   if (result === ERR_NO_PATH) {
     setStatus(creep, "no_route");
+    const homeRoom = getHomeRoom(creep);
+
+    if (homeRoom && creep.room.name === homeRoom.name) {
+      setTrip(creep, "waiting");
+      park(creep, homeRoom);
+    }
+
     return;
   }
 
@@ -49,6 +58,104 @@ function setTrip(creep, trip) {
   }
 
   creep.memory.supplierTrip = trip;
+}
+
+function getParkingAnchor(room) {
+  if (room.storage) {
+    return room.storage.pos;
+  }
+
+  const spawn = room.find(FIND_MY_SPAWNS)[0];
+
+  if (spawn) {
+    return spawn.pos;
+  }
+
+  return room.controller ? room.controller.pos : null;
+}
+
+function isParkingPosition(room, x, y) {
+  if (x <= 1 || x >= 48 || y <= 1 || y >= 48) {
+    return false;
+  }
+
+  const terrain = room.getTerrain();
+
+  if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+    return false;
+  }
+
+  const look = room.lookAt(x, y);
+
+  for (const item of look) {
+    if (item.type === LOOK_CREEPS) {
+      return false;
+    }
+
+    if (item.type === LOOK_CONSTRUCTION_SITES) {
+      return false;
+    }
+
+    if (item.type === LOOK_STRUCTURES) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function findParkingPosition(room) {
+  const anchor = getParkingAnchor(room);
+
+  if (!anchor) {
+    return null;
+  }
+
+  for (let range = PARKING_MIN_RANGE; range <= PARKING_MAX_RANGE; range++) {
+    for (let dx = -range; dx <= range; dx++) {
+      for (let dy = -range; dy <= range; dy++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== range) {
+          continue;
+        }
+
+        const x = anchor.x + dx;
+        const y = anchor.y + dy;
+
+        if (isParkingPosition(room, x, y)) {
+          return new RoomPosition(x, y, room.name);
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function park(creep, room) {
+  if (!room || creep.room.name !== room.name) {
+    return false;
+  }
+
+  const parkingPosition = findParkingPosition(room);
+
+  if (!parkingPosition) {
+    return false;
+  }
+
+  if (creep.pos.isEqualTo(parkingPosition)) {
+    setStatus(creep, "parked");
+    return true;
+  }
+
+  creep.moveTo(parkingPosition, {
+    maxRooms: 1,
+    reusePath: 10,
+    visualizePathStyle: {
+      stroke: "#777777",
+    },
+  });
+  setStatus(creep, "parking");
+  return true;
 }
 
 function returnCarriedEnergy(creep, storage) {
@@ -85,6 +192,7 @@ function withdrawEnergy(creep) {
   if (!homeRoom || !homeRoom.storage) {
     creep.say("no source");
     setStatus(creep, "no_source");
+    park(creep, creep.room);
     return;
   }
 
@@ -107,6 +215,7 @@ function withdrawEnergy(creep) {
     setTrip(creep, "waiting");
     creep.say("wait");
     setStatus(creep, "target_full");
+    park(creep, homeRoom);
     return;
   }
 
@@ -119,6 +228,7 @@ function withdrawEnergy(creep) {
   if (homeRoom.storage.store[RESOURCE_ENERGY] <= SOURCE_RESERVE) {
     creep.say("reserve");
     setStatus(creep, "reserve");
+    park(creep, homeRoom);
     return;
   }
 
@@ -235,6 +345,7 @@ module.exports = {
     if (!creep.memory.targetRoom || !creep.memory.homeRoom) {
       creep.say("no route");
       setStatus(creep, "missing_route");
+      park(creep, creep.room);
       return;
     }
 

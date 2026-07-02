@@ -1457,6 +1457,39 @@ function getBootstrapThreat(roomName) {
   };
 }
 
+function isDangerousSupplierTransitRoom(roomName, destinationRoomName) {
+  if (roomName === destinationRoomName) {
+    return false;
+  }
+
+  const intel = getExpansionIntel(roomName);
+
+  if (!intel || !intel.military) {
+    return false;
+  }
+
+  return (
+    intel.military.sourceKeeperCount > 0 ||
+    intel.military.invaderCount > 0 ||
+    (intel.military.blockingHostileCount || 0) > 0 ||
+    intel.military.towerCount > 0
+  );
+}
+
+function hasSafeSupplierRoute(sourceRoomName, targetRoomName) {
+  const route = Game.map.findRoute(sourceRoomName, targetRoomName, {
+    routeCallback: function (roomName) {
+      if (isDangerousSupplierTransitRoom(roomName, targetRoomName)) {
+        return Infinity;
+      }
+
+      return 1;
+    },
+  });
+
+  return route !== ERR_NO_PATH;
+}
+
 function manageBootstrapEscorts(room, counts, desired) {
   if (counts.harvester < desired.harvester) {
     return false;
@@ -1564,6 +1597,10 @@ function manageEnergySupport(room, counts, desired) {
 
   for (const target of targets) {
     if (getSuppliersForTarget(target.name).length > 0) {
+      continue;
+    }
+
+    if (!hasSafeSupplierRoute(room.name, target.name)) {
       continue;
     }
 
