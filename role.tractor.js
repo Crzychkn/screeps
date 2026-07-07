@@ -65,7 +65,7 @@ function isControllerContainer(container) {
 }
 
 function findPriorityDeliveryTarget(creep) {
-  const spawnOrExtension = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
+  const spawnOrExtensions = creep.room.find(FIND_MY_STRUCTURES, {
     filter: (structure) => {
       return (
         (
@@ -77,11 +77,11 @@ function findPriorityDeliveryTarget(creep) {
     },
   });
 
-  if (spawnOrExtension) {
-    return spawnOrExtension;
+  if (spawnOrExtensions.length > 0) {
+    return creep.pos.findClosestByRange(spawnOrExtensions);
   }
 
-  return creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
+  const towers = creep.room.find(FIND_MY_STRUCTURES, {
     filter: (structure) => {
       return (
         structure.structureType === STRUCTURE_TOWER &&
@@ -90,6 +90,8 @@ function findPriorityDeliveryTarget(creep) {
       );
     },
   });
+
+  return creep.pos.findClosestByRange(towers);
 }
 
 function findDeliveryTarget(creep) {
@@ -99,7 +101,7 @@ function findDeliveryTarget(creep) {
     return priorityTarget;
   }
 
-  const controllerContainer = creep.pos.findClosestByPath(FIND_STRUCTURES, {
+  const controllerContainers = creep.room.find(FIND_STRUCTURES, {
     filter: (structure) => {
       return (
         isControllerContainer(structure) &&
@@ -107,6 +109,7 @@ function findDeliveryTarget(creep) {
       );
     },
   });
+  const controllerContainer = creep.pos.findClosestByRange(controllerContainers);
 
   if (controllerContainer) {
     return controllerContainer;
@@ -116,7 +119,7 @@ function findDeliveryTarget(creep) {
     return creep.room.storage;
   }
 
-  return creep.pos.findClosestByPath(FIND_STRUCTURES, {
+  const containers = creep.room.find(FIND_STRUCTURES, {
     filter: (structure) => {
       return (
         structure.structureType === STRUCTURE_CONTAINER &&
@@ -126,6 +129,8 @@ function findDeliveryTarget(creep) {
       );
     },
   });
+
+  return creep.pos.findClosestByRange(containers);
 }
 
 function findSourceContainer(creep) {
@@ -187,8 +192,8 @@ function findStorageWithdrawTarget(creep) {
 
 function harvestFallback(creep) {
   const source =
-    creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE) ||
-    creep.pos.findClosestByPath(FIND_SOURCES);
+    creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE) ||
+    creep.pos.findClosestByRange(FIND_SOURCES);
 
   if (!source) {
     creep.say("🚫 energy");
@@ -252,7 +257,7 @@ function deliverEnergy(creep) {
   const target = findDeliveryTarget(creep);
 
   if (!target) {
-    const spawn = creep.pos.findClosestByPath(FIND_MY_SPAWNS);
+    const spawn = creep.pos.findClosestByRange(FIND_MY_SPAWNS);
 
     if (spawn) {
       moveToTarget(creep, spawn, "#ffffff");

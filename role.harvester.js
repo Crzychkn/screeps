@@ -1,4 +1,5 @@
 const TOWER_REFILL_THRESHOLD = 700;
+const SOURCE_REBALANCE_INTERVAL = 100;
 const utils = require("utils");
 
 function getHomeRoom(creep) {
@@ -24,9 +25,18 @@ function hasFreeEnergyCapacity(structure) {
 }
 
 function hasLogisticsSupport(room) {
-  return _.some(Game.creeps, (creep) => {
+  const roomMemory = getRoomMemory(room);
+
+  if (roomMemory.logisticsSupportTick === Game.time) {
+    return roomMemory.hasLogisticsSupport;
+  }
+
+  roomMemory.logisticsSupportTick = Game.time;
+  roomMemory.hasLogisticsSupport = _.some(Game.creeps, (creep) => {
     return creep.memory.role === "tractor" && creep.memory.homeRoom === room.name;
   });
+
+  return roomMemory.hasLogisticsSupport;
 }
 
 function getRoomMemory(room) {
@@ -149,10 +159,25 @@ function getAssignedSource(creep) {
     return null;
   }
 
-  const assignedCounts = countAssignedHarvesters(room, creep.name);
   let currentSource = creep.memory.sourceId
     ? Game.getObjectById(creep.memory.sourceId)
     : null;
+
+  if (currentSource && !sources.some((source) => source.id === currentSource.id)) {
+    currentSource = null;
+  }
+
+  if (
+    currentSource &&
+    (
+      creep.store[RESOURCE_ENERGY] > 0 ||
+      creep.memory.lastSourceRebalance + SOURCE_REBALANCE_INTERVAL > Game.time
+    )
+  ) {
+    return currentSource;
+  }
+
+  const assignedCounts = countAssignedHarvesters(room, creep.name);
   const bestSource = chooseLeastLoadedSource(creep, room, sources, assignedCounts);
 
   if (!bestSource) {
@@ -160,23 +185,18 @@ function getAssignedSource(creep) {
     return null;
   }
 
-  if (currentSource && !sources.some((source) => source.id === currentSource.id)) {
-    currentSource = null;
-  }
-
-  if (!currentSource) {
-    creep.memory.sourceId = bestSource.id;
-    return bestSource;
-  }
-
   const currentLoad =
-    ((assignedCounts[currentSource.id] || 0) + 1) /
-    getSourceSlotCount(room, currentSource);
+    currentSource
+      ? ((assignedCounts[currentSource.id] || 0) + 1) /
+        getSourceSlotCount(room, currentSource)
+      : Infinity;
   const bestLoad =
     ((assignedCounts[bestSource.id] || 0) + 1) /
     getSourceSlotCount(room, bestSource);
 
-  if (creep.store[RESOURCE_ENERGY] === 0 && currentLoad > bestLoad + 0.5) {
+  creep.memory.lastSourceRebalance = Game.time;
+
+  if (!currentSource || currentLoad > bestLoad + 0.5) {
     creep.memory.sourceId = bestSource.id;
     return bestSource;
   }
