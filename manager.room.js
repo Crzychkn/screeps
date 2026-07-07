@@ -222,6 +222,12 @@ function isSourceContainer(container) {
   return sources.length > 0;
 }
 
+function getDroppedEnergyNearSource(source) {
+  return source.pos.findInRange(FIND_DROPPED_RESOURCES, 1, {
+    filter: (resource) => resource.resourceType === RESOURCE_ENERGY,
+  }).reduce((total, resource) => total + resource.amount, 0);
+}
+
 function getLogisticsStats(room) {
   const sources = room.find(FIND_SOURCES);
   const constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES);
@@ -232,6 +238,12 @@ function getLogisticsStats(room) {
   const sourceContainers = containers.filter(isSourceContainer);
   const sourceContainerEnergy = sourceContainers.reduce((total, container) => {
     return total + container.store[RESOURCE_ENERGY];
+  }, 0);
+  const fullSourceContainerCount = sourceContainers.filter((container) => {
+    return container.store.getFreeCapacity(RESOURCE_ENERGY) === 0;
+  }).length;
+  const droppedSourceEnergy = sources.reduce((total, source) => {
+    return total + getDroppedEnergyNearSource(source);
   }, 0);
   const storedEnergy = getStoredEnergy(room);
   const lowEnergyThreshold = Math.max(800, room.energyCapacityAvailable * 2);
@@ -245,6 +257,8 @@ function getLogisticsStats(room) {
     sourceCount: sources.length,
     sourceContainerCount: sourceContainers.length,
     sourceContainerEnergy: sourceContainerEnergy,
+    fullSourceContainerCount: fullSourceContainerCount,
+    droppedSourceEnergy: droppedSourceEnergy,
     storedEnergy: storedEnergy,
     hasSourceContainers: sourceContainers.length > 0,
     lowEnergy: storedEnergy < lowEnergyThreshold,
@@ -256,12 +270,6 @@ function getSourceContainerForSource(source) {
   return source.pos.findInRange(FIND_STRUCTURES, 1, {
     filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
   })[0];
-}
-
-function getDroppedEnergyNearSource(source) {
-  return source.pos.findInRange(FIND_DROPPED_RESOURCES, 1, {
-    filter: (resource) => resource.resourceType === RESOURCE_ENERGY,
-  }).reduce((total, resource) => total + resource.amount, 0);
 }
 
 function getAssignedHarvesterWork(room, source) {
@@ -415,6 +423,20 @@ function getDesiredCounts(room) {
     (logistics.sourceContainerEnergy > 800 || logistics.comfortableEnergy)
   ) {
     desired.tractor = Math.max(desired.tractor, 2);
+  }
+
+  if (
+    logistics.hasSourceContainers &&
+    (logistics.fullSourceContainerCount > 0 || logistics.droppedSourceEnergy > 500)
+  ) {
+    desired.tractor = Math.max(desired.tractor, 2);
+  }
+
+  if (
+    logistics.sourceContainerCount >= 2 &&
+    (logistics.fullSourceContainerCount > 0 || logistics.droppedSourceEnergy > 1500)
+  ) {
+    desired.tractor = Math.max(desired.tractor, 3);
   }
 
   if (rcl >= 4 && logistics.sourceContainerCount >= logistics.sourceCount) {
@@ -619,6 +641,7 @@ function getBodiesForRole(role, rcl, room) {
   if (role === "tractor") {
     if (rcl >= 7) {
       return [
+        [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
         [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
         [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
         [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE],
@@ -628,6 +651,7 @@ function getBodiesForRole(role, rcl, room) {
 
     if (rcl >= 4) {
       return [
+        [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
         [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE],
         [CARRY, CARRY, MOVE],
       ];

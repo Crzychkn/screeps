@@ -1,5 +1,6 @@
 const TOWER_REFILL_THRESHOLD = 700;
 const MIN_DROPPED_ENERGY = 50;
+const SOURCE_DROPPED_RANGE = 1;
 
 function moveToTarget(creep, target, stroke) {
   creep.moveTo(target, {
@@ -30,6 +31,25 @@ function isSourceContainer(container) {
   const sources = container.pos.findInRange(FIND_SOURCES, 1);
 
   return sources.length > 0;
+}
+
+function getSourceRangeDroppedEnergy(resource) {
+  const sources = resource.pos.findInRange(FIND_SOURCES, SOURCE_DROPPED_RANGE);
+
+  return sources.length > 0;
+}
+
+function sortByEnergyThenRange(creep, targets, getEnergyAmount) {
+  return targets.sort((a, b) => {
+    const energyA = getEnergyAmount(a);
+    const energyB = getEnergyAmount(b);
+
+    if (energyA !== energyB) {
+      return energyB - energyA;
+    }
+
+    return creep.pos.getRangeTo(a) - creep.pos.getRangeTo(b);
+  });
 }
 
 function isControllerContainer(container) {
@@ -109,7 +129,7 @@ function findDeliveryTarget(creep) {
 }
 
 function findSourceContainer(creep) {
-  return creep.pos.findClosestByPath(FIND_STRUCTURES, {
+  const sourceContainers = creep.room.find(FIND_STRUCTURES, {
     filter: (structure) => {
       return (
         structure.structureType === STRUCTURE_CONTAINER &&
@@ -118,10 +138,18 @@ function findSourceContainer(creep) {
       );
     },
   });
+
+  if (sourceContainers.length === 0) {
+    return null;
+  }
+
+  return sortByEnergyThenRange(creep, sourceContainers, (container) => {
+    return container.store[RESOURCE_ENERGY];
+  })[0];
 }
 
 function findDroppedEnergy(creep) {
-  return creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
+  const droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, {
     filter: (resource) => {
       return (
         resource.resourceType === RESOURCE_ENERGY &&
@@ -129,6 +157,18 @@ function findDroppedEnergy(creep) {
       );
     },
   });
+
+  if (droppedEnergy.length === 0) {
+    return null;
+  }
+
+  const sourceDroppedEnergy = droppedEnergy.filter(getSourceRangeDroppedEnergy);
+
+  return sortByEnergyThenRange(
+    creep,
+    sourceDroppedEnergy.length > 0 ? sourceDroppedEnergy : droppedEnergy,
+    (resource) => resource.amount
+  )[0];
 }
 
 function findStorageWithdrawTarget(creep) {
