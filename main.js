@@ -18,6 +18,7 @@ const militaryManager = require("manager.military");
 const warManager = require("manager.war");
 
 const CPU_LOG_INTERVAL = 100;
+const ROLE_CPU_PROFILE_INTERVAL = 100;
 const CREEP_STATE_INTERVAL = 25;
 const DEAD_MEMORY_CLEANUP_INTERVAL = 25;
 const MAIN_LOG_INTERVAL = 100;
@@ -72,6 +73,77 @@ const roles = {
   bootstrapEscort: roleBootstrapEscort,
   supplier: roleSupplier,
 };
+
+function getCpuProfileMemory() {
+  if (!Memory.cpuProfile) {
+    Memory.cpuProfile = {
+      started: Game.time,
+      roles: {},
+    };
+  }
+
+  if (!Memory.cpuProfile.roles) {
+    Memory.cpuProfile.roles = {};
+  }
+
+  return Memory.cpuProfile;
+}
+
+function recordRoleCpu(roleName, usedCpu) {
+  const profile = getCpuProfileMemory();
+
+  if (!profile.roles[roleName]) {
+    profile.roles[roleName] = {
+      cpu: 0,
+      runs: 0,
+    };
+  }
+
+  profile.roles[roleName].cpu += usedCpu;
+  profile.roles[roleName].runs++;
+}
+
+function logRoleCpuProfile() {
+  const profile = getCpuProfileMemory();
+
+  if (Game.time - profile.started < ROLE_CPU_PROFILE_INTERVAL) {
+    return;
+  }
+
+  const ticks = Math.max(Game.time - profile.started, 1);
+  const entries = Object.keys(profile.roles).map((roleName) => {
+    const roleProfile = profile.roles[roleName];
+
+    return {
+      roleName: roleName,
+      cpu: roleProfile.cpu,
+      runs: roleProfile.runs,
+      average: roleProfile.runs > 0 ? roleProfile.cpu / roleProfile.runs : 0,
+      perTick: roleProfile.cpu / ticks,
+    };
+  });
+
+  entries.sort((a, b) => b.cpu - a.cpu);
+
+  const summary = entries.slice(0, 8).map((entry) => {
+    return (
+      entry.roleName +
+      " total:" + entry.cpu.toFixed(2) +
+      " avg:" + entry.average.toFixed(3) +
+      " run:" + entry.runs +
+      " tick:" + entry.perTick.toFixed(3)
+    );
+  });
+
+  console.log(
+    `Role CPU over ${ticks} ticks - ${summary.join(" | ")}`
+  );
+
+  Memory.cpuProfile = {
+    started: Game.time,
+    roles: {},
+  };
+}
 
 function cleanDeadCreepMemory() {
   for (const name in Memory.creeps) {
@@ -182,7 +254,10 @@ function runCreep(creep) {
   }
 
   try {
+    const before = Game.cpu.getUsed();
+
     role.run(creep);
+    recordRoleCpu(roleName, Game.cpu.getUsed() - before);
   } catch (error) {
     console.log(`Error running ${roleName} for ${creep.name}:`, error);
   }
@@ -264,4 +339,5 @@ module.exports.loop = function () {
   }
 
   runCreeps();
+  logRoleCpuProfile();
 };
