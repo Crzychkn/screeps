@@ -32,10 +32,9 @@ module.exports = {
       return;
     }
 
-    const repairQueue = utils.getRepairQueue(homeRoom);
-
     // If the creep is in repair mode, find sites to repair
     if (creep.memory.repairing) {
+      const repairQueue = utils.getRepairQueue(homeRoom);
       const repairTarget = repairQueue[0];
 
       if (!repairTarget) {

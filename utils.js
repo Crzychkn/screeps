@@ -1,4 +1,6 @@
 const MIN_DROPPED_ENERGY = 25;
+const REPAIR_QUEUE_CACHE_TICKS = 10;
+const repairQueueCache = {};
 
 function getHomeRoom(creep) {
   const homeRoomName = creep.memory.homeRoom || creep.room.name;
@@ -156,7 +158,7 @@ function withdrawFromControllerContainer(creep, room) {
     return false;
   }
 
-  const target = creep.pos.findClosestByPath(controllerContainers);
+  const target = creep.pos.findClosestByRange(controllerContainers);
 
   if (!target) {
     return false;
@@ -190,7 +192,7 @@ function withdrawFromContainer(creep, room) {
     return false;
   }
 
-  const target = creep.pos.findClosestByPath(containers);
+  const target = creep.pos.findClosestByRange(containers);
 
   if (!target) {
     return false;
@@ -224,7 +226,7 @@ function pickupDroppedEnergy(creep, room) {
     return false;
   }
 
-  const target = creep.pos.findClosestByPath(droppedEnergy);
+  const target = creep.pos.findClosestByRange(droppedEnergy);
 
   if (!target) {
     return false;
@@ -251,7 +253,7 @@ function harvestSource(creep, room) {
     return false;
   }
 
-  const source = creep.pos.findClosestByPath(sources);
+  const source = creep.pos.findClosestByRange(sources);
 
   if (!source) {
     return false;
@@ -310,6 +312,12 @@ function getEnergy(creep) {
 }
 
 function getRepairQueue(room) {
+  const cached = repairQueueCache[room.name];
+
+  if (cached && Game.time - cached.tick < REPAIR_QUEUE_CACHE_TICKS) {
+    return cached.ids.map((id) => Game.getObjectById(id)).filter(Boolean);
+  }
+
   const repairSites = room.find(FIND_STRUCTURES, {
     filter: (structure) => {
       if (
@@ -340,7 +348,7 @@ function getRepairQueue(room) {
     [STRUCTURE_STORAGE]: 6,
   };
 
-  return repairSites.sort((a, b) => {
+  const queue = repairSites.sort((a, b) => {
     const healthA = a.hits / a.hitsMax;
     const healthB = b.hits / b.hitsMax;
 
@@ -357,6 +365,13 @@ function getRepairQueue(room) {
 
     return healthA - healthB;
   });
+
+  repairQueueCache[room.name] = {
+    tick: Game.time,
+    ids: queue.map((structure) => structure.id),
+  };
+
+  return queue;
 }
 
 module.exports = {
