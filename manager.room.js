@@ -368,6 +368,12 @@ function getMaintenanceTargets(room) {
   });
 }
 
+function getCriticalMaintenanceTargets(maintenanceTargets) {
+  return maintenanceTargets.filter((structure) => {
+    return structure.hits < structure.hitsMax * 0.35;
+  });
+}
+
 function getDesiredCounts(room) {
   const rcl = room.controller.level;
   const logistics = getLogisticsStats(room);
@@ -461,12 +467,19 @@ function getDesiredCounts(room) {
   }
 
   const maintenanceTargets = getMaintenanceTargets(room);
+  const criticalMaintenanceTargets = getCriticalMaintenanceTargets(maintenanceTargets);
 
-  if (rcl >= 2 && maintenanceTargets.length > 0) {
+  if (
+    rcl >= 2 &&
+    (criticalMaintenanceTargets.length > 0 || maintenanceTargets.length >= 5)
+  ) {
     desired.repairer = 1;
   }
 
-  if (rcl >= 5 && maintenanceTargets.length > 20) {
+  if (
+    rcl >= 5 &&
+    (criticalMaintenanceTargets.length >= 3 || maintenanceTargets.length > 20)
+  ) {
     desired.repairer = 2;
   }
 
