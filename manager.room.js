@@ -389,7 +389,7 @@ function getDesiredCounts(room) {
   if (rcl >= 3) {
     desired.harvester = 4;
     desired.builder = logistics.constructionSiteCount > 0 ? 2 : 0;
-    desired.upgrader = 4;
+    desired.upgrader = 2;
 
     if (logistics.hasSourceContainers && logistics.sourceContainerEnergy > 100) {
       desired.tractor = 1;
@@ -399,7 +399,7 @@ function getDesiredCounts(room) {
   if (rcl >= 4) {
     desired.harvester = 4;
     desired.builder = logistics.constructionSiteCount > 0 ? 2 : 0;
-    desired.upgrader = 4;
+    desired.upgrader = 2;
     desired.tractor =
       logistics.hasSourceContainers &&
       (logistics.sourceContainerEnergy > 100 || logistics.storedEnergy > 1200)
@@ -410,7 +410,7 @@ function getDesiredCounts(room) {
   if (rcl >= 5) {
     desired.harvester = 5;
     desired.builder = logistics.constructionSiteCount > 0 ? 2 : 0;
-    desired.upgrader = 5;
+    desired.upgrader = 3;
     desired.tractor =
       logistics.hasSourceContainers &&
       (logistics.sourceContainerEnergy > 100 || logistics.storedEnergy > 1200)
@@ -444,7 +444,7 @@ function getDesiredCounts(room) {
   }
 
   if (rcl === 7 && logistics.storedEnergy > 900000) {
-    desired.upgrader = 7;
+    desired.upgrader = 4;
   }
 
   if (rcl >= 8) {
@@ -620,6 +620,7 @@ function getBodiesForRole(role, rcl, room) {
   if (role === "upgrader") {
     if (rcl >= 6) {
       return [
+        [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
         [WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
         [WORK, WORK, CARRY, CARRY, MOVE, MOVE],
         [WORK, CARRY, MOVE],
@@ -628,6 +629,7 @@ function getBodiesForRole(role, rcl, room) {
 
     if (rcl >= 3) {
       return [
+        [WORK, WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
         [WORK, WORK, CARRY, CARRY, MOVE, MOVE],
         [WORK, CARRY, MOVE],
       ];
