@@ -3,6 +3,7 @@ const utils = require("utils");
 const SOURCE_RESERVE = 200000;
 const PARKING_MIN_RANGE = 4;
 const PARKING_MAX_RANGE = 7;
+const PARKING_RECHECK_INTERVAL = 50;
 
 function getTargetRoom(creep) {
   if (!creep.memory.targetRoom) {
@@ -131,16 +132,45 @@ function findParkingPosition(room) {
   return null;
 }
 
+function getCachedParkingPosition(creep, room) {
+  if (
+    !creep.memory.parkingPosition ||
+    creep.memory.parkingRoom !== room.name ||
+    !creep.memory.parkingTick ||
+    Game.time - creep.memory.parkingTick > PARKING_RECHECK_INTERVAL
+  ) {
+    return null;
+  }
+
+  return new RoomPosition(
+    creep.memory.parkingPosition.x,
+    creep.memory.parkingPosition.y,
+    room.name
+  );
+}
+
+function rememberParkingPosition(creep, position) {
+  creep.memory.parkingRoom = position.roomName;
+  creep.memory.parkingPosition = {
+    x: position.x,
+    y: position.y,
+  };
+  creep.memory.parkingTick = Game.time;
+}
+
 function park(creep, room) {
   if (!room || creep.room.name !== room.name) {
     return false;
   }
 
-  const parkingPosition = findParkingPosition(room);
+  const parkingPosition =
+    getCachedParkingPosition(creep, room) || findParkingPosition(room);
 
   if (!parkingPosition) {
     return false;
   }
+
+  rememberParkingPosition(creep, parkingPosition);
 
   if (creep.pos.isEqualTo(parkingPosition)) {
     setStatus(creep, "parked");

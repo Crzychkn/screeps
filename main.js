@@ -28,6 +28,7 @@ const INTEL_MANAGER_INTERVAL = 5;
 const PLANNING_MANAGER_INTERVAL = 10;
 const OPTIONAL_CREEP_CPU_LIMIT = 18;
 const OPTIONAL_CREEP_CPU_BUCKET_LIMIT = 5000;
+const HARD_CPU_STOP = 19;
 
 const CRITICAL_CREEP_ROLES = {
   harvester: true,
@@ -240,6 +241,10 @@ function shouldRunCreep(creep) {
   return true;
 }
 
+function shouldStopForCpu() {
+  return Game.cpu.getUsed() > HARD_CPU_STOP;
+}
+
 function runCreep(creep) {
   const roleName = creep.memory.role;
   const role = roles[roleName];
@@ -267,6 +272,10 @@ function runCreeps() {
   const optionalCreeps = [];
 
   for (const name in Game.creeps) {
+    if (shouldStopForCpu()) {
+      return;
+    }
+
     const creep = Game.creeps[name];
 
     if (CRITICAL_CREEP_ROLES[creep.memory.role]) {
@@ -279,8 +288,11 @@ function runCreeps() {
 
   for (const creep of optionalCreeps) {
     if (
-      Game.cpu.bucket < OPTIONAL_CREEP_CPU_BUCKET_LIMIT &&
-      Game.cpu.getUsed() > OPTIONAL_CREEP_CPU_LIMIT
+      shouldStopForCpu() ||
+      (
+        Game.cpu.bucket < OPTIONAL_CREEP_CPU_BUCKET_LIMIT &&
+        Game.cpu.getUsed() > OPTIONAL_CREEP_CPU_LIMIT
+      )
     ) {
       return;
     }
@@ -306,9 +318,13 @@ module.exports.loop = function () {
     console.log(`GCL: ${Game.gcl.level}`);
   }
 
+  runCreeps();
+
   if (Game.time % INTEL_MANAGER_INTERVAL === 0) {
     try {
-      intelManager.run();
+      if (!shouldStopForCpu()) {
+        intelManager.run();
+      }
     } catch (error) {
       console.log("Intel manager error:", error);
     }
@@ -316,7 +332,9 @@ module.exports.loop = function () {
 
   if (Game.time % PLANNING_MANAGER_INTERVAL === 0) {
     try {
-      militaryManager.run();
+      if (!shouldStopForCpu()) {
+        militaryManager.run();
+      }
     } catch (error) {
       console.log("Military manager error:", error);
     }
@@ -324,13 +342,19 @@ module.exports.loop = function () {
 
   if (Game.time % PLANNING_MANAGER_INTERVAL === 0) {
     try {
-      warManager.run();
+      if (!shouldStopForCpu()) {
+        warManager.run();
+      }
     } catch (error) {
       console.log("War manager error:", error);
     }
   }
 
   for (const room of ownedRooms) {
+    if (shouldStopForCpu()) {
+      break;
+    }
+
     try {
       roomManager.run(room);
     } catch (error) {
@@ -338,6 +362,7 @@ module.exports.loop = function () {
     }
   }
 
-  runCreeps();
-  logRoleCpuProfile();
+  if (!shouldStopForCpu()) {
+    logRoleCpuProfile();
+  }
 };
