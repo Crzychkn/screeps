@@ -131,7 +131,7 @@ function chooseLeastLoadedSource(creep, room, sources, assignedCounts) {
 }
 
 function findClosestOwnedStructureToFill(creep, structureType) {
-  return creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
+  return creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
     filter: (structure) => {
       if (structure.structureType !== structureType) {
         return false;
@@ -245,7 +245,7 @@ function findNearbyContainerToFill(creep) {
 }
 
 function findClosestContainerToFill(creep) {
-  return creep.pos.findClosestByPath(FIND_STRUCTURES, {
+  return creep.pos.findClosestByRange(FIND_STRUCTURES, {
     filter: (structure) => {
       return (
         structure.structureType === STRUCTURE_CONTAINER &&

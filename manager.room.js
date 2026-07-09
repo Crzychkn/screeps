@@ -24,6 +24,7 @@ const LOW_BUCKET_SPAWN_INTERVAL = 3;
 const CRITICAL_BUCKET_SPAWN_INTERVAL = 5;
 const STRATEGIC_SPAWN_INTERVAL = 25;
 const SPAWN_VISUAL_INTERVAL = 5;
+const DEFENSE_SPAWN_INTERVAL = 5;
 const logisticsStatsCache = {};
 
 const ROLE_PRIORITY = [
@@ -1000,15 +1001,11 @@ function shouldSignRoom(room) {
     return false;
   }
 
-  if (
-    room.controller.sign &&
+  return !( room.controller.sign &&
     room.controller.sign.username === room.controller.owner.username &&
-    room.controller.sign.text === signText
-  ) {
-    return false;
-  }
+    room.controller.sign.text === signText );
 
-  return true;
+
 }
 
 function manageSigningSupport(room, counts, desired) {
@@ -1920,6 +1917,24 @@ function shouldShowSpawnVisual(room) {
   return (Game.time + getRoomCpuOffset(room)) % SPAWN_VISUAL_INTERVAL === 0;
 }
 
+function shouldRunDefenseSpawn(room) {
+  return (Game.time + getRoomCpuOffset(room)) % DEFENSE_SPAWN_INTERVAL === 0;
+}
+
+function runMeasuredRoomPhase(room, phase, callback) {
+  const before = Game.cpu.getUsed();
+
+  callback();
+
+  const usedCpu = Game.cpu.getUsed() - before;
+
+  if (usedCpu >= 1) {
+    console.log(
+      `Slow room phase ${room.name}:${phase} cpu=${usedCpu.toFixed(2)}`
+    );
+  }
+}
+
 module.exports = {
   run: function (room) {
     if (!room.controller || !room.controller.my) {
@@ -1933,30 +1948,44 @@ module.exports = {
       console.log(`Energy: ${room.energyAvailable}/${room.energyCapacityAvailable}`);
     }
 
-    logIncomeEfficiency(room);
+    runMeasuredRoomPhase(room, "income", function () {
+      logIncomeEfficiency(room);
+    });
 
     try {
-      roleTower.run(room.name);
+      runMeasuredRoomPhase(room, "tower", function () {
+        roleTower.run(room.name);
+      });
     } catch (error) {
       console.log(`Tower error in ${room.name}:`, error);
     }
 
     if (shouldRunConstruction(room)) {
       try {
-        constructionManager.run(room);
+        runMeasuredRoomPhase(room, "construction", function () {
+          constructionManager.run(room);
+        });
       } catch (error) {
         console.log(`Construction manager error in ${room.name}:`, error);
       }
     }
 
-    manageDefense(room);
+    if (shouldRunDefenseSpawn(room)) {
+      runMeasuredRoomPhase(room, "defense", function () {
+        manageDefense(room);
+      });
+    }
 
     if (shouldRunSpawning(room)) {
-      manageSpawning(room);
+      runMeasuredRoomPhase(room, "spawn", function () {
+        manageSpawning(room);
+      });
     }
 
     if (shouldShowSpawnVisual(room)) {
-      showSpawnVisual(room);
+      runMeasuredRoomPhase(room, "visual", function () {
+        showSpawnVisual(room);
+      });
     }
   },
 };
