@@ -29,6 +29,8 @@ const PLANNING_MANAGER_INTERVAL = 10;
 const OPTIONAL_CREEP_CPU_LIMIT = 18;
 const OPTIONAL_CREEP_CPU_BUCKET_LIMIT = 5000;
 const HARD_CPU_STOP = 19;
+const SLOW_CREEP_CPU = 2;
+const SLOW_CREEP_LOG_INTERVAL = 100;
 
 const CRITICAL_CREEP_ROLES = {
   harvester: true,
@@ -262,7 +264,22 @@ function runCreep(creep) {
     const before = Game.cpu.getUsed();
 
     role.run(creep);
-    recordRoleCpu(roleName, Game.cpu.getUsed() - before);
+    const usedCpu = Game.cpu.getUsed() - before;
+
+    recordRoleCpu(roleName, usedCpu);
+
+    if (
+      usedCpu >= SLOW_CREEP_CPU &&
+      (!creep.memory.lastSlowCpuLog ||
+        Game.time - creep.memory.lastSlowCpuLog >= SLOW_CREEP_LOG_INTERVAL)
+    ) {
+      creep.memory.lastSlowCpuLog = Game.time;
+      console.log(
+        `Slow creep ${creep.name} role=${roleName} cpu=${usedCpu.toFixed(2)} ` +
+        `room=${creep.room.name} home=${creep.memory.homeRoom || "unknown"} ` +
+        `target=${creep.memory.targetRoom || "none"} status=${creep.memory.lastStatus || "unknown"}`
+      );
+    }
   } catch (error) {
     console.log(`Error running ${roleName} for ${creep.name}:`, error);
   }

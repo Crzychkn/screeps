@@ -446,7 +446,15 @@ function getDesiredCounts(room) {
   }
 
   if (rcl >= 4 && logistics.sourceContainerCount >= logistics.sourceCount) {
-    desired.harvester = Math.max(logistics.sourceCount, 2);
+    desired.harvester = logistics.sourceCount;
+  }
+
+  if (
+    rcl >= 3 &&
+    logistics.sourceCount === 1 &&
+    logistics.sourceContainerCount < logistics.sourceCount
+  ) {
+    desired.harvester = Math.min(desired.harvester, 2);
   }
 
   if (rcl === 7 && logistics.storedEnergy > 900000) {
@@ -460,6 +468,7 @@ function getDesiredCounts(room) {
   if (logistics.lowEnergy) {
     desired.upgrader = Math.min(desired.upgrader, 1);
     desired.builder = Math.min(desired.builder, 1);
+    desired.harvester = Math.max(desired.harvester, logistics.sourceCount);
 
     if (logistics.sourceContainerEnergy > 100) {
       desired.tractor = Math.max(desired.tractor, 1);
