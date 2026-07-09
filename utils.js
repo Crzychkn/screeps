@@ -108,9 +108,9 @@ function moveToRoom(creep, roomName, stroke) {
   }
 
   return creep.moveTo(destination, {
-    reusePath: 0,
+    reusePath: 10,
     maxRooms: 2,
-    routeCallback: getSafeRoomRouteOptions(roomName).routeCallback,
+    ignoreCreeps: true,
     visualizePathStyle: {
       stroke: stroke || "#ffffff",
     },

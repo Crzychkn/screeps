@@ -31,6 +31,7 @@ const OPTIONAL_CREEP_CPU_BUCKET_LIMIT = 5000;
 const HARD_CPU_STOP = 19;
 const SLOW_CREEP_CPU = 2;
 const SLOW_CREEP_LOG_INTERVAL = 100;
+const SLOW_MANAGER_CPU = 2;
 
 const CRITICAL_CREEP_ROLES = {
   harvester: true,
@@ -247,6 +248,18 @@ function shouldStopForCpu() {
   return Game.cpu.getUsed() > HARD_CPU_STOP;
 }
 
+function runMeasured(label, callback) {
+  const before = Game.cpu.getUsed();
+
+  callback();
+
+  const usedCpu = Game.cpu.getUsed() - before;
+
+  if (usedCpu >= SLOW_MANAGER_CPU) {
+    console.log(`Slow manager ${label} cpu=${usedCpu.toFixed(2)}`);
+  }
+}
+
 function runCreep(creep) {
   const roleName = creep.memory.role;
   const role = roles[roleName];
@@ -340,7 +353,9 @@ module.exports.loop = function () {
   if (Game.time % INTEL_MANAGER_INTERVAL === 0) {
     try {
       if (!shouldStopForCpu()) {
-        intelManager.run();
+        runMeasured("intel", function () {
+          intelManager.run();
+        });
       }
     } catch (error) {
       console.log("Intel manager error:", error);
@@ -350,7 +365,9 @@ module.exports.loop = function () {
   if (Game.time % PLANNING_MANAGER_INTERVAL === 0) {
     try {
       if (!shouldStopForCpu()) {
-        militaryManager.run();
+        runMeasured("military", function () {
+          militaryManager.run();
+        });
       }
     } catch (error) {
       console.log("Military manager error:", error);
@@ -360,7 +377,9 @@ module.exports.loop = function () {
   if (Game.time % PLANNING_MANAGER_INTERVAL === 0) {
     try {
       if (!shouldStopForCpu()) {
-        warManager.run();
+        runMeasured("war", function () {
+          warManager.run();
+        });
       }
     } catch (error) {
       console.log("War manager error:", error);
@@ -373,7 +392,9 @@ module.exports.loop = function () {
     }
 
     try {
-      roomManager.run(room);
+      runMeasured("room:" + room.name, function () {
+        roomManager.run(room);
+      });
     } catch (error) {
       console.log(`Error managing room ${room.name}:`, error);
     }
