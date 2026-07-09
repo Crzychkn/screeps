@@ -22,6 +22,9 @@ const LOW_BUCKET_SPAWN_LIMIT = 3000;
 const CRITICAL_BUCKET_SPAWN_LIMIT = 1000;
 const LOW_BUCKET_SPAWN_INTERVAL = 3;
 const CRITICAL_BUCKET_SPAWN_INTERVAL = 5;
+const STRATEGIC_SPAWN_INTERVAL = 25;
+const SPAWN_VISUAL_INTERVAL = 5;
+const logisticsStatsCache = {};
 
 const ROLE_PRIORITY = [
   "harvester",
@@ -229,6 +232,12 @@ function getDroppedEnergyNearSource(source) {
 }
 
 function getLogisticsStats(room) {
+  const cached = logisticsStatsCache[room.name];
+
+  if (cached && cached.tick === Game.time) {
+    return cached.stats;
+  }
+
   const sources = room.find(FIND_SOURCES);
   const constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES);
   const containers = room.find(FIND_STRUCTURES, {
@@ -252,7 +261,7 @@ function getLogisticsStats(room) {
     room.energyCapacityAvailable * 3
   );
 
-  return {
+  const stats = {
     constructionSiteCount: constructionSites.length,
     sourceCount: sources.length,
     sourceContainerCount: sourceContainers.length,
@@ -264,6 +273,13 @@ function getLogisticsStats(room) {
     lowEnergy: storedEnergy < lowEnergyThreshold,
     comfortableEnergy: storedEnergy >= comfortableEnergyThreshold,
   };
+
+  logisticsStatsCache[room.name] = {
+    tick: Game.time,
+    stats: stats,
+  };
+
+  return stats;
 }
 
 function getSourceContainerForSource(source) {
@@ -1772,36 +1788,38 @@ function manageSpawning(room) {
     return;
   }
 
-  if (manageBootstrapEscorts(room, counts, desired)) {
-    return;
-  }
+  if (shouldRunStrategicSpawning(room)) {
+    if (manageBootstrapEscorts(room, counts, desired)) {
+      return;
+    }
 
-  if (manageEnergySupport(room, counts, desired)) {
-    return;
-  }
+    if (manageEnergySupport(room, counts, desired)) {
+      return;
+    }
 
-  if (manageExpansionSupport(room, counts, desired)) {
-    return;
-  }
+    if (manageExpansionSupport(room, counts, desired)) {
+      return;
+    }
 
-  if (manageClaimingSupport(room, counts, desired)) {
-    return;
-  }
+    if (manageClaimingSupport(room, counts, desired)) {
+      return;
+    }
 
-  if (manageExpansionScouting(room, counts, desired)) {
-    return;
-  }
+    if (manageExpansionScouting(room, counts, desired)) {
+      return;
+    }
 
-  if (manageSigningSupport(room, counts, desired)) {
-    return;
-  }
+    if (manageSigningSupport(room, counts, desired)) {
+      return;
+    }
 
-  if (manageMilitaryScouting(room, counts, desired)) {
-    return;
-  }
+    if (manageMilitaryScouting(room, counts, desired)) {
+      return;
+    }
 
-  if (manageMilitaryAttackers(room, counts, desired)) {
-    return;
+    if (manageMilitaryAttackers(room, counts, desired)) {
+      return;
+    }
   }
 
   for (const role of ROLE_PRIORITY) {
@@ -1890,6 +1908,18 @@ function shouldRunSpawning(room) {
   return (Game.time + getRoomCpuOffset(room)) % interval === 0;
 }
 
+function shouldRunStrategicSpawning(room) {
+  return (Game.time + getRoomCpuOffset(room)) % STRATEGIC_SPAWN_INTERVAL === 0;
+}
+
+function shouldShowSpawnVisual(room) {
+  if (Game.cpu.bucket < LOW_BUCKET_VISUAL_LIMIT) {
+    return false;
+  }
+
+  return (Game.time + getRoomCpuOffset(room)) % SPAWN_VISUAL_INTERVAL === 0;
+}
+
 module.exports = {
   run: function (room) {
     if (!room.controller || !room.controller.my) {
@@ -1925,7 +1955,7 @@ module.exports = {
       manageSpawning(room);
     }
 
-    if (Game.cpu.bucket >= LOW_BUCKET_VISUAL_LIMIT) {
+    if (shouldShowSpawnVisual(room)) {
       showSpawnVisual(room);
     }
   },
