@@ -412,7 +412,7 @@ function getDesiredCounts(room) {
   if (rcl >= 3) {
     desired.harvester = 4;
     desired.builder = logistics.constructionSiteCount > 0 ? 2 : 0;
-    desired.upgrader = 2;
+    desired.upgrader = logistics.comfortableEnergy ? 2 : 1;
 
     if (logistics.hasSourceContainers && logistics.sourceContainerEnergy > 100) {
       desired.tractor = 1;
@@ -422,7 +422,7 @@ function getDesiredCounts(room) {
   if (rcl >= 4) {
     desired.harvester = 4;
     desired.builder = logistics.constructionSiteCount > 0 ? 2 : 0;
-    desired.upgrader = 2;
+    desired.upgrader = logistics.comfortableEnergy ? 2 : 1;
     desired.tractor =
       logistics.hasSourceContainers &&
       (logistics.sourceContainerEnergy > 100 || logistics.storedEnergy > 1200)
@@ -433,7 +433,7 @@ function getDesiredCounts(room) {
   if (rcl >= 5) {
     desired.harvester = 5;
     desired.builder = logistics.constructionSiteCount > 0 ? 2 : 0;
-    desired.upgrader = 3;
+    desired.upgrader = logistics.comfortableEnergy ? 3 : 1;
     desired.tractor =
       logistics.hasSourceContainers &&
       (logistics.sourceContainerEnergy > 100 || logistics.storedEnergy > 1200)

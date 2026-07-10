@@ -22,15 +22,41 @@ function upgradeController(creep, room) {
   const result = creep.upgradeController(room.controller);
 
   if (result === ERR_NOT_IN_RANGE) {
-    creep.moveTo(room.controller, {
+    const target = getUpgradeTarget(creep, room);
+
+    creep.moveTo(target, {
       range: 3,
       maxRooms: 1,
-      reusePath: 5,
+      reusePath: 10,
+      ignoreCreeps: true,
       visualizePathStyle: {
         stroke: "#ffffff",
       },
     });
   }
+}
+
+function getUpgradeTarget(creep, room) {
+  if (
+    creep.memory.upgradeTarget &&
+    creep.memory.upgradeTarget.roomName === room.name
+  ) {
+    return new RoomPosition(
+      creep.memory.upgradeTarget.x,
+      creep.memory.upgradeTarget.y,
+      room.name
+    );
+  }
+
+  const target = room.controller.pos;
+
+  creep.memory.upgradeTarget = {
+    x: target.x,
+    y: target.y,
+    roomName: room.name,
+  };
+
+  return target;
 }
 
 module.exports = {
