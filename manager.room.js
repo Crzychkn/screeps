@@ -25,6 +25,8 @@ const CRITICAL_BUCKET_SPAWN_INTERVAL = 5;
 const STRATEGIC_SPAWN_INTERVAL = 25;
 const SPAWN_VISUAL_INTERVAL = 5;
 const DEFENSE_SPAWN_INTERVAL = 5;
+const SOURCE_WORK_TARGET = 5;
+const STORAGE_COMFORTABLE_ENERGY = 200000;
 const logisticsStatsCache = {};
 
 const ROLE_PRIORITY = [
@@ -232,6 +234,28 @@ function getDroppedEnergyNearSource(source) {
   }).reduce((total, resource) => total + resource.amount, 0);
 }
 
+function getAssignedHarvesterWorkBySource(room) {
+  const assignedWork = {};
+
+  for (const name in Game.creeps) {
+    const creep = Game.creeps[name];
+
+    if (
+      creep.memory.role !== "harvester" ||
+      creep.memory.homeRoom !== room.name ||
+      !creep.memory.sourceId
+    ) {
+      continue;
+    }
+
+    assignedWork[creep.memory.sourceId] =
+      (assignedWork[creep.memory.sourceId] || 0) +
+      creep.getActiveBodyparts(WORK);
+  }
+
+  return assignedWork;
+}
+
 function getLogisticsStats(room) {
   const cached = logisticsStatsCache[room.name];
 
@@ -255,12 +279,15 @@ function getLogisticsStats(room) {
   const droppedSourceEnergy = sources.reduce((total, source) => {
     return total + getDroppedEnergyNearSource(source);
   }, 0);
+  const assignedHarvesterWork = getAssignedHarvesterWorkBySource(room);
+  const weakHarvestingSourceCount = sources.filter((source) => {
+    return (assignedHarvesterWork[source.id] || 0) < SOURCE_WORK_TARGET;
+  }).length;
   const storedEnergy = getStoredEnergy(room);
   const lowEnergyThreshold = Math.max(800, room.energyCapacityAvailable * 2);
-  const comfortableEnergyThreshold = Math.max(
-    1600,
-    room.energyCapacityAvailable * 3
-  );
+  const comfortableEnergyThreshold = room.storage
+    ? Math.max(STORAGE_COMFORTABLE_ENERGY, room.energyCapacityAvailable * 10)
+    : Math.max(1600, room.energyCapacityAvailable * 3);
 
   const stats = {
     constructionSiteCount: constructionSites.length,
@@ -269,6 +296,7 @@ function getLogisticsStats(room) {
     sourceContainerEnergy: sourceContainerEnergy,
     fullSourceContainerCount: fullSourceContainerCount,
     droppedSourceEnergy: droppedSourceEnergy,
+    weakHarvestingSourceCount: weakHarvestingSourceCount,
     storedEnergy: storedEnergy,
     hasSourceContainers: sourceContainers.length > 0,
     lowEnergy: storedEnergy < lowEnergyThreshold,
@@ -464,6 +492,21 @@ function getDesiredCounts(room) {
 
   if (rcl >= 4 && logistics.sourceContainerCount >= logistics.sourceCount) {
     desired.harvester = logistics.sourceCount;
+  }
+
+  if (rcl >= 4 && logistics.weakHarvestingSourceCount > 0) {
+    desired.harvester = Math.max(
+      desired.harvester,
+      logistics.sourceCount + logistics.weakHarvestingSourceCount
+    );
+  }
+
+  if (
+    rcl === 3 &&
+    logistics.sourceCount === 1 &&
+    logistics.hasSourceContainers
+  ) {
+    desired.harvester = Math.min(desired.harvester, 3);
   }
 
   if (
