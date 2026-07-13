@@ -809,6 +809,34 @@ function spawnRole(room, role, body) {
   return result;
 }
 
+function spawnRoleWithMemory(room, role, body, memory) {
+  const spawn = getAvailableSpawn(room);
+
+  if (!spawn) {
+    return ERR_BUSY;
+  }
+
+  if (!body || bodyCost(body) > room.energyAvailable) {
+    return ERR_NOT_ENOUGH_ENERGY;
+  }
+
+  const name = role.charAt(0).toUpperCase() + role.slice(1) + Game.time;
+  const result = spawn.spawnCreep(body, name, {
+    memory: Object.assign({
+      role: role,
+      homeRoom: room.name,
+    }, memory || {}),
+  });
+
+  if (result === OK) {
+    console.log(`Spawning ${role} in ${room.name}: ${name}`);
+  } else {
+    console.log(`Failed to spawn ${role} in ${room.name}: ${result}`);
+  }
+
+  return result;
+}
+
 function spawnTargetedDefender(room, body, targetRoomName) {
   const spawn = getAvailableSpawn(room);
 
@@ -1969,6 +1997,80 @@ function manageDefense(room) {
   }
 }
 
+function getEmergencyDefenderBody(room) {
+  const bodies = [
+    [TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, HEAL],
+    [MOVE, MOVE, RANGED_ATTACK, HEAL],
+    [MOVE, RANGED_ATTACK],
+    [MOVE, ATTACK],
+  ];
+
+  for (const body of bodies) {
+    if (bodyCost(body) <= room.energyAvailable) {
+      return body;
+    }
+  }
+
+  return null;
+}
+
+function needsTowerEnergy(room) {
+  const tower = room.find(FIND_MY_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_TOWER &&
+        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+      );
+    },
+  })[0];
+
+  return !!tower;
+}
+
+function manageHostileEmergencySpawning(room, counts) {
+  const hostiles = room.find(FIND_HOSTILE_CREEPS);
+
+  if (hostiles.length === 0) {
+    return false;
+  }
+
+  if (needsTowerEnergy(room) && counts.stim === 0) {
+    const body = bodyCost([MOVE, MOVE, CARRY, CARRY]) <= room.energyAvailable
+      ? [MOVE, MOVE, CARRY, CARRY]
+      : [MOVE, CARRY];
+
+    if (bodyCost(body) <= room.energyAvailable) {
+      spawnRole(room, "stim", body);
+      return true;
+    }
+  }
+
+  const localDefenders = getRoomCreeps(room, "defender").filter((creep) => {
+    return !creep.memory.targetRoom;
+  });
+  const functionalDefenders = localDefenders.filter((creep) => {
+    return (
+      creep.getActiveBodyparts(ATTACK) > 0 ||
+      creep.getActiveBodyparts(RANGED_ATTACK) > 0
+    );
+  });
+
+  if (functionalDefenders.length >= Math.max(hostiles.length, 1)) {
+    return true;
+  }
+
+  const body = getEmergencyDefenderBody(room);
+
+  if (!body) {
+    return true;
+  }
+
+  spawnRoleWithMemory(room, "defender", body, {
+    emergency: true,
+  });
+  return true;
+}
+
 function manageSpawning(room) {
   const spawn = getAvailableSpawn(room);
 
@@ -1995,6 +2097,10 @@ function manageSpawning(room) {
       `Stims: ${counts.stim}, ` +
       `Signers: ${counts.signer}`
     );
+  }
+
+  if (manageHostileEmergencySpawning(room, counts)) {
+    return;
   }
 
   // Emergency recovery: if the room has no harvesters, prioritize the cheapest viable worker.
