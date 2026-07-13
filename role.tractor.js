@@ -228,6 +228,8 @@ function harvestFallback(creep) {
   if (result === ERR_NOT_IN_RANGE) {
     moveToTarget(creep, source, "#ffaa00");
   }
+
+  return result === OK || result === ERR_NOT_IN_RANGE;
 }
 
 function collectEnergy(creep) {
@@ -242,7 +244,7 @@ function collectEnergy(creep) {
       moveToTarget(creep, sourceContainer, "#ffaa00");
     }
 
-    return;
+    return true;
   }
 
   const droppedEnergy = findDroppedEnergy(creep);
@@ -256,7 +258,7 @@ function collectEnergy(creep) {
       moveToTarget(creep, droppedEnergy, "#ffaa00");
     }
 
-    return;
+    return true;
   }
 
   const storage = findStorageWithdrawTarget(creep);
@@ -270,10 +272,10 @@ function collectEnergy(creep) {
       moveToTarget(creep, storage, "#ffaa00");
     }
 
-    return;
+    return true;
   }
 
-  harvestFallback(creep);
+  return harvestFallback(creep);
 }
 
 function deliverEnergy(creep) {
@@ -299,6 +301,18 @@ function deliverEnergy(creep) {
   }
 }
 
+function shouldDeliverPartial(creep) {
+  if (creep.store[RESOURCE_ENERGY] === 0) {
+    return false;
+  }
+
+  if (hasHostiles(creep.room) && findTowerDeliveryTarget(creep, HOSTILE_TOWER_REFILL_THRESHOLD)) {
+    return true;
+  }
+
+  return !findSourceContainer(creep) && !findDroppedEnergy(creep);
+}
+
 module.exports = {
   /** @param {Creep} creep **/
   run: function (creep) {
@@ -312,6 +326,21 @@ module.exports = {
       }
 
       if (creep.memory.withdraw) {
+        const collecting = collectEnergy(creep);
+
+        if (!collecting && shouldDeliverPartial(creep)) {
+          creep.memory.withdraw = false;
+          deliverEnergy(creep);
+        }
+
+        return;
+      }
+
+      if (
+        creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
+        !shouldDeliverPartial(creep)
+      ) {
+        creep.memory.withdraw = true;
         collectEnergy(creep);
         return;
       }
