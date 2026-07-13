@@ -1,4 +1,5 @@
 const TOWER_REFILL_THRESHOLD = 700;
+const HOSTILE_TOWER_REFILL_THRESHOLD = 1000;
 const SOURCE_REBALANCE_INTERVAL = 100;
 const utils = require("utils");
 
@@ -150,6 +151,22 @@ function findClosestOwnedStructureToFill(creep, structureType) {
   });
 }
 
+function hasHostiles(room) {
+  return room.find(FIND_HOSTILE_CREEPS).length > 0;
+}
+
+function findTowerToFill(creep, threshold) {
+  return creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_TOWER &&
+        structure.store[RESOURCE_ENERGY] < threshold &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+}
+
 function getAssignedSource(creep) {
   const room = getHomeRoom(creep);
   const sources = room.find(FIND_SOURCES);
@@ -257,6 +274,14 @@ function findClosestContainerToFill(creep) {
 
 function findDeliveryTarget(creep) {
   const room = getHomeRoom(creep);
+
+  if (hasHostiles(room)) {
+    const tower = findTowerToFill(creep, HOSTILE_TOWER_REFILL_THRESHOLD);
+
+    if (tower) {
+      return tower;
+    }
+  }
 
   if (hasLogisticsSupport(room)) {
     const sourceContainer = findAssignedSourceContainer(creep, false);

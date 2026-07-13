@@ -1306,7 +1306,7 @@ function isFreshExpansionIntel(intel) {
 function isNormalRoom(roomName) {
   const status = Game.map.getRoomStatus(roomName);
 
-  return status.status === "normal";
+  return !!status && status.status === "normal";
 }
 
 function hasExpansionScoutForTarget(roomName) {

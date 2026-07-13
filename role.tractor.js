@@ -1,4 +1,5 @@
 const TOWER_REFILL_THRESHOLD = 700;
+const HOSTILE_TOWER_REFILL_THRESHOLD = 1000;
 const MIN_DROPPED_ENERGY = 50;
 const SOURCE_DROPPED_RANGE = 1;
 
@@ -64,7 +65,39 @@ function isControllerContainer(container) {
   return container.pos.getRangeTo(container.room.controller) <= 3;
 }
 
+function hasHostiles(room) {
+  return room.find(FIND_HOSTILE_CREEPS).length > 0;
+}
+
+function findTowerDeliveryTarget(creep, threshold) {
+  const towers = creep.room.find(FIND_MY_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_TOWER &&
+        structure.store[RESOURCE_ENERGY] < threshold &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+
+  if (towers.length === 0) {
+    return null;
+  }
+
+  return sortByEnergyThenRange(creep, towers, (tower) => {
+    return tower.store.getFreeCapacity(RESOURCE_ENERGY);
+  })[0];
+}
+
 function findPriorityDeliveryTarget(creep) {
+  if (hasHostiles(creep.room)) {
+    const tower = findTowerDeliveryTarget(creep, HOSTILE_TOWER_REFILL_THRESHOLD);
+
+    if (tower) {
+      return tower;
+    }
+  }
+
   const spawnOrExtensions = creep.room.find(FIND_MY_STRUCTURES, {
     filter: (structure) => {
       return (
@@ -81,17 +114,7 @@ function findPriorityDeliveryTarget(creep) {
     return creep.pos.findClosestByRange(spawnOrExtensions);
   }
 
-  const towers = creep.room.find(FIND_MY_STRUCTURES, {
-    filter: (structure) => {
-      return (
-        structure.structureType === STRUCTURE_TOWER &&
-        structure.store[RESOURCE_ENERGY] < TOWER_REFILL_THRESHOLD &&
-        hasFreeEnergyCapacity(structure)
-      );
-    },
-  });
-
-  return creep.pos.findClosestByRange(towers);
+  return findTowerDeliveryTarget(creep, TOWER_REFILL_THRESHOLD);
 }
 
 function findDeliveryTarget(creep) {

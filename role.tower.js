@@ -2,9 +2,14 @@ const utils = require("utils");
 
 const STIM_SPAWN_THRESHOLD = 400;
 const STIM_BODY = [MOVE, MOVE, CARRY, CARRY];
+const STIM_FALLBACK_BODY = [MOVE, CARRY];
 const TOWER_REPAIR_MIN_ENERGY = 600;
 const TOWER_REPAIR_INTERVAL = 10;
 const LOW_BUCKET_REPAIR_LIMIT = 3000;
+
+function bodyCost(body) {
+    return body.reduce((total, part) => total + BODYPART_COST[part], 0);
+}
 
 function getAvailableSpawn(room) {
     const spawns = room.find(FIND_MY_SPAWNS);
@@ -22,10 +27,6 @@ function getRoomStims(room) {
 }
 
 function spawnStimIfNeeded(room, towers) {
-    if (!room.storage || room.storage.store[RESOURCE_ENERGY] === 0) {
-        return;
-    }
-
     const needsStim = towers.some((tower) => {
         return tower.store[RESOURCE_ENERGY] < STIM_SPAWN_THRESHOLD;
     });
@@ -40,8 +41,16 @@ function spawnStimIfNeeded(room, towers) {
         return;
     }
 
+    const body = bodyCost(STIM_BODY) <= room.energyAvailable
+        ? STIM_BODY
+        : STIM_FALLBACK_BODY;
+
+    if (bodyCost(body) > room.energyAvailable) {
+        return;
+    }
+
     const newName = "Stim" + Game.time;
-    const result = spawn.spawnCreep(STIM_BODY, newName, {
+    const result = spawn.spawnCreep(body, newName, {
         memory: {
             role: "stim",
             homeRoom: room.name,

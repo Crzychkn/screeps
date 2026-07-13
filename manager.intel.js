@@ -110,11 +110,12 @@ function recordRoom(room) {
 
   const controller = getControllerIntel(room);
   const military = getMilitaryIntel(room);
+  const roomStatus = Game.map.getRoomStatus(room.name);
 
   roomMemory.intel = {
     lastScouted: Game.time,
     roomName: room.name,
-    status: Game.map.getRoomStatus(room.name).status,
+    status: roomStatus ? roomStatus.status : "unknown",
     controller: controller,
     military: military,
     sourceCount: room.find(FIND_SOURCES).length,
