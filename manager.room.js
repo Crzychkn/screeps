@@ -3,6 +3,7 @@ const constructionManager = require("manager.construction");
 const signConfig = require("config.sign");
 
 const EXPANSION_BLOCK_TTL = 50000;
+const EXPANSION_BLOCK_RECHECK_TICKS = 3000;
 const EXPANSION_INTEL_MAX_AGE = 10000;
 const EXPANSION_SCOUT_RETRY_TICKS = 3000;
 const MAX_EXPANSION_SCOUTS = 2;
@@ -1207,6 +1208,18 @@ function pruneBlockedExpansionRooms() {
 
     if (!block.time || Game.time - block.time > EXPANSION_BLOCK_TTL) {
       delete expansion.blockedRooms[roomName];
+      continue;
+    }
+
+    const intel = getExpansionIntel(roomName);
+
+    if (
+      intel &&
+      isFreshExpansionIntel(intel) &&
+      intel.claimableNow &&
+      !hasDangerousExpansionStructures(intel)
+    ) {
+      delete expansion.blockedRooms[roomName];
     }
   }
 }
@@ -1218,7 +1231,32 @@ function isExpansionBlocked(roomName) {
     return false;
   }
 
-  return !!expansion.blockedRooms[roomName];
+  const block = expansion.blockedRooms[roomName];
+
+  if (!block) {
+    return false;
+  }
+
+  const intel = getExpansionIntel(roomName);
+
+  if (
+    intel &&
+    isFreshExpansionIntel(intel) &&
+    intel.claimableNow &&
+    !hasDangerousExpansionStructures(intel)
+  ) {
+    delete expansion.blockedRooms[roomName];
+    return false;
+  }
+
+  if (
+    Game.time - block.time > EXPANSION_BLOCK_RECHECK_TICKS &&
+    (!intel || !isFreshExpansionIntel(intel))
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function getOwnedRoomCount() {
