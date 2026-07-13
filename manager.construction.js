@@ -21,6 +21,12 @@ const TRAFFIC_SAFE_STRUCTURE_TYPES = [
   STRUCTURE_RAMPART,
 ];
 
+const SERVICE_ACCESS_STRUCTURE_TYPES = [
+  STRUCTURE_SPAWN,
+  STRUCTURE_TOWER,
+  STRUCTURE_STORAGE,
+];
+
 function getPositionKey(x, y) {
   return `${x},${y}`;
 }
@@ -142,6 +148,92 @@ function isWalkableConstructionSite(site) {
   return TRAFFIC_SAFE_STRUCTURE_TYPES.indexOf(site.structureType) !== -1;
 }
 
+function isWalkableLookItem(item) {
+  if (item.type === LOOK_TERRAIN) {
+    return item.terrain !== "wall";
+  }
+
+  if (item.type === LOOK_STRUCTURES) {
+    return isWalkableStructure(item.structure);
+  }
+
+  if (item.type === LOOK_CONSTRUCTION_SITES) {
+    return isWalkableConstructionSite(item.constructionSite);
+  }
+
+  return true;
+}
+
+function isWalkableTile(room, x, y, blockedX, blockedY) {
+  if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
+    return false;
+  }
+
+  if (x === blockedX && y === blockedY) {
+    return false;
+  }
+
+  const terrain = room.getTerrain();
+
+  if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+    return false;
+  }
+
+  const look = room.lookAt(x, y);
+
+  for (const item of look) {
+    if (!isWalkableLookItem(item)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function countAdjacentWalkableTiles(room, pos, blockedX, blockedY) {
+  let count = 0;
+
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      if (dx === 0 && dy === 0) {
+        continue;
+      }
+
+      if (isWalkableTile(room, pos.x + dx, pos.y + dy, blockedX, blockedY)) {
+        count++;
+      }
+    }
+  }
+
+  return count;
+}
+
+function wouldBlockServiceAccess(room, x, y) {
+  const serviceStructures = room.find(FIND_MY_STRUCTURES, {
+    filter: (structure) => {
+      return SERVICE_ACCESS_STRUCTURE_TYPES.indexOf(structure.structureType) !== -1;
+    },
+  });
+
+  for (const structure of serviceStructures) {
+    if (structure.pos.getRangeTo(x, y) > 1) {
+      continue;
+    }
+
+    const minimumAccessTiles =
+      structure.structureType === STRUCTURE_TOWER ? 2 : 1;
+
+    if (
+      countAdjacentWalkableTiles(room, structure.pos, x, y) <
+      minimumAccessTiles
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function getBaseTrafficCostMatrix(room) {
   if (room._baseTrafficCostMatrix) {
     return room._baseTrafficCostMatrix;
@@ -233,6 +325,10 @@ function wouldBlockCriticalPaths(room, x, y) {
 function isTrafficSafePlacement(room, structureType, x, y) {
   if (TRAFFIC_SAFE_STRUCTURE_TYPES.indexOf(structureType) !== -1) {
     return true;
+  }
+
+  if (wouldBlockServiceAccess(room, x, y)) {
+    return false;
   }
 
   const reserved = getTrafficReservedPositions(room);
