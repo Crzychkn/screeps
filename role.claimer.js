@@ -83,6 +83,36 @@ function findBlockingHostiles(room) {
   });
 }
 
+function clearForeignReservation(creep, controller) {
+  if (
+    !controller.reservation ||
+    controller.reservation.username === creep.owner.username
+  ) {
+    return false;
+  }
+
+  const result = creep.attackController(controller);
+
+  if (result === ERR_NOT_IN_RANGE) {
+    creep.moveTo(controller, {
+      visualizePathStyle: {
+        stroke: "#ffffff",
+      },
+    });
+    return true;
+  }
+
+  if (result === OK) {
+    creep.say("clear");
+    return true;
+  }
+
+  console.log(
+    `${creep.name} failed to clear reservation in ${creep.room.name}: ${result}`
+  );
+  return false;
+}
+
 module.exports = {
   run: function (creep) {
     if (!creep.memory.targetRoom) {
@@ -139,6 +169,10 @@ module.exports = {
       return;
     }
 
+    if (clearForeignReservation(creep, controller)) {
+      return;
+    }
+
     const result = creep.claimController(controller);
 
     if (result === ERR_NOT_IN_RANGE) {
@@ -147,6 +181,14 @@ module.exports = {
           stroke: "#ffffff",
         },
       });
+      return;
+    }
+
+    if (result !== OK) {
+      creep.say("claim " + result);
+      console.log(
+        `${creep.name} failed to claim ${creep.room.name}: ${result}`
+      );
     }
   },
 };
