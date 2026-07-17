@@ -53,6 +53,17 @@ module.exports = {
               maxRooms: 1,
               reusePath: 5,
             });
+          } else if (repairQueue.length === 0 && homeRoom.controller) {
+            const result = creep.upgradeController(homeRoom.controller);
+
+            if (result === ERR_NOT_IN_RANGE) {
+              creep.moveTo(homeRoom.controller, {
+                range: 3,
+                maxRooms: 1,
+                reusePath: 5,
+                visualizePathStyle: { stroke: "#ffffff" },
+              });
+            }
           }
       }
     }

@@ -555,7 +555,7 @@ function getDesiredCounts(room) {
       logistics.droppedSourceEnergy > 1000
     )
   ) {
-    desired.upgrader = Math.max(desired.upgrader, 2);
+    desired.upgrader = Math.max(desired.upgrader, rcl >= 5 ? 3 : 2);
   }
 
   if (logistics.lowEnergy) {

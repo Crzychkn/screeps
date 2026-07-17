@@ -1,4 +1,5 @@
 const MAX_CONSTRUCTION_SITES_PER_ROOM = 5;
+const CONSTRUCTION_FAILURE_LOG_INTERVAL = 500;
 
 const BUILD_ORDER = [
   STRUCTURE_SPAWN,
@@ -849,6 +850,33 @@ function tryBuild(room, structureType) {
   return false;
 }
 
+function getRoomMemory(room) {
+  if (!Memory.rooms) {
+    Memory.rooms = {};
+  }
+
+  if (!Memory.rooms[room.name]) {
+    Memory.rooms[room.name] = {};
+  }
+
+  return Memory.rooms[room.name];
+}
+
+function logConstructionFailure(room) {
+  const roomMemory = getRoomMemory(room);
+
+  if (
+    roomMemory.lastConstructionFailureLog &&
+    Game.time - roomMemory.lastConstructionFailureLog <
+      CONSTRUCTION_FAILURE_LOG_INTERVAL
+  ) {
+    return;
+  }
+
+  roomMemory.lastConstructionFailureLog = Game.time;
+  console.log(`Construction: no build placement found in ${room.name}`);
+}
+
 module.exports = {
   run: function (room) {
     if (!room.controller || !room.controller.my) {
@@ -864,5 +892,7 @@ module.exports = {
         return;
       }
     }
+
+    logConstructionFailure(room);
   },
 };
