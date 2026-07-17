@@ -282,13 +282,22 @@ function deliverEnergy(creep) {
   const target = findDeliveryTarget(creep);
 
   if (!target) {
-    const spawn = creep.pos.findClosestByRange(FIND_MY_SPAWNS);
+    const waitTarget =
+      creep.room.controller ||
+      creep.pos.findClosestByRange(FIND_MY_SPAWNS);
 
-    if (spawn) {
-      moveToTarget(creep, spawn, "#ffffff");
+    if (waitTarget && creep.pos.getRangeTo(waitTarget) > 4) {
+      creep.moveTo(waitTarget, {
+        range: 4,
+        maxRooms: 1,
+        reusePath: 10,
+        visualizePathStyle: {
+          stroke: "#777777",
+        },
+      });
     }
 
-    creep.say("🚫 target");
+    creep.say("wait");
     return;
   }
 

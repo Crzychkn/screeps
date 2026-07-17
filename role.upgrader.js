@@ -21,6 +21,11 @@ function upgradeController(creep, room) {
 
   const result = creep.upgradeController(room.controller);
 
+  if (result === OK) {
+    creep.memory.lastStatus = "upgrading";
+    return;
+  }
+
   if (result === ERR_NOT_IN_RANGE) {
     const target = getUpgradeTarget(creep, room);
 
@@ -33,6 +38,18 @@ function upgradeController(creep, room) {
         stroke: "#ffffff",
       },
     });
+    creep.memory.lastStatus = "moving_to_controller";
+    return;
+  }
+
+  if (result === ERR_FULL) {
+    creep.memory.lastStatus = "controller_upgrade_capped";
+    return;
+  }
+
+  if (result !== ERR_BUSY) {
+    creep.memory.lastStatus = "upgrade_error_" + result;
+    console.log(`${creep.name} failed to upgrade in ${room.name}: ${result}`);
   }
 }
 

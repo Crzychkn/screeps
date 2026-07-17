@@ -548,6 +548,16 @@ function getDesiredCounts(room) {
     desired.upgrader = logistics.comfortableEnergy ? 2 : 1;
   }
 
+  if (
+    rcl < 8 &&
+    (
+      logistics.fullSourceContainerCount > 0 ||
+      logistics.droppedSourceEnergy > 1000
+    )
+  ) {
+    desired.upgrader = Math.max(desired.upgrader, 2);
+  }
+
   if (logistics.lowEnergy) {
     desired.upgrader = Math.min(desired.upgrader, 1);
     desired.builder = Math.min(desired.builder, 1);
