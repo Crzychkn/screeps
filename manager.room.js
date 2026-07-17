@@ -22,11 +22,13 @@ const LOW_BUCKET_CONSTRUCTION_LIMIT = 2000;
 const LOW_BUCKET_VISUAL_LIMIT = 5000;
 const LOW_BUCKET_SPAWN_LIMIT = 3000;
 const CRITICAL_BUCKET_SPAWN_LIMIT = 1000;
+const NORMAL_SPAWN_INTERVAL = 2;
 const LOW_BUCKET_SPAWN_INTERVAL = 3;
 const CRITICAL_BUCKET_SPAWN_INTERVAL = 5;
 const STRATEGIC_SPAWN_INTERVAL = 25;
 const SPAWN_VISUAL_INTERVAL = 5;
 const DEFENSE_SPAWN_INTERVAL = 5;
+const MAINTENANCE_TARGET_CACHE_TICKS = 50;
 const SOURCE_WORK_TARGET = 5;
 const STORAGE_COMFORTABLE_ENERGY = 200000;
 const logisticsStatsCache = {};
@@ -395,7 +397,18 @@ function logIncomeEfficiency(room) {
 }
 
 function getMaintenanceTargets(room) {
-  return room.find(FIND_STRUCTURES, {
+  const roomMemory = getRoomMemory(room);
+  const cached = roomMemory.maintenanceTargets;
+
+  if (
+    cached &&
+    cached.tick &&
+    Game.time - cached.tick < MAINTENANCE_TARGET_CACHE_TICKS
+  ) {
+    return cached.ids.map((id) => Game.getObjectById(id)).filter(Boolean);
+  }
+
+  const targets = room.find(FIND_STRUCTURES, {
     filter: (structure) => {
       if (
         structure.structureType === STRUCTURE_WALL ||
@@ -414,6 +427,13 @@ function getMaintenanceTargets(room) {
       return structure.hits < structure.hitsMax * 0.75;
     },
   });
+
+  roomMemory.maintenanceTargets = {
+    tick: Game.time,
+    ids: targets.map((target) => target.id),
+  };
+
+  return targets;
 }
 
 function getCriticalMaintenanceTargets(maintenanceTargets) {
@@ -2224,7 +2244,7 @@ function getRoomCpuOffset(room) {
 
 function shouldRunSpawning(room) {
   if (Game.cpu.bucket >= LOW_BUCKET_SPAWN_LIMIT) {
-    return true;
+    return (Game.time + getRoomCpuOffset(room)) % NORMAL_SPAWN_INTERVAL === 0;
   }
 
   const interval = Game.cpu.bucket < CRITICAL_BUCKET_SPAWN_LIMIT
