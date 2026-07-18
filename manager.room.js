@@ -474,22 +474,14 @@ function getDesiredCounts(room) {
     desired.harvester = 4;
     desired.builder = logistics.constructionSiteCount > 0 ? 2 : 0;
     desired.upgrader = logistics.comfortableEnergy ? 2 : 1;
-    desired.tractor =
-      logistics.hasSourceContainers &&
-      (logistics.sourceContainerEnergy > 100 || logistics.storedEnergy > 1200)
-        ? 1
-        : 0;
+    desired.tractor = logistics.hasSourceContainers ? 1 : 0;
   }
 
   if (rcl >= 5) {
     desired.harvester = 5;
     desired.builder = logistics.constructionSiteCount > 0 ? 2 : 0;
     desired.upgrader = logistics.comfortableEnergy ? 3 : 1;
-    desired.tractor =
-      logistics.hasSourceContainers &&
-      (logistics.sourceContainerEnergy > 100 || logistics.storedEnergy > 1200)
-        ? 1
-        : 0;
+    desired.tractor = logistics.hasSourceContainers ? 1 : 0;
   }
 
   if (
@@ -2113,6 +2105,18 @@ function manageHostileEmergencySpawning(room, counts) {
   return true;
 }
 
+function canRunSupportSpawning(room, counts, desired) {
+  if (counts.harvester < desired.harvester) {
+    return false;
+  }
+
+  if (getLogisticsStats(room).lowEnergy) {
+    return false;
+  }
+
+  return room.controller.level >= 6 || isSupplierSourceRoom(room, counts, desired);
+}
+
 function manageSpawning(room) {
   const spawn = getAvailableSpawn(room);
 
@@ -2169,24 +2173,26 @@ function manageSpawning(room) {
       return;
     }
 
-    if (manageEnergySupport(room, counts, desired)) {
-      return;
-    }
+    if (canRunSupportSpawning(room, counts, desired)) {
+      if (manageEnergySupport(room, counts, desired)) {
+        return;
+      }
 
-    if (manageExpansionSupport(room, counts, desired)) {
-      return;
-    }
+      if (manageExpansionSupport(room, counts, desired)) {
+        return;
+      }
 
-    if (manageSigningSupport(room, counts, desired)) {
-      return;
-    }
+      if (manageSigningSupport(room, counts, desired)) {
+        return;
+      }
 
-    if (manageMilitaryScouting(room, counts, desired)) {
-      return;
-    }
+      if (manageMilitaryScouting(room, counts, desired)) {
+        return;
+      }
 
-    if (manageMilitaryAttackers(room, counts, desired)) {
-      return;
+      if (manageMilitaryAttackers(room, counts, desired)) {
+        return;
+      }
     }
   }
 
