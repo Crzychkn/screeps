@@ -7,6 +7,7 @@ const EXPANSION_BLOCK_RECHECK_TICKS = 3000;
 const EXPANSION_INTEL_MAX_AGE = 10000;
 const EXPANSION_SCOUT_RETRY_TICKS = 3000;
 const EXPANSION_LOG_INTERVAL = 500;
+const EXPANSION_TARGET_RECHECK_TICKS = 100;
 const MAX_EXPANSION_SCOUTS = 2;
 const MAX_BOOTSTRAP_ROOMS = 2;
 const MAX_PIONEERS_PER_BOOTSTRAP_ROOM = 4;
@@ -1481,6 +1482,7 @@ function getPreferredExpansionTarget(expansion) {
       expansion,
       `invalid preferred target ${expansion.preferredTarget}`
     );
+    clearExpansionTarget(expansion);
     return null;
   }
 
@@ -1654,6 +1656,27 @@ function chooseExpansionTarget(sourceRoom, expansion) {
   return candidates[0];
 }
 
+function getCachedExpansionTarget(room, expansion) {
+  if (
+    expansion.targetRoom &&
+    expansion.sourceRoom === room.name &&
+    isClaimableExpansionIntel(expansion.targetRoom) &&
+    isSafeExpansionRoute(room.name, expansion.targetRoom)
+  ) {
+    return expansion.targetRoom;
+  }
+
+  if (
+    expansion.lastTargetSearch &&
+    Game.time - expansion.lastTargetSearch < EXPANSION_TARGET_RECHECK_TICKS
+  ) {
+    return null;
+  }
+
+  expansion.lastTargetSearch = Game.time;
+  return chooseExpansionTarget(room, expansion);
+}
+
 function getExpansionTarget(room) {
   pruneBlockedExpansionRooms();
 
@@ -1682,10 +1705,14 @@ function getExpansionTarget(room) {
     expansion.sourceRoom &&
     isClaimableExpansionIntel(expansion.targetRoom)
   ) {
+    if (expansion.sourceRoom !== room.name) {
+      return null;
+    }
+
     return expansion;
   }
 
-  const targetRoom = chooseExpansionTarget(room, expansion);
+  const targetRoom = getCachedExpansionTarget(room, expansion);
 
   if (!targetRoom) {
     clearExpansionTarget(expansion);
