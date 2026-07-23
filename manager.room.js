@@ -1578,6 +1578,32 @@ function describeExpansionCandidate(sourceRoom, roomName) {
   );
 }
 
+function describeExpansionIntel(roomName) {
+  const intel = getExpansionIntel(roomName);
+
+  if (!intel) {
+    return "no intel";
+  }
+
+  const controller = intel.controller || {};
+  const military = intel.military || {};
+
+  return (
+    "fresh=" + isFreshExpansionIntel(intel) +
+    " claimable=" + !!intel.claimableNow +
+    " status=" + (intel.status || "unknown") +
+    " controllerExists=" + !!controller.exists +
+    " owner=" + (controller.owner || "none") +
+    " reservedBy=" + (
+      controller.reservation ? controller.reservation.username : "none"
+    ) +
+    " hostiles=" + (military.hostileCount || 0) +
+    " blockingHostiles=" + getBlockingHostileCount({ military: military }) +
+    " towers=" + (military.towerCount || 0) +
+    " spawns=" + (military.spawnCount || 0)
+  );
+}
+
 function chooseExpansionTarget(sourceRoom, expansion) {
   const preferredTarget = getPreferredExpansionTarget(expansion);
 
@@ -1595,7 +1621,9 @@ function chooseExpansionTarget(sourceRoom, expansion) {
 
     logExpansionDecision(
       expansion,
-      `preferred target ${preferredTarget} not claimable or no safe route yet`
+      `preferred target ${preferredTarget} unavailable from ${sourceRoom.name}: ` +
+      describeExpansionIntel(preferredTarget) +
+      " safeRoute=" + isSafeExpansionRoute(sourceRoom.name, preferredTarget)
     );
   }
 
@@ -2144,6 +2172,20 @@ function manageHostileEmergencySpawning(room, counts) {
   return true;
 }
 
+function runMeasuredSpawnStep(room, step, callback) {
+  const before = Game.cpu.getUsed();
+  const result = callback();
+  const usedCpu = Game.cpu.getUsed() - before;
+
+  if (usedCpu >= 1) {
+    console.log(
+      `Slow spawn step ${room.name}:${step} cpu=${usedCpu.toFixed(2)}`
+    );
+  }
+
+  return result;
+}
+
 function canRunSupportSpawning(room, counts, desired) {
   if (counts.harvester < desired.harvester) {
     return false;
@@ -2163,8 +2205,12 @@ function manageSpawning(room) {
     return;
   }
 
-  const desired = getDesiredCounts(room);
-  const counts = getRoomCreepCounts(room);
+  const desired = runMeasuredSpawnStep(room, "desired", function () {
+    return getDesiredCounts(room);
+  });
+  const counts = runMeasuredSpawnStep(room, "counts", function () {
+    return getRoomCreepCounts(room);
+  });
 
   if (Game.time % ROOM_LOG_INTERVAL === 0) {
     console.log(
@@ -2184,7 +2230,9 @@ function manageSpawning(room) {
     );
   }
 
-  if (manageHostileEmergencySpawning(room, counts)) {
+  if (runMeasuredSpawnStep(room, "hostile", function () {
+    return manageHostileEmergencySpawning(room, counts);
+  })) {
     return;
   }
 
@@ -2200,57 +2248,79 @@ function manageSpawning(room) {
   }
 
   if (shouldRunExpansionSpawning(room)) {
-    if (manageClaimingSupport(room, counts, desired)) {
+    if (runMeasuredSpawnStep(room, "claim", function () {
+      return manageClaimingSupport(room, counts, desired);
+    })) {
       return;
     }
 
-    if (manageExpansionScouting(room, counts, desired)) {
+    if (runMeasuredSpawnStep(room, "scout", function () {
+      return manageExpansionScouting(room, counts, desired);
+    })) {
       return;
     }
   }
 
   if (shouldRunStrategicSpawning(room)) {
-    if (manageBootstrapEscorts(room, counts, desired)) {
+    if (runMeasuredSpawnStep(room, "escort", function () {
+      return manageBootstrapEscorts(room, counts, desired);
+    })) {
       return;
     }
 
-    if (canRunSupportSpawning(room, counts, desired)) {
-      if (manageEnergySupport(room, counts, desired)) {
+    if (runMeasuredSpawnStep(room, "supportGate", function () {
+      return canRunSupportSpawning(room, counts, desired);
+    })) {
+      if (runMeasuredSpawnStep(room, "energySupport", function () {
+        return manageEnergySupport(room, counts, desired);
+      })) {
         return;
       }
 
-      if (manageExpansionSupport(room, counts, desired)) {
+      if (runMeasuredSpawnStep(room, "pioneer", function () {
+        return manageExpansionSupport(room, counts, desired);
+      })) {
         return;
       }
 
-      if (manageSigningSupport(room, counts, desired)) {
+      if (runMeasuredSpawnStep(room, "sign", function () {
+        return manageSigningSupport(room, counts, desired);
+      })) {
         return;
       }
 
-      if (manageMilitaryScouting(room, counts, desired)) {
+      if (runMeasuredSpawnStep(room, "militaryScout", function () {
+        return manageMilitaryScouting(room, counts, desired);
+      })) {
         return;
       }
 
-      if (manageMilitaryAttackers(room, counts, desired)) {
+      if (runMeasuredSpawnStep(room, "militaryAttack", function () {
+        return manageMilitaryAttackers(room, counts, desired);
+      })) {
         return;
       }
     }
   }
 
-  for (const role of ROLE_PRIORITY) {
-    if (counts[role] >= desired[role]) {
-      continue;
+  runMeasuredSpawnStep(room, "core", function () {
+    for (const role of ROLE_PRIORITY) {
+      if (counts[role] >= desired[role]) {
+        continue;
+      }
+
+      const body = chooseBody(room, role);
+
+      if (!body) {
+        continue;
+      }
+
+      spawnRole(room, role, body);
+      return true;
     }
 
-    const body = chooseBody(room, role);
-
-    if (!body) {
-      continue;
-    }
-
-    spawnRole(room, role, body);
-    return;
-  }
+    return false;
+  });
 }
 
 function showSpawnVisual(room) {
