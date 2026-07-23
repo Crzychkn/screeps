@@ -26,6 +26,7 @@ const NORMAL_SPAWN_INTERVAL = 2;
 const LOW_BUCKET_SPAWN_INTERVAL = 3;
 const CRITICAL_BUCKET_SPAWN_INTERVAL = 5;
 const STRATEGIC_SPAWN_INTERVAL = 25;
+const EXPANSION_SPAWN_INTERVAL = 5;
 const SPAWN_VISUAL_INTERVAL = 5;
 const DEFENSE_SPAWN_INTERVAL = 5;
 const MAINTENANCE_TARGET_CACHE_TICKS = 50;
@@ -1666,6 +1667,10 @@ function getExpansionTarget(room) {
 
 function manageClaimingSupport(room, counts, desired) {
   if (counts.harvester < desired.harvester) {
+    logExpansionDecision(
+      getExpansionMemory(),
+      `claim skipped in ${room.name}: harvesters ${counts.harvester}/${desired.harvester}`
+    );
     return false;
   }
 
@@ -1678,12 +1683,20 @@ function manageClaimingSupport(room, counts, desired) {
   const claimers = getClaimersForTarget(expansion.targetRoom);
 
   if (claimers.length > 0) {
+    logExpansionDecision(
+      expansion,
+      `claimer already active for ${expansion.targetRoom}`
+    );
     return false;
   }
 
   const body = chooseBody(room, "claimer");
 
   if (!body) {
+    logExpansionDecision(
+      expansion,
+      `claim skipped in ${room.name}: cannot afford claimer`
+    );
     return false;
   }
 
@@ -1726,20 +1739,36 @@ function manageExpansionScouting(room, counts, desired) {
   }
 
   if (counts.harvester < desired.harvester) {
+    logExpansionDecision(
+      getExpansionMemory(),
+      `scout skipped in ${room.name}: harvesters ${counts.harvester}/${desired.harvester}`
+    );
     return false;
   }
 
   if (getLogisticsStats(room).lowEnergy) {
+    logExpansionDecision(
+      getExpansionMemory(),
+      `scout skipped in ${room.name}: low energy`
+    );
     return false;
   }
 
   if (getExpansionScoutCount() >= MAX_EXPANSION_SCOUTS) {
+    logExpansionDecision(
+      getExpansionMemory(),
+      `scout skipped: active scouts ${getExpansionScoutCount()}/${MAX_EXPANSION_SCOUTS}`
+    );
     return false;
   }
 
   const targetRoom = chooseExpansionScoutTarget(room);
 
   if (!targetRoom) {
+    logExpansionDecision(
+      getExpansionMemory(),
+      `no adjacent scout target from ${room.name}`
+    );
     return false;
   }
 
@@ -2160,16 +2189,18 @@ function manageSpawning(room) {
     return;
   }
 
-  if (shouldRunStrategicSpawning(room)) {
-    if (manageBootstrapEscorts(room, counts, desired)) {
-      return;
-    }
-
+  if (shouldRunExpansionSpawning(room)) {
     if (manageClaimingSupport(room, counts, desired)) {
       return;
     }
 
     if (manageExpansionScouting(room, counts, desired)) {
+      return;
+    }
+  }
+
+  if (shouldRunStrategicSpawning(room)) {
+    if (manageBootstrapEscorts(room, counts, desired)) {
       return;
     }
 
@@ -2284,6 +2315,10 @@ function shouldRunSpawning(room) {
 
 function shouldRunStrategicSpawning(room) {
   return (Game.time + getRoomCpuOffset(room)) % STRATEGIC_SPAWN_INTERVAL === 0;
+}
+
+function shouldRunExpansionSpawning(room) {
+  return (Game.time + getRoomCpuOffset(room)) % EXPANSION_SPAWN_INTERVAL === 0;
 }
 
 function shouldShowSpawnVisual(room) {
