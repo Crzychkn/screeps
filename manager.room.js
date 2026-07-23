@@ -1474,7 +1474,17 @@ function getPreferredExpansionTarget(expansion) {
     return null;
   }
 
-  return expansion.preferredTarget;
+  const preferredTarget = expansion.preferredTarget.trim().toUpperCase();
+
+  if (!/^[WE][0-9]+[NS][0-9]+$/.test(preferredTarget)) {
+    logExpansionDecision(
+      expansion,
+      `invalid preferred target ${expansion.preferredTarget}`
+    );
+    return null;
+  }
+
+  return preferredTarget;
 }
 
 function isExpansionScoutCandidate(roomName) {
