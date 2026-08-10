@@ -8,6 +8,7 @@ const EXPANSION_INTEL_MAX_AGE = 10000;
 const EXPANSION_SCOUT_RETRY_TICKS = 3000;
 const EXPANSION_LOG_INTERVAL = 500;
 const EXPANSION_TARGET_RECHECK_TICKS = 100;
+const EXPANSION_TARGET_SEARCH_THROTTLED = "throttled";
 const MAX_EXPANSION_SCOUTS = 2;
 const MAX_BOOTSTRAP_ROOMS = 2;
 const MAX_PIONEERS_PER_BOOTSTRAP_ROOM = 4;
@@ -1483,6 +1484,7 @@ function getPreferredExpansionTarget(expansion) {
       expansion,
       `invalid preferred target ${expansion.preferredTarget}`
     );
+    delete expansion.preferredTarget;
     clearExpansionTarget(expansion);
     return null;
   }
@@ -1671,7 +1673,7 @@ function getCachedExpansionTarget(room, expansion) {
     expansion.lastTargetSearch &&
     Game.time - expansion.lastTargetSearch < EXPANSION_TARGET_RECHECK_TICKS
   ) {
-    return null;
+    return EXPANSION_TARGET_SEARCH_THROTTLED;
   }
 
   expansion.lastTargetSearch = Game.time;
@@ -1715,6 +1717,10 @@ function getExpansionTarget(room) {
 
   const targetRoom = getCachedExpansionTarget(room, expansion);
 
+  if (targetRoom === EXPANSION_TARGET_SEARCH_THROTTLED) {
+    return null;
+  }
+
   if (!targetRoom) {
     clearExpansionTarget(expansion);
     return null;
@@ -1737,6 +1743,18 @@ function manageClaimingSupport(room, counts, desired) {
       getExpansionMemory(),
       `claim skipped in ${room.name}: harvesters ${counts.harvester}/${desired.harvester}`
     );
+    return false;
+  }
+
+  if (!room.controller || room.controller.level < 6) {
+    return false;
+  }
+
+  if (bodyCost([CLAIM, MOVE]) > room.energyAvailable) {
+    return false;
+  }
+
+  if (getLogisticsStats(room).lowEnergy) {
     return false;
   }
 
