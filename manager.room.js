@@ -1259,8 +1259,9 @@ function pruneBlockedExpansionRooms() {
 
   for (const roomName in expansion.blockedRooms) {
     const block = expansion.blockedRooms[roomName];
+    const blockTtl = block.ttl || EXPANSION_BLOCK_TTL;
 
-    if (!block.time || Game.time - block.time > EXPANSION_BLOCK_TTL) {
+    if (!block.time || Game.time - block.time > blockTtl) {
       delete expansion.blockedRooms[roomName];
       continue;
     }
@@ -2105,10 +2106,6 @@ function manageDefense(room) {
   }
 
   console.log(`${hostiles.length} hostile(s) found in ${room.name}`);
-
-  if (hostiles.length > 3) {
-    Game.notify(`${hostiles.length} hostile(s) found in ${room.name}`, 0);
-  }
 
   const defenders = getRoomCreeps(room, "defender").filter((creep) => {
     return !creep.memory.targetRoom;

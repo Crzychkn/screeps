@@ -32,6 +32,9 @@ const HARD_CPU_STOP = 19;
 const SLOW_CREEP_CPU = 2;
 const SLOW_CREEP_LOG_INTERVAL = 100;
 const SLOW_MANAGER_CPU = 2;
+const NOTIFY_HOSTILE_INTERVAL = 1500;
+const NOTIFY_BUCKET_INTERVAL = 5000;
+const NOTIFY_LOW_BUCKET = 2000;
 
 const CRITICAL_CREEP_ROLES = {
   harvester: true,
@@ -216,6 +219,58 @@ function logCpuStats() {
   console.log("CPU Unlocked Status:", Game.cpu.unlocked);
 }
 
+function getNotificationMemory() {
+  if (!Memory.notifications) {
+    Memory.notifications = {};
+  }
+
+  return Memory.notifications;
+}
+
+function notifyThrottled(key, message, interval) {
+  const notifications = getNotificationMemory();
+  const lastSent = notifications[key] || 0;
+
+  if (Game.time - lastSent < interval) {
+    return;
+  }
+
+  notifications[key] = Game.time;
+  Game.notify(message, interval);
+  console.log(`Notify: ${message}`);
+}
+
+function reportColonyAlerts(ownedRooms) {
+  if (Game.cpu.bucket < NOTIFY_LOW_BUCKET) {
+    notifyThrottled(
+      "low_cpu_bucket",
+      `CPU bucket low: ${Game.cpu.bucket}`,
+      NOTIFY_BUCKET_INTERVAL
+    );
+  }
+
+  for (const room of ownedRooms) {
+    const hostiles = room.find(FIND_HOSTILE_CREEPS);
+
+    if (hostiles.length === 0) {
+      continue;
+    }
+
+    const towers = room.find(FIND_MY_STRUCTURES, {
+      filter: (structure) => structure.structureType === STRUCTURE_TOWER,
+    });
+    const towerEnergy = towers.reduce((total, tower) => {
+      return total + tower.store[RESOURCE_ENERGY];
+    }, 0);
+
+    notifyThrottled(
+      `hostiles_${room.name}`,
+      `${hostiles.length} hostile(s) in ${room.name}; towerEnergy=${towerEnergy}`,
+      NOTIFY_HOSTILE_INTERVAL
+    );
+  }
+}
+
 function getCreepCpuOffset(creep) {
   if (creep.memory.cpuOffset === undefined) {
     creep.memory.cpuOffset = Game.time % 20;
@@ -347,6 +402,8 @@ module.exports.loop = function () {
     console.log(`${ownedRooms.length} owned room(s).`);
     console.log(`GCL: ${Game.gcl.level}`);
   }
+
+  reportColonyAlerts(ownedRooms);
 
   runCreeps();
 
