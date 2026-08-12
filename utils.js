@@ -1,5 +1,6 @@
 const MIN_DROPPED_ENERGY = 25;
 const REPAIR_QUEUE_CACHE_TICKS = 10;
+const ROOM_ROUTE_CACHE_TICKS = 1000;
 const repairQueueCache = {};
 
 function getHomeRoom(creep) {
@@ -75,8 +76,38 @@ function getSafeRoomRouteOptions(destinationRoomName) {
   };
 }
 
+function getRoomRouteCache() {
+  if (!Memory.roomRouteCache) {
+    Memory.roomRouteCache = {};
+  }
+
+  return Memory.roomRouteCache;
+}
+
+function getCachedRoomRoute(fromRoomName, destinationRoomName) {
+  const cache = getRoomRouteCache();
+  const cacheKey = fromRoomName + ">" + destinationRoomName;
+  const cached = cache[cacheKey];
+
+  if (cached && Game.time - cached.time <= ROOM_ROUTE_CACHE_TICKS) {
+    return cached.route;
+  }
+
+  const route = Game.map.findRoute(
+    fromRoomName,
+    destinationRoomName,
+    getSafeRoomRouteOptions(destinationRoomName)
+  );
+
+  cache[cacheKey] = {
+    time: Game.time,
+    route: route === ERR_NO_PATH ? null : route,
+  };
+
+  return cache[cacheKey].route;
+}
+
 function moveToRoom(creep, roomName, stroke) {
-  const routeOptions = getSafeRoomRouteOptions(roomName);
   let destination = new RoomPosition(25, 25, roomName);
 
   if (creep.room.name !== roomName) {
@@ -85,9 +116,9 @@ function moveToRoom(creep, roomName, stroke) {
       creep.memory.routeFromRoom !== creep.room.name ||
       !creep.memory.routeNextRoom
     ) {
-      const route = Game.map.findRoute(creep.room.name, roomName, routeOptions);
+      const route = getCachedRoomRoute(creep.room.name, roomName);
 
-      if (route === ERR_NO_PATH) {
+      if (!route) {
         delete creep.memory.routeDestination;
         delete creep.memory.routeFromRoom;
         delete creep.memory.routeNextRoom;

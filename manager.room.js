@@ -24,6 +24,7 @@ const LOW_BUCKET_CONSTRUCTION_LIMIT = 2000;
 const LOW_BUCKET_VISUAL_LIMIT = 5000;
 const LOW_BUCKET_SPAWN_LIMIT = 3000;
 const CRITICAL_BUCKET_SPAWN_LIMIT = 1000;
+const ROOM_PHASE_CPU_STOP = 17.5;
 const NORMAL_SPAWN_INTERVAL = 2;
 const LOW_BUCKET_SPAWN_INTERVAL = 3;
 const CRITICAL_BUCKET_SPAWN_INTERVAL = 5;
@@ -2469,6 +2470,10 @@ function runMeasuredRoomPhase(room, phase, callback) {
   }
 }
 
+function shouldStopRoomForCpu() {
+  return Game.cpu.getUsed() > ROOM_PHASE_CPU_STOP;
+}
+
 module.exports = {
   run: function (room) {
     if (!room.controller || !room.controller.my) {
@@ -2494,7 +2499,7 @@ module.exports = {
       console.log(`Tower error in ${room.name}:`, error);
     }
 
-    if (shouldRunConstruction(room)) {
+    if (!shouldStopRoomForCpu() && shouldRunConstruction(room)) {
       try {
         runMeasuredRoomPhase(room, "construction", function () {
           constructionManager.run(room);
@@ -2504,19 +2509,19 @@ module.exports = {
       }
     }
 
-    if (shouldRunDefenseSpawn(room)) {
+    if (!shouldStopRoomForCpu() && shouldRunDefenseSpawn(room)) {
       runMeasuredRoomPhase(room, "defense", function () {
         manageDefense(room);
       });
     }
 
-    if (shouldRunSpawning(room)) {
+    if (!shouldStopRoomForCpu() && shouldRunSpawning(room)) {
       runMeasuredRoomPhase(room, "spawn", function () {
         manageSpawning(room);
       });
     }
 
-    if (shouldShowSpawnVisual(room)) {
+    if (!shouldStopRoomForCpu() && shouldShowSpawnVisual(room)) {
       runMeasuredRoomPhase(room, "visual", function () {
         showSpawnVisual(room);
       });
