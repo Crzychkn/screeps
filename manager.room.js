@@ -10,6 +10,8 @@ const EXPANSION_LOG_INTERVAL = 500;
 const EXPANSION_TARGET_RECHECK_TICKS = 100;
 const EXPANSION_TARGET_SEARCH_THROTTLED = "throttled";
 const EXPANSION_ROUTE_CACHE_TICKS = 1000;
+const EXPANSION_CLAIM_SEARCH_RANGE = 4;
+const EXPANSION_CLAIM_DIAGNOSTIC_INTERVAL = 250;
 const EXPANSION_DIAGNOSTIC_SAMPLE_LIMIT = 3;
 const MAX_EXPANSION_SCOUTS = 2;
 const MAX_BOOTSTRAP_ROOMS = 2;
@@ -1569,7 +1571,13 @@ function getExpansionCandidateScore(sourceRoom, roomName) {
   );
 }
 
-function getExpansionCandidateRejectReason(roomName) {
+function getExpansionCandidateRejectReason(sourceRoom, roomName) {
+  const range = Game.map.getRoomLinearDistance(sourceRoom.name, roomName);
+
+  if (range > EXPANSION_CLAIM_SEARCH_RANGE) {
+    return "out_of_range";
+  }
+
   if (isExpansionBlocked(roomName)) {
     const expansion = getExpansionMemory();
     const block = expansion.blockedRooms && expansion.blockedRooms[roomName];
@@ -1621,7 +1629,7 @@ function getExpansionCandidateRejectReason(roomName) {
 }
 
 function analyzeExpansionCandidate(sourceRoom, roomName) {
-  const rejectReason = getExpansionCandidateRejectReason(roomName);
+  const rejectReason = getExpansionCandidateRejectReason(sourceRoom, roomName);
 
   if (rejectReason) {
     return {
@@ -1646,6 +1654,15 @@ function analyzeExpansionCandidate(sourceRoom, roomName) {
 }
 
 function logExpansionCandidateDiagnostics(expansion, sourceRoom, analyses) {
+  if (
+    expansion.lastClaimDiagnosticLog &&
+    Game.time - expansion.lastClaimDiagnosticLog < EXPANSION_CLAIM_DIAGNOSTIC_INTERVAL
+  ) {
+    return;
+  }
+
+  expansion.lastClaimDiagnosticLog = Game.time;
+
   const rejectCounts = {};
   const rejectSamples = {};
 
@@ -1677,9 +1694,8 @@ function logExpansionCandidateDiagnostics(expansion, sourceRoom, analyses) {
     );
   });
 
-  logExpansionDecision(
-    expansion,
-    "no claim candidates from " + sourceRoom.name + "; rejected " +
+  console.log(
+    "Expansion: no claim candidates from " + sourceRoom.name + "; rejected " +
       (summary.length > 0 ? summary.join(" | ") : "none")
   );
 }
