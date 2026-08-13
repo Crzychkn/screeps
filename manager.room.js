@@ -9,6 +9,7 @@ const EXPANSION_SCOUT_RETRY_TICKS = 3000;
 const EXPANSION_LOG_INTERVAL = 500;
 const EXPANSION_TARGET_RECHECK_TICKS = 100;
 const EXPANSION_TARGET_SEARCH_THROTTLED = "throttled";
+const EXPANSION_ROUTE_CACHE_TICKS = 1000;
 const MAX_EXPANSION_SCOUTS = 2;
 const MAX_BOOTSTRAP_ROOMS = 2;
 const MAX_PIONEERS_PER_BOOTSTRAP_ROOM = 4;
@@ -1451,7 +1452,7 @@ function isSafeExpansionRoute(sourceRoomName, targetRoomName) {
   const cacheKey = sourceRoomName + ">" + targetRoomName;
   const cached = expansionRouteCache[cacheKey];
 
-  if (cached && cached.tick === Game.time) {
+  if (cached && Game.time - cached.time <= EXPANSION_ROUTE_CACHE_TICKS) {
     return cached.safe;
   }
 
@@ -1466,7 +1467,7 @@ function isSafeExpansionRoute(sourceRoomName, targetRoomName) {
   });
 
   expansionRouteCache[cacheKey] = {
-    tick: Game.time,
+    time: Game.time,
     safe: route !== ERR_NO_PATH,
   };
 
