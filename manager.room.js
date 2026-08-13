@@ -10,6 +10,7 @@ const EXPANSION_LOG_INTERVAL = 500;
 const EXPANSION_TARGET_RECHECK_TICKS = 100;
 const EXPANSION_TARGET_SEARCH_THROTTLED = "throttled";
 const EXPANSION_ROUTE_CACHE_TICKS = 1000;
+const EXPANSION_DIAGNOSTIC_SAMPLE_LIMIT = 3;
 const MAX_EXPANSION_SCOUTS = 2;
 const MAX_BOOTSTRAP_ROOMS = 2;
 const MAX_PIONEERS_PER_BOOTSTRAP_ROOM = 4;
@@ -1568,6 +1569,121 @@ function getExpansionCandidateScore(sourceRoom, roomName) {
   );
 }
 
+function getExpansionCandidateRejectReason(roomName) {
+  if (isExpansionBlocked(roomName)) {
+    const expansion = getExpansionMemory();
+    const block = expansion.blockedRooms && expansion.blockedRooms[roomName];
+    return "blocked_" + (block && block.reason ? block.reason : "unknown");
+  }
+
+  if (!isNormalRoom(roomName)) {
+    const status = Game.map.getRoomStatus(roomName);
+    return "status_" + (status ? status.status : "unknown");
+  }
+
+  const intel = getExpansionIntel(roomName);
+
+  if (!intel) {
+    return "no_intel";
+  }
+
+  if (!isFreshExpansionIntel(intel)) {
+    return "stale_intel";
+  }
+
+  if (hasDangerousExpansionStructures(intel)) {
+    return "dangerous_structures";
+  }
+
+  const controller = intel.controller || {};
+
+  if (!controller.exists) {
+    return "no_controller";
+  }
+
+  if (controller.my) {
+    return "already_owned";
+  }
+
+  if (controller.owner) {
+    return "owned_by_" + controller.owner;
+  }
+
+  if (getBlockingHostileCount(intel) > 0) {
+    return "blocking_hostiles";
+  }
+
+  if (!intel.claimableNow) {
+    return "not_claimable";
+  }
+
+  return null;
+}
+
+function analyzeExpansionCandidate(sourceRoom, roomName) {
+  const rejectReason = getExpansionCandidateRejectReason(roomName);
+
+  if (rejectReason) {
+    return {
+      roomName: roomName,
+      rejectReason: rejectReason,
+    };
+  }
+
+  const safeRoute = isSafeExpansionRoute(sourceRoom.name, roomName);
+
+  if (!safeRoute) {
+    return {
+      roomName: roomName,
+      rejectReason: "unsafe_route",
+    };
+  }
+
+  return {
+    roomName: roomName,
+    score: getExpansionCandidateScore(sourceRoom, roomName),
+  };
+}
+
+function logExpansionCandidateDiagnostics(expansion, sourceRoom, analyses) {
+  const rejectCounts = {};
+  const rejectSamples = {};
+
+  for (const analysis of analyses) {
+    if (!analysis.rejectReason) {
+      continue;
+    }
+
+    rejectCounts[analysis.rejectReason] =
+      (rejectCounts[analysis.rejectReason] || 0) + 1;
+
+    if (!rejectSamples[analysis.rejectReason]) {
+      rejectSamples[analysis.rejectReason] = [];
+    }
+
+    if (
+      rejectSamples[analysis.rejectReason].length <
+      EXPANSION_DIAGNOSTIC_SAMPLE_LIMIT
+    ) {
+      rejectSamples[analysis.rejectReason].push(analysis.roomName);
+    }
+  }
+
+  const summary = Object.keys(rejectCounts).sort().map((reason) => {
+    return (
+      reason +
+      ":" + rejectCounts[reason] +
+      "[" + rejectSamples[reason].join(",") + "]"
+    );
+  });
+
+  logExpansionDecision(
+    expansion,
+    "no claim candidates from " + sourceRoom.name + "; rejected " +
+      (summary.length > 0 ? summary.join(" | ") : "none")
+  );
+}
+
 function describeExpansionCandidate(sourceRoom, roomName) {
   const intel = getExpansionIntel(roomName);
   const sourceCount = intel ? intel.sourceCount : 0;
@@ -1634,31 +1750,29 @@ function chooseExpansionTarget(sourceRoom, expansion) {
     );
   }
 
-  const candidates = Object.keys(Memory.rooms || {}).filter((roomName) => {
-    return (
-      isClaimableExpansionIntel(roomName) &&
-      isSafeExpansionRoute(sourceRoom.name, roomName)
-    );
+  const analyses = Object.keys(Memory.rooms || {}).map((roomName) => {
+    return analyzeExpansionCandidate(sourceRoom, roomName);
   });
+  const candidates = analyses.filter((analysis) => !analysis.rejectReason);
 
   if (candidates.length === 0) {
-    logExpansionDecision(expansion, "no fresh claimable candidates with safe routes");
+    logExpansionCandidateDiagnostics(expansion, sourceRoom, analyses);
     return null;
   }
 
   candidates.sort((a, b) => {
-    return getExpansionCandidateScore(sourceRoom, a) - getExpansionCandidateScore(sourceRoom, b);
+    return a.score - b.score;
   });
 
   logExpansionDecision(
     expansion,
     "best candidates from " + sourceRoom.name + ": " +
-      candidates.slice(0, 3).map((roomName) => {
-        return describeExpansionCandidate(sourceRoom, roomName);
+      candidates.slice(0, 3).map((analysis) => {
+        return describeExpansionCandidate(sourceRoom, analysis.roomName);
       }).join(" | ")
   );
 
-  return candidates[0];
+  return candidates[0].roomName;
 }
 
 function getCachedExpansionTarget(room, expansion) {
