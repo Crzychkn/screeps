@@ -1,8 +1,43 @@
 const signConfig = require("config.sign");
 const utils = require("utils");
 
+const CLAIMER_EVENT_LOG_INTERVAL = 100;
+
+function setStatus(creep, status) {
+  creep.memory.lastStatus = status;
+  creep.memory.lastStatusTick = Game.time;
+}
+
+function logClaimerEvent(creep, message) {
+  if (
+    creep.memory.lastClaimerEventLog &&
+    Game.time - creep.memory.lastClaimerEventLog < CLAIMER_EVENT_LOG_INTERVAL
+  ) {
+    return;
+  }
+
+  creep.memory.lastClaimerEventLog = Game.time;
+  console.log(
+    `${creep.name} ${message} ` +
+    `(room=${creep.room.name}, target=${creep.memory.targetRoom || "none"})`
+  );
+}
+
 function moveToTargetRoom(creep) {
-  utils.moveToRoom(creep, creep.memory.targetRoom, "#ffffff");
+  if (utils.moveOffRoomEdge(creep)) {
+    setStatus(creep, "leaving_edge");
+    return;
+  }
+
+  const result = utils.moveToRoom(creep, creep.memory.targetRoom, "#ffffff");
+
+  if (result === ERR_NO_PATH) {
+    setStatus(creep, "no_route");
+    logClaimerEvent(creep, "has no safe route");
+    return;
+  }
+
+  setStatus(creep, "traveling");
 }
 
 function blockExpansionTarget(creep, reason) {
@@ -18,6 +53,8 @@ function blockExpansionTarget(creep, reason) {
     reason: reason,
     time: Game.time,
   };
+
+  logClaimerEvent(creep, `blocked expansion target: ${reason}`);
 
   if (Memory.expansion.targetRoom === creep.memory.targetRoom) {
     delete Memory.expansion.targetRoom;
@@ -61,6 +98,7 @@ function signControllerIfNeeded(creep, controller) {
   const result = creep.signController(controller, signText);
 
   if (result === ERR_NOT_IN_RANGE) {
+    setStatus(creep, "moving_to_sign");
     creep.moveTo(controller, {
       range: 1,
       visualizePathStyle: {
@@ -94,6 +132,7 @@ function clearForeignReservation(creep, controller) {
   const result = creep.attackController(controller);
 
   if (result === ERR_NOT_IN_RANGE) {
+    setStatus(creep, "moving_to_clear_reservation");
     creep.moveTo(controller, {
       visualizePathStyle: {
         stroke: "#ffffff",
@@ -104,6 +143,8 @@ function clearForeignReservation(creep, controller) {
 
   if (result === OK) {
     creep.say("clear");
+    setStatus(creep, "clearing_reservation");
+    logClaimerEvent(creep, "cleared foreign reservation");
     return true;
   }
 
@@ -117,12 +158,15 @@ module.exports = {
   run: function (creep) {
     if (!creep.memory.targetRoom) {
       creep.say("no target");
+      setStatus(creep, "no_target");
       return;
     }
 
     if (creep.room.name !== creep.memory.targetRoom) {
       if (!isActiveExpansionTarget(creep)) {
         creep.say("stand down");
+        setStatus(creep, "stand_down_in_transit");
+        logClaimerEvent(creep, "standing down in transit");
         creep.suicide();
         return;
       }
@@ -135,6 +179,7 @@ module.exports = {
 
     if (!controller) {
       creep.say("no ctrl");
+      setStatus(creep, "no_controller");
       blockExpansionTarget(creep, "no_controller");
       return;
     }
@@ -146,17 +191,22 @@ module.exports = {
       }
 
       creep.say("claimed");
+      setStatus(creep, "claimed");
+      logClaimerEvent(creep, "confirmed owned controller");
       return;
     }
 
     if (!isActiveExpansionTarget(creep)) {
       creep.say("stand down");
+      setStatus(creep, "stand_down_at_target");
+      logClaimerEvent(creep, "standing down at target");
       creep.suicide();
       return;
     }
 
     if (controller.owner && controller.owner.username !== creep.owner.username) {
       creep.say("owned");
+      setStatus(creep, "owned_by_other");
       blockExpansionTarget(creep, `owned_by_${controller.owner.username}`);
       return;
     }
@@ -165,6 +215,7 @@ module.exports = {
 
     if (hostiles.length > 0) {
       creep.say("hostile");
+      setStatus(creep, "hostiles_at_target");
       blockExpansionTarget(creep, "hostiles");
       return;
     }
@@ -176,6 +227,7 @@ module.exports = {
     const result = creep.claimController(controller);
 
     if (result === ERR_NOT_IN_RANGE) {
+      setStatus(creep, "moving_to_controller");
       creep.moveTo(controller, {
         visualizePathStyle: {
           stroke: "#ffffff",
@@ -186,9 +238,15 @@ module.exports = {
 
     if (result !== OK) {
       creep.say("claim " + result);
+      setStatus(creep, "claim_failed_" + result);
       console.log(
         `${creep.name} failed to claim ${creep.room.name}: ${result}`
       );
+      return;
     }
+
+    creep.say("claim");
+    setStatus(creep, "claim_success");
+    logClaimerEvent(creep, "claimed controller");
   },
 };
