@@ -11,6 +11,7 @@ const EXPANSION_TARGET_RECHECK_TICKS = 100;
 const EXPANSION_TARGET_SEARCH_THROTTLED = "throttled";
 const EXPANSION_ROUTE_CACHE_TICKS = 1000;
 const EXPANSION_CLAIM_SEARCH_RANGE = 4;
+const EXPANSION_SCOUT_SEARCH_RANGE = 4;
 const EXPANSION_CLAIM_DIAGNOSTIC_INTERVAL = 250;
 const EXPANSION_DIAGNOSTIC_SAMPLE_LIMIT = 3;
 const MAX_EXPANSION_SCOUTS = 2;
@@ -1497,7 +1498,7 @@ function getPreferredExpansionTarget(expansion) {
   return preferredTarget;
 }
 
-function isExpansionScoutCandidate(roomName) {
+function canAssignExpansionScoutTarget(roomName) {
   const expansion = getExpansionMemory();
 
   if (isExpansionBlocked(roomName) || !isNormalRoom(roomName)) {
@@ -1528,6 +1529,14 @@ function isExpansionScoutCandidate(roomName) {
     return false;
   }
 
+  return true;
+}
+
+function isExpansionScoutCandidate(roomName) {
+  if (!canAssignExpansionScoutTarget(roomName)) {
+    return false;
+  }
+
   const intel = getExpansionIntel(roomName);
 
   if (!intel) {
@@ -1543,6 +1552,31 @@ function isExpansionScoutCandidate(roomName) {
   }
 
   return getBlockingHostileCount(intel) === 0 && !intel.claimableNow;
+}
+
+function isStaleExpansionScoutCandidate(sourceRoom, roomName) {
+  if (
+    Game.map.getRoomLinearDistance(sourceRoom.name, roomName) >
+    EXPANSION_SCOUT_SEARCH_RANGE
+  ) {
+    return false;
+  }
+
+  if (!canAssignExpansionScoutTarget(roomName)) {
+    return false;
+  }
+
+  const intel = getExpansionIntel(roomName);
+
+  if (!intel || isFreshExpansionIntel(intel)) {
+    return false;
+  }
+
+  if (!intel.controller || !intel.controller.exists || intel.controller.my) {
+    return false;
+  }
+
+  return isSafeExpansionRoute(sourceRoom.name, roomName);
 }
 
 function getExpansionCandidateScore(sourceRoom, roomName) {
@@ -1599,10 +1633,6 @@ function getExpansionCandidateRejectReason(sourceRoom, roomName) {
     return "stale_intel";
   }
 
-  if (hasDangerousExpansionStructures(intel)) {
-    return "dangerous_structures";
-  }
-
   const controller = intel.controller || {};
 
   if (!controller.exists) {
@@ -1615,6 +1645,10 @@ function getExpansionCandidateRejectReason(sourceRoom, roomName) {
 
   if (controller.owner) {
     return "owned_by_" + controller.owner;
+  }
+
+  if (hasDangerousExpansionStructures(intel)) {
+    return "dangerous_structures";
   }
 
   if (getBlockingHostileCount(intel) > 0) {
@@ -1926,8 +1960,13 @@ function chooseExpansionScoutTarget(room) {
 
   if (
     preferredTarget &&
-    getAdjacentRoomNames(room.name).indexOf(preferredTarget) >= 0 &&
-    isExpansionScoutCandidate(preferredTarget)
+    (
+      (
+        getAdjacentRoomNames(room.name).indexOf(preferredTarget) >= 0 &&
+        isExpansionScoutCandidate(preferredTarget)
+      ) ||
+      isStaleExpansionScoutCandidate(room, preferredTarget)
+    )
   ) {
     return preferredTarget;
   }
@@ -1937,7 +1976,22 @@ function chooseExpansionScoutTarget(room) {
   });
 
   if (candidates.length === 0) {
-    return null;
+    const staleCandidates = Object.keys(Memory.rooms || {}).filter((roomName) => {
+      return isStaleExpansionScoutCandidate(room, roomName);
+    });
+
+    if (staleCandidates.length === 0) {
+      return null;
+    }
+
+    staleCandidates.sort((a, b) => {
+      return (
+        Game.map.getRoomLinearDistance(room.name, a) -
+        Game.map.getRoomLinearDistance(room.name, b)
+      );
+    });
+
+    return staleCandidates[0];
   }
 
   candidates.sort((a, b) => {
@@ -1983,7 +2037,7 @@ function manageExpansionScouting(room, counts, desired) {
   if (!targetRoom) {
     logExpansionDecision(
       getExpansionMemory(),
-      `no adjacent scout target from ${room.name}`
+      `no scout target from ${room.name}`
     );
     return false;
   }
