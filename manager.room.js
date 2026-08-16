@@ -12,6 +12,7 @@ const EXPANSION_TARGET_SEARCH_THROTTLED = "throttled";
 const EXPANSION_ROUTE_CACHE_TICKS = 1000;
 const EXPANSION_CLAIM_SEARCH_RANGE = 4;
 const EXPANSION_SCOUT_SEARCH_RANGE = 4;
+const EXPANSION_STALE_SCOUT_ROUTE_CHECK_LIMIT = 5;
 const EXPANSION_CLAIM_DIAGNOSTIC_INTERVAL = 250;
 const EXPANSION_DIAGNOSTIC_SAMPLE_LIMIT = 3;
 const MAX_EXPANSION_SCOUTS = 2;
@@ -1576,7 +1577,37 @@ function isStaleExpansionScoutCandidate(sourceRoom, roomName) {
     return false;
   }
 
-  return isSafeExpansionRoute(sourceRoom.name, roomName);
+  return true;
+}
+
+function chooseStaleExpansionScoutTarget(room) {
+  const staleCandidates = Object.keys(Memory.rooms || {}).filter((roomName) => {
+    return isStaleExpansionScoutCandidate(room, roomName);
+  });
+
+  if (staleCandidates.length === 0) {
+    return null;
+  }
+
+  staleCandidates.sort((a, b) => {
+    return (
+      Game.map.getRoomLinearDistance(room.name, a) -
+      Game.map.getRoomLinearDistance(room.name, b)
+    );
+  });
+
+  const routeCheckCandidates = staleCandidates.slice(
+    0,
+    EXPANSION_STALE_SCOUT_ROUTE_CHECK_LIMIT
+  );
+
+  for (const roomName of routeCheckCandidates) {
+    if (isSafeExpansionRoute(room.name, roomName)) {
+      return roomName;
+    }
+  }
+
+  return null;
 }
 
 function getExpansionCandidateScore(sourceRoom, roomName) {
@@ -1965,7 +1996,10 @@ function chooseExpansionScoutTarget(room) {
         getAdjacentRoomNames(room.name).indexOf(preferredTarget) >= 0 &&
         isExpansionScoutCandidate(preferredTarget)
       ) ||
-      isStaleExpansionScoutCandidate(room, preferredTarget)
+      (
+        isStaleExpansionScoutCandidate(room, preferredTarget) &&
+        isSafeExpansionRoute(room.name, preferredTarget)
+      )
     )
   ) {
     return preferredTarget;
@@ -1976,22 +2010,7 @@ function chooseExpansionScoutTarget(room) {
   });
 
   if (candidates.length === 0) {
-    const staleCandidates = Object.keys(Memory.rooms || {}).filter((roomName) => {
-      return isStaleExpansionScoutCandidate(room, roomName);
-    });
-
-    if (staleCandidates.length === 0) {
-      return null;
-    }
-
-    staleCandidates.sort((a, b) => {
-      return (
-        Game.map.getRoomLinearDistance(room.name, a) -
-        Game.map.getRoomLinearDistance(room.name, b)
-      );
-    });
-
-    return staleCandidates[0];
+    return chooseStaleExpansionScoutTarget(room);
   }
 
   candidates.sort((a, b) => {
