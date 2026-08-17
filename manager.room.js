@@ -12,7 +12,8 @@ const EXPANSION_TARGET_SEARCH_THROTTLED = "throttled";
 const EXPANSION_ROUTE_CACHE_TICKS = 1000;
 const EXPANSION_CLAIM_SEARCH_RANGE = 4;
 const EXPANSION_SCOUT_SEARCH_RANGE = 4;
-const EXPANSION_STALE_SCOUT_ROUTE_CHECK_LIMIT = 5;
+const EXPANSION_STALE_SCOUT_ROUTE_CHECK_LIMIT = 2;
+const EXPANSION_STALE_SCOUT_INTERVAL = 250;
 const EXPANSION_CLAIM_DIAGNOSTIC_INTERVAL = 250;
 const EXPANSION_DIAGNOSTIC_SAMPLE_LIMIT = 3;
 const MAX_EXPANSION_SCOUTS = 2;
@@ -1581,6 +1582,21 @@ function isStaleExpansionScoutCandidate(sourceRoom, roomName) {
 }
 
 function chooseStaleExpansionScoutTarget(room) {
+  const expansion = getExpansionMemory();
+
+  if (!room.controller || room.controller.level < 6) {
+    return null;
+  }
+
+  if (
+    expansion.lastStaleScoutSearch &&
+    Game.time - expansion.lastStaleScoutSearch < EXPANSION_STALE_SCOUT_INTERVAL
+  ) {
+    return null;
+  }
+
+  expansion.lastStaleScoutSearch = Game.time;
+
   const staleCandidates = Object.keys(Memory.rooms || {}).filter((roomName) => {
     return isStaleExpansionScoutCandidate(room, roomName);
   });
