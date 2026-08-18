@@ -21,7 +21,9 @@ const MAX_BOOTSTRAP_ROOMS = 2;
 const MAX_PIONEERS_PER_BOOTSTRAP_ROOM = 4;
 const DESIRED_FUNCTIONAL_PIONEERS_PER_BOOTSTRAP_ROOM = 2;
 const SUPPORT_STORAGE_RESERVE = 200000;
-const SUPPORT_TARGET_MAX_RCL = 4;
+const SUPPORT_TARGET_ENERGY_FLOOR = 50000;
+const SUPPORT_TARGET_MAX_RCL = 6;
+const ENERGY_STRAINED_THRESHOLD = 25000;
 const MILITARY_INTEL_MAX_AGE = 1500;
 const INCOME_LOG_INTERVAL = 100;
 const ROOM_LOG_INTERVAL = 100;
@@ -301,6 +303,10 @@ function getLogisticsStats(room) {
   }).length;
   const storedEnergy = getStoredEnergy(room);
   const lowEnergyThreshold = Math.max(800, room.energyCapacityAvailable * 2);
+  const strainedEnergyThreshold = Math.max(
+    ENERGY_STRAINED_THRESHOLD,
+    room.energyCapacityAvailable * 5
+  );
   const comfortableEnergyThreshold = room.storage
     ? Math.max(STORAGE_COMFORTABLE_ENERGY, room.energyCapacityAvailable * 10)
     : Math.max(1600, room.energyCapacityAvailable * 3);
@@ -316,6 +322,7 @@ function getLogisticsStats(room) {
     storedEnergy: storedEnergy,
     hasSourceContainers: sourceContainers.length > 0,
     lowEnergy: storedEnergy < lowEnergyThreshold,
+    strainedEnergy: storedEnergy < strainedEnergyThreshold,
     comfortableEnergy: storedEnergy >= comfortableEnergyThreshold,
   };
 
@@ -553,6 +560,7 @@ function getDesiredCounts(room) {
 
   if (
     rcl < 8 &&
+    !logistics.strainedEnergy &&
     (
       logistics.fullSourceContainerCount > 0 ||
       logistics.droppedSourceEnergy > 1000
@@ -586,6 +594,16 @@ function getDesiredCounts(room) {
     (criticalMaintenanceTargets.length >= 3 || maintenanceTargets.length > 20)
   ) {
     desired.repairer = 2;
+  }
+
+  if (logistics.strainedEnergy) {
+    desired.upgrader = Math.min(desired.upgrader, 1);
+    desired.builder = criticalMaintenanceTargets.length > 0
+      ? Math.min(desired.builder, 1)
+      : 0;
+    desired.repairer = criticalMaintenanceTargets.length > 0
+      ? Math.min(desired.repairer, 1)
+      : 0;
   }
 
   return desired;
@@ -786,6 +804,14 @@ function getBodiesForRole(role, rcl, room) {
     if (rcl >= 7) {
       return [
         [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+        [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
+        [CARRY, CARRY, MOVE, MOVE],
+      ];
+    }
+
+    if (rcl >= 6) {
+      return [
+        [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
         [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
         [CARRY, CARRY, MOVE, MOVE],
       ];
@@ -2209,7 +2235,7 @@ function manageBootstrapEscorts(room, counts, desired) {
 
 function isSupplierSourceRoom(room, counts, desired) {
   return (
-    room.controller.level >= 8 &&
+    room.controller.level >= 6 &&
     room.storage &&
     room.storage.store[RESOURCE_ENERGY] > SUPPORT_STORAGE_RESERVE &&
     counts.harvester >= desired.harvester &&
@@ -2237,11 +2263,11 @@ function getSupportTargetRooms(sourceRoom) {
       return false;
     }
 
-    if (room.energyAvailable < room.energyCapacityAvailable) {
+    if (getStoredEnergy(room) < SUPPORT_TARGET_ENERGY_FLOOR) {
       return true;
     }
 
-    if (room.storage && room.storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+    if (room.energyAvailable < room.energyCapacityAvailable) {
       return true;
     }
 
@@ -2257,7 +2283,7 @@ function getSupportTargetRooms(sourceRoom) {
 }
 
 function getSupportTargetScore(room) {
-  return room.controller.level * 100 + room.energyAvailable;
+  return getStoredEnergy(room) + room.controller.level * 1000;
 }
 
 function manageEnergySupport(room, counts, desired) {

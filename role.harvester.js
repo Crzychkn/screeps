@@ -89,7 +89,7 @@ function getSourceSlotCount(room, source) {
   return roomMemory.sourceSlots[source.id];
 }
 
-function countAssignedHarvesters(room, creepName) {
+function countAssignedHarvesterWork(room, creepName) {
   const counts = {};
 
   for (const name in Game.creeps) {
@@ -104,22 +104,24 @@ function countAssignedHarvesters(room, creepName) {
       continue;
     }
 
-    counts[other.memory.sourceId] = (counts[other.memory.sourceId] || 0) + 1;
+    counts[other.memory.sourceId] =
+      (counts[other.memory.sourceId] || 0) +
+      other.getActiveBodyparts(WORK);
   }
 
   return counts;
 }
 
-function chooseLeastLoadedSource(creep, room, sources, assignedCounts) {
+function chooseLeastLoadedSource(creep, room, sources, assignedWork) {
   return sources.reduce((best, source) => {
     if (!best) {
       return source;
     }
 
     const sourceLoad =
-      (assignedCounts[source.id] || 0) / getSourceSlotCount(room, source);
+      (assignedWork[source.id] || 0) / Math.max(getSourceSlotCount(room, source), 1);
     const bestLoad =
-      (assignedCounts[best.id] || 0) / getSourceSlotCount(room, best);
+      (assignedWork[best.id] || 0) / Math.max(getSourceSlotCount(room, best), 1);
 
     if (sourceLoad !== bestLoad) {
       return sourceLoad < bestLoad ? source : best;
@@ -194,8 +196,8 @@ function getAssignedSource(creep) {
     return currentSource;
   }
 
-  const assignedCounts = countAssignedHarvesters(room, creep.name);
-  const bestSource = chooseLeastLoadedSource(creep, room, sources, assignedCounts);
+  const assignedWork = countAssignedHarvesterWork(room, creep.name);
+  const bestSource = chooseLeastLoadedSource(creep, room, sources, assignedWork);
 
   if (!bestSource) {
     delete creep.memory.sourceId;
@@ -204,11 +206,11 @@ function getAssignedSource(creep) {
 
   const currentLoad =
     currentSource
-      ? ((assignedCounts[currentSource.id] || 0) + 1) /
+      ? ((assignedWork[currentSource.id] || 0) + creep.getActiveBodyparts(WORK)) /
         getSourceSlotCount(room, currentSource)
       : Infinity;
   const bestLoad =
-    ((assignedCounts[bestSource.id] || 0) + 1) /
+    ((assignedWork[bestSource.id] || 0) + creep.getActiveBodyparts(WORK)) /
     getSourceSlotCount(room, bestSource);
 
   creep.memory.lastSourceRebalance = Game.time;
