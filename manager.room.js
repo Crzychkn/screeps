@@ -23,7 +23,9 @@ const DESIRED_FUNCTIONAL_PIONEERS_PER_BOOTSTRAP_ROOM = 2;
 const SUPPORT_STORAGE_RESERVE = 200000;
 const SUPPORT_TARGET_ENERGY_FLOOR = 50000;
 const SUPPORT_TARGET_MAX_RCL = 6;
+const SUPPORT_MAX_SUPPLIERS_PER_TARGET = 2;
 const ENERGY_STRAINED_THRESHOLD = 25000;
+const EXPANSION_PAUSE_LOW_ROOM_COUNT = 2;
 const MILITARY_INTEL_MAX_AGE = 1500;
 const INCOME_LOG_INTERVAL = 100;
 const ROOM_LOG_INTERVAL = 100;
@@ -1355,6 +1357,24 @@ function hasExpansionCapacity() {
   return Game.gcl.level > getOwnedRoomCount();
 }
 
+function getLowEstablishedRoomCount() {
+  return Object.values(Game.rooms).filter((room) => {
+    if (!room.controller || !room.controller.my) {
+      return false;
+    }
+
+    if (room.find(FIND_MY_SPAWNS).length === 0) {
+      return false;
+    }
+
+    return getStoredEnergy(room) < SUPPORT_TARGET_ENERGY_FLOOR;
+  }).length;
+}
+
+function shouldPauseExpansionForEconomy() {
+  return getLowEstablishedRoomCount() >= EXPANSION_PAUSE_LOW_ROOM_COUNT;
+}
+
 function getActiveBootstrapRoomCount() {
   return Object.values(Game.rooms).filter((room) => {
     if (!room.controller || !room.controller.my) {
@@ -1977,6 +1997,14 @@ function getExpansionTarget(room) {
 }
 
 function manageClaimingSupport(room, counts, desired) {
+  if (shouldPauseExpansionForEconomy()) {
+    logExpansionDecision(
+      getExpansionMemory(),
+      `claim paused: ${getLowEstablishedRoomCount()} low established rooms`
+    );
+    return false;
+  }
+
   if (counts.harvester < desired.harvester) {
     logExpansionDecision(
       getExpansionMemory(),
@@ -2066,6 +2094,14 @@ function manageExpansionScouting(room, counts, desired) {
   pruneBlockedExpansionRooms();
 
   if (!hasExpansionCapacity()) {
+    return false;
+  }
+
+  if (shouldPauseExpansionForEconomy()) {
+    logExpansionDecision(
+      getExpansionMemory(),
+      `scout paused: ${getLowEstablishedRoomCount()} low established rooms`
+    );
     return false;
   }
 
@@ -2302,7 +2338,11 @@ function manageEnergySupport(room, counts, desired) {
   });
 
   for (const target of targets) {
-    if (getSuppliersForTarget(target.name).length > 0) {
+    const maxSuppliers = getStoredEnergy(target) < ENERGY_STRAINED_THRESHOLD
+      ? SUPPORT_MAX_SUPPLIERS_PER_TARGET
+      : 1;
+
+    if (getSuppliersForTarget(target.name).length >= maxSuppliers) {
       continue;
     }
 
@@ -2316,6 +2356,10 @@ function manageEnergySupport(room, counts, desired) {
       continue;
     }
 
+    console.log(
+      `Energy support ${room.name} -> ${target.name} ` +
+      `stored=${getStoredEnergy(target)} suppliers=${getSuppliersForTarget(target.name).length}/${maxSuppliers}`
+    );
     spawnSupplier(room, body, target.name);
     return true;
   }
