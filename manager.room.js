@@ -24,6 +24,7 @@ const SUPPORT_STORAGE_RESERVE = 200000;
 const SUPPORT_TARGET_ENERGY_FLOOR = 50000;
 const SUPPORT_TARGET_MAX_RCL = 6;
 const SUPPORT_MAX_SUPPLIERS_PER_TARGET = 2;
+const SUPPORT_ROUTE_CACHE_TICKS = 1000;
 const ENERGY_STRAINED_THRESHOLD = 25000;
 const EXPANSION_PAUSE_LOW_ROOM_COUNT = 2;
 const MILITARY_INTEL_MAX_AGE = 1500;
@@ -48,6 +49,7 @@ const SOURCE_WORK_TARGET = 5;
 const STORAGE_COMFORTABLE_ENERGY = 200000;
 const logisticsStatsCache = {};
 const expansionRouteCache = {};
+const supportRouteCache = {};
 
 const ROLE_PRIORITY = [
   "harvester",
@@ -2219,6 +2221,13 @@ function isDangerousSupplierTransitRoom(roomName, destinationRoomName) {
 }
 
 function hasSafeSupplierRoute(sourceRoomName, targetRoomName) {
+  const cacheKey = sourceRoomName + ">" + targetRoomName;
+  const cached = supportRouteCache[cacheKey];
+
+  if (cached && Game.time - cached.time <= SUPPORT_ROUTE_CACHE_TICKS) {
+    return cached.safe;
+  }
+
   const route = Game.map.findRoute(sourceRoomName, targetRoomName, {
     routeCallback: function (roomName) {
       if (isDangerousSupplierTransitRoom(roomName, targetRoomName)) {
@@ -2229,7 +2238,12 @@ function hasSafeSupplierRoute(sourceRoomName, targetRoomName) {
     },
   });
 
-  return route !== ERR_NO_PATH;
+  supportRouteCache[cacheKey] = {
+    time: Game.time,
+    safe: route !== ERR_NO_PATH,
+  };
+
+  return supportRouteCache[cacheKey].safe;
 }
 
 function manageBootstrapEscorts(room, counts, desired) {
@@ -2319,7 +2333,7 @@ function getSupportTargetRooms(sourceRoom) {
 }
 
 function getSupportTargetScore(room) {
-  return getStoredEnergy(room) + room.controller.level * 1000;
+  return getStoredEnergy(room);
 }
 
 function manageEnergySupport(room, counts, desired) {

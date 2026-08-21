@@ -1,6 +1,7 @@
 const utils = require("utils");
 
 const SOURCE_RESERVE = 200000;
+const LOW_ROOM_DROP_THRESHOLD = 50000;
 const PARKING_MIN_RANGE = 4;
 const PARKING_MAX_RANGE = 7;
 const PARKING_RECHECK_INTERVAL = 50;
@@ -325,6 +326,73 @@ function findDeliveryTarget(room) {
   })[0];
 }
 
+function getFallbackDropPosition(room) {
+  if (room.storage) {
+    return room.storage.pos;
+  }
+
+  const spawn = room.find(FIND_MY_SPAWNS)[0];
+
+  if (spawn) {
+    return spawn.pos;
+  }
+
+  return room.controller ? room.controller.pos : null;
+}
+
+function getStoredEnergy(room) {
+  let total = room.energyAvailable;
+
+  if (room.storage) {
+    total += room.storage.store[RESOURCE_ENERGY];
+  }
+
+  const containers = room.find(FIND_STRUCTURES, {
+    filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
+  });
+
+  for (const container of containers) {
+    total += container.store[RESOURCE_ENERGY];
+  }
+
+  return total;
+}
+
+function dropSupportEnergy(creep, room) {
+  if (getStoredEnergy(room) >= LOW_ROOM_DROP_THRESHOLD) {
+    return false;
+  }
+
+  const dropPosition = getFallbackDropPosition(room);
+
+  if (!dropPosition) {
+    return false;
+  }
+
+  if (creep.pos.getRangeTo(dropPosition) > 1) {
+    setStatus(creep, "moving_to_drop_energy");
+    creep.moveTo(dropPosition, {
+      range: 1,
+      maxRooms: 1,
+      reusePath: 5,
+      visualizePathStyle: {
+        stroke: "#ffffff",
+      },
+    });
+    return true;
+  }
+
+  const result = creep.drop(RESOURCE_ENERGY);
+
+  if (result === OK) {
+    setTrip(creep, "to_home");
+    setStatus(creep, "dropped_support_energy");
+    return true;
+  }
+
+  return false;
+}
+
 function deliverEnergy(creep) {
   const targetRoom = getTargetRoom(creep);
 
@@ -342,6 +410,10 @@ function deliverEnergy(creep) {
   const target = findDeliveryTarget(targetRoom);
 
   if (!target) {
+    if (dropSupportEnergy(creep, targetRoom)) {
+      return;
+    }
+
     creep.say("return");
     setTrip(creep, "to_home");
     setStatus(creep, "target_full_returning");
