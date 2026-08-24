@@ -22,7 +22,8 @@ const MAX_PIONEERS_PER_BOOTSTRAP_ROOM = 4;
 const DESIRED_FUNCTIONAL_PIONEERS_PER_BOOTSTRAP_ROOM = 2;
 const SUPPORT_STORAGE_RESERVE = 200000;
 const SUPPORT_TARGET_ENERGY_FLOOR = 50000;
-const SUPPORT_TARGET_MAX_RCL = 6;
+const SUPPORT_MATURE_TARGET_ENERGY_FLOOR = 100000;
+const SUPPORT_TARGET_MAX_RCL = 8;
 const SUPPORT_MAX_SUPPLIERS_PER_TARGET = 2;
 const SUPPORT_ROUTE_CACHE_TICKS = 1000;
 const ENERGY_STRAINED_THRESHOLD = 25000;
@@ -1359,6 +1360,14 @@ function hasExpansionCapacity() {
   return Game.gcl.level > getOwnedRoomCount();
 }
 
+function getSupportEnergyFloor(room) {
+  if (room.controller && room.controller.level >= 7) {
+    return SUPPORT_MATURE_TARGET_ENERGY_FLOOR;
+  }
+
+  return SUPPORT_TARGET_ENERGY_FLOOR;
+}
+
 function getLowEstablishedRoomCount() {
   return Object.values(Game.rooms).filter((room) => {
     if (!room.controller || !room.controller.my) {
@@ -1369,7 +1378,7 @@ function getLowEstablishedRoomCount() {
       return false;
     }
 
-    return getStoredEnergy(room) < SUPPORT_TARGET_ENERGY_FLOOR;
+    return getStoredEnergy(room) < getSupportEnergyFloor(room);
   }).length;
 }
 
@@ -2313,7 +2322,7 @@ function getSupportTargetRooms(sourceRoom) {
       return false;
     }
 
-    if (getStoredEnergy(room) < SUPPORT_TARGET_ENERGY_FLOOR) {
+    if (getStoredEnergy(room) < getSupportEnergyFloor(room)) {
       return true;
     }
 
