@@ -24,7 +24,7 @@ const SUPPORT_STORAGE_RESERVE = 200000;
 const SUPPORT_TARGET_ENERGY_FLOOR = 50000;
 const SUPPORT_MATURE_TARGET_ENERGY_FLOOR = 100000;
 const SUPPORT_TARGET_MAX_RCL = 8;
-const SUPPORT_MAX_SUPPLIERS_PER_TARGET = 2;
+const SUPPORT_MAX_SUPPLIERS_PER_TARGET = 3;
 const SUPPORT_ROUTE_CACHE_TICKS = 1000;
 const ENERGY_STRAINED_THRESHOLD = 25000;
 const EXPANSION_PAUSE_LOW_ROOM_COUNT = 2;
@@ -584,6 +584,13 @@ function getDesiredCounts(room) {
     }
   }
 
+  if (logistics.strainedEnergy) {
+    desired.upgrader = Math.min(desired.upgrader, 1);
+    desired.builder = 0;
+    desired.repairer = 0;
+    return desired;
+  }
+
   const maintenanceTargets = getMaintenanceTargets(room);
   const criticalMaintenanceTargets = getCriticalMaintenanceTargets(maintenanceTargets);
 
@@ -599,16 +606,6 @@ function getDesiredCounts(room) {
     (criticalMaintenanceTargets.length >= 3 || maintenanceTargets.length > 20)
   ) {
     desired.repairer = 2;
-  }
-
-  if (logistics.strainedEnergy) {
-    desired.upgrader = Math.min(desired.upgrader, 1);
-    desired.builder = criticalMaintenanceTargets.length > 0
-      ? Math.min(desired.builder, 1)
-      : 0;
-    desired.repairer = criticalMaintenanceTargets.length > 0
-      ? Math.min(desired.repairer, 1)
-      : 0;
   }
 
   return desired;
@@ -2361,7 +2358,7 @@ function manageEnergySupport(room, counts, desired) {
   });
 
   for (const target of targets) {
-    const maxSuppliers = getStoredEnergy(target) < ENERGY_STRAINED_THRESHOLD
+    const maxSuppliers = getStoredEnergy(target) < getSupportEnergyFloor(target)
       ? SUPPORT_MAX_SUPPLIERS_PER_TARGET
       : 1;
 
