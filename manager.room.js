@@ -50,6 +50,7 @@ const DEFENSE_SPAWN_INTERVAL = 5;
 const MAINTENANCE_TARGET_CACHE_TICKS = 50;
 const SOURCE_WORK_TARGET = 5;
 const STORAGE_COMFORTABLE_ENERGY = 200000;
+const RAMPART_REPAIR_TARGET = 10000;
 const logisticsStatsCache = {};
 const expansionRouteCache = {};
 const supportRouteCache = {};
@@ -436,10 +437,13 @@ function getMaintenanceTargets(room) {
   const targets = room.find(FIND_STRUCTURES, {
     filter: (structure) => {
       if (
-        structure.structureType === STRUCTURE_WALL ||
-        structure.structureType === STRUCTURE_RAMPART
+        structure.structureType === STRUCTURE_WALL
       ) {
         return false;
+      }
+
+      if (structure.structureType === STRUCTURE_RAMPART) {
+        return structure.hits < RAMPART_REPAIR_TARGET;
       }
 
       if (
@@ -2466,9 +2470,9 @@ function manageDefense(room) {
     return;
   }
 
-  const body = [MOVE, MOVE, MOVE, ATTACK, ATTACK, ATTACK];
+  const body = getEmergencyDefenderBody(room);
 
-  if (bodyCost(body) <= room.energyAvailable) {
+  if (body) {
     spawnRole(room, "defender", body);
   }
 }

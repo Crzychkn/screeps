@@ -1,6 +1,7 @@
 const MIN_DROPPED_ENERGY = 25;
 const REPAIR_QUEUE_CACHE_TICKS = 10;
 const ROOM_ROUTE_CACHE_TICKS = 1000;
+const RAMPART_REPAIR_TARGET = 10000;
 const avoidConfig = require("config.avoid");
 const repairQueueCache = {};
 
@@ -371,10 +372,13 @@ function getRepairQueue(room) {
   const repairSites = room.find(FIND_STRUCTURES, {
     filter: (structure) => {
       if (
-        structure.structureType === STRUCTURE_WALL ||
-        structure.structureType === STRUCTURE_RAMPART
+        structure.structureType === STRUCTURE_WALL
       ) {
         return false;
+      }
+
+      if (structure.structureType === STRUCTURE_RAMPART) {
+        return structure.hits < RAMPART_REPAIR_TARGET;
       }
 
       if (structure.structureType === STRUCTURE_ROAD) {
@@ -390,6 +394,7 @@ function getRepairQueue(room) {
   });
 
   const repairPriorities = {
+    [STRUCTURE_RAMPART]: 1,
     [STRUCTURE_ROAD]: 1,
     [STRUCTURE_CONTAINER]: 2,
     [STRUCTURE_TOWER]: 3,

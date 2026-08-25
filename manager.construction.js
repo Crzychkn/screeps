@@ -7,6 +7,7 @@ const BUILD_ORDER = [
   STRUCTURE_EXTENSION,
   STRUCTURE_TOWER,
   STRUCTURE_STORAGE,
+  STRUCTURE_RAMPART,
   STRUCTURE_ROAD,
 ];
 
@@ -84,6 +85,42 @@ function isBuildablePosition(room, x, y) {
   }
 
   return true;
+}
+
+function hasRampartAt(room, x, y) {
+  const look = room.lookAt(x, y);
+
+  for (const item of look) {
+    if (
+      item.type === LOOK_STRUCTURES &&
+      item.structure.structureType === STRUCTURE_RAMPART
+    ) {
+      return true;
+    }
+
+    if (
+      item.type === LOOK_CONSTRUCTION_SITES &&
+      item.constructionSite.structureType === STRUCTURE_RAMPART
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isRampartBuildablePosition(room, x, y) {
+  if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
+    return false;
+  }
+
+  const terrain = room.getTerrain();
+
+  if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+    return false;
+  }
+
+  return !hasRampartAt(room, x, y);
 }
 
 function getAnchor(room) {
@@ -209,6 +246,18 @@ function countAdjacentWalkableTiles(room, pos, blockedX, blockedY) {
   return count;
 }
 
+function getMinimumServiceAccessTiles(structureType) {
+  if (structureType === STRUCTURE_TOWER) {
+    return 3;
+  }
+
+  if (structureType === STRUCTURE_SPAWN) {
+    return 2;
+  }
+
+  return 1;
+}
+
 function wouldBlockServiceAccess(room, x, y) {
   const serviceStructures = room.find(FIND_MY_STRUCTURES, {
     filter: (structure) => {
@@ -221,8 +270,9 @@ function wouldBlockServiceAccess(room, x, y) {
       continue;
     }
 
-    const minimumAccessTiles =
-      structure.structureType === STRUCTURE_TOWER ? 2 : 1;
+    const minimumAccessTiles = getMinimumServiceAccessTiles(
+      structure.structureType
+    );
 
     if (
       countAdjacentWalkableTiles(room, structure.pos, x, y) <
@@ -233,6 +283,21 @@ function wouldBlockServiceAccess(room, x, y) {
   }
 
   return false;
+}
+
+function wouldHaveServiceAccess(room, structureType, x, y) {
+  if (SERVICE_ACCESS_STRUCTURE_TYPES.indexOf(structureType) === -1) {
+    return true;
+  }
+
+  return (
+    countAdjacentWalkableTiles(
+      room,
+      new RoomPosition(x, y, room.name),
+      x,
+      y
+    ) >= getMinimumServiceAccessTiles(structureType)
+  );
 }
 
 function getBaseTrafficCostMatrix(room) {
@@ -328,6 +393,10 @@ function isTrafficSafePlacement(room, structureType, x, y) {
     return true;
   }
 
+  if (!wouldHaveServiceAccess(room, structureType, x, y)) {
+    return false;
+  }
+
   if (wouldBlockServiceAccess(room, x, y)) {
     return false;
   }
@@ -342,7 +411,11 @@ function isTrafficSafePlacement(room, structureType, x, y) {
 }
 
 function tryPlaceAt(room, structureType, x, y) {
-  if (!isBuildablePosition(room, x, y)) {
+  if (
+    structureType === STRUCTURE_RAMPART
+      ? !isRampartBuildablePosition(room, x, y)
+      : !isBuildablePosition(room, x, y)
+  ) {
     return false;
   }
 
@@ -500,6 +573,41 @@ function placeStorage(room) {
   }
 
   return placeNearAnchor(room, STRUCTURE_STORAGE, spawn.pos, 2, 5);
+}
+
+function getRampartProtectionTargets(room) {
+  const protectedTypes = [
+    STRUCTURE_SPAWN,
+    STRUCTURE_TOWER,
+    STRUCTURE_STORAGE,
+    STRUCTURE_TERMINAL,
+    STRUCTURE_POWER_SPAWN,
+  ];
+
+  return room.find(FIND_MY_STRUCTURES, {
+    filter: (structure) => {
+      return protectedTypes.indexOf(structure.structureType) !== -1;
+    },
+  });
+}
+
+function placeRamparts(room) {
+  const allowed = getAllowedStructureCount(room, STRUCTURE_RAMPART);
+  const current = getStructureCount(room, STRUCTURE_RAMPART);
+
+  if (current >= allowed || room.controller.level < 4) {
+    return false;
+  }
+
+  const targets = getRampartProtectionTargets(room);
+
+  for (const target of targets) {
+    if (tryPlaceAt(room, STRUCTURE_RAMPART, target.pos.x, target.pos.y)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function getAdjacentBuildablePositions(room, pos) {
@@ -841,6 +949,10 @@ function tryBuild(room, structureType) {
 
   if (structureType === STRUCTURE_STORAGE) {
     return placeStorage(room);
+  }
+
+  if (structureType === STRUCTURE_RAMPART) {
+    return placeRamparts(room);
   }
 
   if (structureType === STRUCTURE_ROAD) {

@@ -16,6 +16,7 @@ const roomManager = require("manager.room");
 const intelManager = require("manager.intel");
 const militaryManager = require("manager.military");
 const warManager = require("manager.war");
+const utils = require("utils");
 
 const CPU_LOG_INTERVAL = 100;
 const ROLE_CPU_PROFILE_INTERVAL = 100;
@@ -250,11 +251,15 @@ function reportColonyAlerts(ownedRooms) {
   }
 
   for (const room of ownedRooms) {
-    const hostiles = room.find(FIND_HOSTILE_CREEPS);
+    const hostiles = utils.findHostileUnits(room);
 
     if (hostiles.length === 0) {
       continue;
     }
+
+    const powerCreepCount = hostiles.filter((hostile) => {
+      return !hostile.body;
+    }).length;
 
     const towers = room.find(FIND_MY_STRUCTURES, {
       filter: (structure) => structure.structureType === STRUCTURE_TOWER,
@@ -265,7 +270,8 @@ function reportColonyAlerts(ownedRooms) {
 
     notifyThrottled(
       `hostiles_${room.name}`,
-      `${hostiles.length} hostile(s) in ${room.name}; towerEnergy=${towerEnergy}`,
+      `${hostiles.length} hostile(s) in ${room.name}; ` +
+        `powerCreeps=${powerCreepCount}; towerEnergy=${towerEnergy}`,
       NOTIFY_HOSTILE_INTERVAL
     );
   }

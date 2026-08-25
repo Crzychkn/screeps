@@ -116,8 +116,8 @@ function isSourceKeeper(creep) {
 }
 
 function findBlockingHostiles(room) {
-  return room.find(FIND_HOSTILE_CREEPS, {
-    filter: (creep) => !isSourceKeeper(creep),
+  return utils.findHostileUnits(room).filter((hostile) => {
+    return !isSourceKeeper(hostile);
   });
 }
 

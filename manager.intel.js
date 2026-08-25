@@ -1,4 +1,5 @@
 const INTEL_RECORD_INTERVAL = 10;
+const utils = require("utils");
 
 function countBodyParts(creep) {
   const counts = {};
@@ -11,14 +12,15 @@ function countBodyParts(creep) {
 }
 
 function summarizeHostiles(room) {
-  const hostiles = room.find(FIND_HOSTILE_CREEPS);
+  const hostiles = utils.findHostileUnits(room);
 
-  return hostiles.map((creep) => {
+  return hostiles.map((hostile) => {
     return {
-      owner: creep.owner ? creep.owner.username : "unknown",
-      body: countBodyParts(creep),
-      x: creep.pos.x,
-      y: creep.pos.y,
+      owner: hostile.owner ? hostile.owner.username : "unknown",
+      body: hostile.body ? countBodyParts(hostile) : {},
+      powerCreep: !hostile.body,
+      x: hostile.pos.x,
+      y: hostile.pos.y,
     };
   });
 }
