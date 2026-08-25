@@ -5,6 +5,7 @@ const LOW_ROOM_DROP_THRESHOLD = 50000;
 const PARKING_MIN_RANGE = 4;
 const PARKING_MAX_RANGE = 7;
 const PARKING_RECHECK_INTERVAL = 50;
+const TOWER_CRITICAL_REFILL_THRESHOLD = 500;
 const HOSTILE_TOWER_REFILL_THRESHOLD = 1000;
 
 function getTargetRoom(creep) {
@@ -301,6 +302,20 @@ function findDeliveryTarget(room) {
     if (tower) {
       return tower;
     }
+  }
+
+  const criticalTower = room.find(FIND_MY_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_TOWER &&
+        structure.store[RESOURCE_ENERGY] < TOWER_CRITICAL_REFILL_THRESHOLD &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  })[0];
+
+  if (criticalTower) {
+    return criticalTower;
   }
 
   const spawnOrExtension = room.find(FIND_MY_STRUCTURES, {

@@ -2,6 +2,7 @@ const roleTower = require("role.tower");
 const constructionManager = require("manager.construction");
 const signConfig = require("config.sign");
 const avoidConfig = require("config.avoid");
+const strategyConfig = require("config.strategy");
 const utils = require("utils");
 
 const EXPANSION_BLOCK_TTL = 50000;
@@ -1182,6 +1183,13 @@ function getMilitaryMemory() {
   return Memory.military;
 }
 
+function isOffenseEnabled() {
+  return (
+    strategyConfig.offenseEnabled === true ||
+    (Memory.strategy && Memory.strategy.offenseEnabled === true)
+  );
+}
+
 function getRoomIntel(roomName) {
   if (!Memory.rooms || !Memory.rooms[roomName]) {
     return null;
@@ -1201,6 +1209,10 @@ function needsMilitaryScout(targetRoomName) {
 }
 
 function manageMilitaryScouting(room, counts, desired) {
+  if (!isOffenseEnabled()) {
+    return false;
+  }
+
   const military = getMilitaryMemory();
 
   if (!military.attackTarget) {
@@ -1226,6 +1238,10 @@ function manageMilitaryScouting(room, counts, desired) {
 }
 
 function manageMilitaryAttackers(room, counts, desired) {
+  if (!isOffenseEnabled()) {
+    return false;
+  }
+
   const military = getMilitaryMemory();
   const operation = military.operation;
 

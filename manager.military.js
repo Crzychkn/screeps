@@ -1,5 +1,6 @@
 const INTEL_MAX_AGE = 1500;
 const avoidConfig = require("config.avoid");
+const strategyConfig = require("config.strategy");
 
 function getMilitaryMemory() {
   if (!Memory.military) {
@@ -149,6 +150,14 @@ function classifyOperation(targetRoom, intel) {
 module.exports = {
   run: function () {
     const military = getMilitaryMemory();
+
+    if (
+      strategyConfig.offenseEnabled !== true &&
+      !(Memory.strategy && Memory.strategy.offenseEnabled === true)
+    ) {
+      delete military.operation;
+      return;
+    }
 
     if (!military.attackTarget) {
       delete military.operation;

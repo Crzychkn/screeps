@@ -1,7 +1,9 @@
 const TOWER_REFILL_THRESHOLD = 700;
+const TOWER_CRITICAL_REFILL_THRESHOLD = 500;
 const HOSTILE_TOWER_REFILL_THRESHOLD = 1000;
 const MIN_DROPPED_ENERGY = 50;
 const SOURCE_DROPPED_RANGE = 1;
+const URGENT_PARTIAL_DELIVERY_ENERGY = 100;
 const utils = require("utils");
 
 function moveToTarget(creep, target, stroke) {
@@ -97,6 +99,15 @@ function findPriorityDeliveryTarget(creep) {
     if (tower) {
       return tower;
     }
+  }
+
+  const criticalTower = findTowerDeliveryTarget(
+    creep,
+    TOWER_CRITICAL_REFILL_THRESHOLD
+  );
+
+  if (criticalTower) {
+    return criticalTower;
   }
 
   const spawnOrExtensions = creep.room.find(FIND_MY_STRUCTURES, {
@@ -214,6 +225,14 @@ function findStorageWithdrawTarget(creep) {
   return creep.room.storage;
 }
 
+function hasUrgentDeliveryTarget(creep) {
+  if (creep.store[RESOURCE_ENERGY] < URGENT_PARTIAL_DELIVERY_ENERGY) {
+    return false;
+  }
+
+  return !!findPriorityDeliveryTarget(creep);
+}
+
 function harvestFallback(creep) {
   const source =
     creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE) ||
@@ -317,6 +336,10 @@ function shouldDeliverPartial(creep) {
   }
 
   if (hasHostiles(creep.room) && findTowerDeliveryTarget(creep, HOSTILE_TOWER_REFILL_THRESHOLD)) {
+    return true;
+  }
+
+  if (hasUrgentDeliveryTarget(creep)) {
     return true;
   }
 

@@ -4,6 +4,7 @@ const MIN_WAR_RCL = 6;
 const MIN_STORAGE_ENERGY = 100000;
 const LOG_INTERVAL = 100;
 const avoidConfig = require("config.avoid");
+const strategyConfig = require("config.strategy");
 
 function getWarMemory() {
   if (!Memory.war) {
@@ -222,6 +223,14 @@ function getReadinessBlock(stableRooms) {
 module.exports = {
   run: function () {
     const war = getWarMemory();
+
+    if (
+      strategyConfig.offenseEnabled !== true &&
+      !(Memory.strategy && Memory.strategy.offenseEnabled === true)
+    ) {
+      delete war.operation;
+      return;
+    }
 
     if (!war.enabled) {
       delete war.operation;
