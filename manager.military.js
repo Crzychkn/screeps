@@ -1,4 +1,5 @@
 const INTEL_MAX_AGE = 1500;
+const avoidConfig = require("config.avoid");
 
 function getMilitaryMemory() {
   if (!Memory.military) {
@@ -151,6 +152,17 @@ module.exports = {
 
     if (!military.attackTarget) {
       delete military.operation;
+      return;
+    }
+
+    if (avoidConfig.isRoomAvoided(military.attackTarget)) {
+      military.operation = makeOperation(
+        military.attackTarget,
+        "avoided",
+        "blocked",
+        {},
+        ["Target room is in the avoid list."]
+      );
       return;
     }
 

@@ -1,6 +1,8 @@
 const roleTower = require("role.tower");
 const constructionManager = require("manager.construction");
 const signConfig = require("config.sign");
+const avoidConfig = require("config.avoid");
+const utils = require("utils");
 
 const EXPANSION_BLOCK_TTL = 50000;
 const EXPANSION_BLOCK_RECHECK_TICKS = 3000;
@@ -1475,7 +1477,11 @@ function logExpansionStatus(expansion, message) {
 }
 
 function isClaimableExpansionIntel(roomName) {
-  if (isExpansionBlocked(roomName) || !isNormalRoom(roomName)) {
+  if (
+    avoidConfig.isRoomAvoided(roomName) ||
+    isExpansionBlocked(roomName) ||
+    !isNormalRoom(roomName)
+  ) {
     return false;
   }
 
@@ -1509,6 +1515,10 @@ function getAdjacentEstablishedRoomCount(roomName) {
 }
 
 function isSafeExpansionRoute(sourceRoomName, targetRoomName) {
+  if (avoidConfig.isRoomAvoided(targetRoomName)) {
+    return false;
+  }
+
   const cacheKey = sourceRoomName + ">" + targetRoomName;
   const cached = expansionRouteCache[cacheKey];
 
@@ -1557,7 +1567,11 @@ function getPreferredExpansionTarget(expansion) {
 function canAssignExpansionScoutTarget(roomName) {
   const expansion = getExpansionMemory();
 
-  if (isExpansionBlocked(roomName) || !isNormalRoom(roomName)) {
+  if (
+    avoidConfig.isRoomAvoided(roomName) ||
+    isExpansionBlocked(roomName) ||
+    !isNormalRoom(roomName)
+  ) {
     return false;
   }
 
@@ -1708,6 +1722,10 @@ function getExpansionCandidateScore(sourceRoom, roomName) {
 
 function getExpansionCandidateRejectReason(sourceRoom, roomName) {
   const range = Game.map.getRoomLinearDistance(sourceRoom.name, roomName);
+
+  if (avoidConfig.isRoomAvoided(roomName)) {
+    return "avoided";
+  }
 
   if (range > EXPANSION_CLAIM_SEARCH_RANGE) {
     return "out_of_range";
@@ -2208,6 +2226,10 @@ function getBootstrapThreat(roomName) {
 }
 
 function isDangerousSupplierTransitRoom(roomName, destinationRoomName) {
+  if (avoidConfig.isRoomAvoided(roomName)) {
+    return true;
+  }
+
   if (roomName === destinationRoomName) {
     return false;
   }
@@ -2428,7 +2450,7 @@ function manageExpansionSupport(room, counts, desired) {
 }
 
 function manageDefense(room) {
-  const hostiles = room.find(FIND_HOSTILE_CREEPS);
+  const hostiles = utils.findHostileUnits(room);
 
   if (hostiles.length === 0) {
     return;
@@ -2482,7 +2504,7 @@ function needsTowerEnergy(room) {
 }
 
 function manageHostileEmergencySpawning(room, counts) {
-  const hostiles = room.find(FIND_HOSTILE_CREEPS);
+  const hostiles = utils.findHostileUnits(room);
 
   if (hostiles.length === 0) {
     return false;
@@ -2509,7 +2531,13 @@ function manageHostileEmergencySpawning(room, counts) {
     );
   });
 
-  if (functionalDefenders.length >= Math.max(hostiles.length, 1)) {
+  const towerEnergyLow = needsTowerEnergy(room);
+  const desiredDefenders = Math.max(
+    hostiles.length,
+    towerEnergyLow ? 2 : 1
+  );
+
+  if (functionalDefenders.length >= desiredDefenders) {
     return true;
   }
 

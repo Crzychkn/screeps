@@ -3,6 +3,7 @@ const MIN_STABLE_ROOMS = 2;
 const MIN_WAR_RCL = 6;
 const MIN_STORAGE_ENERGY = 100000;
 const LOG_INTERVAL = 100;
+const avoidConfig = require("config.avoid");
 
 function getWarMemory() {
   if (!Memory.war) {
@@ -242,6 +243,21 @@ module.exports = {
     }
 
     const mode = war.mode || "clear";
+
+    if (avoidConfig.isRoomAvoided(war.targetRoom)) {
+      war.operation = makeOperation(
+        war.targetRoom,
+        mode,
+        "blocked",
+        [],
+        emptyRoles(),
+        "Target room is in the avoid list.",
+        "avoided"
+      );
+      logOperation(war);
+      return;
+    }
+
     const stableRooms = getStableWarRooms();
     const sourceRooms = stableRooms.map((room) => room.name);
     const readinessBlock = getReadinessBlock(stableRooms);

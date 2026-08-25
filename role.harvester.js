@@ -154,7 +154,7 @@ function findClosestOwnedStructureToFill(creep, structureType) {
 }
 
 function hasHostiles(room) {
-  return room.find(FIND_HOSTILE_CREEPS).length > 0;
+  return utils.hasHostileUnits(room);
 }
 
 function findTowerToFill(creep, threshold) {

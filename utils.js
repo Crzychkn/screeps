@@ -1,6 +1,7 @@
 const MIN_DROPPED_ENERGY = 25;
 const REPAIR_QUEUE_CACHE_TICKS = 10;
 const ROOM_ROUTE_CACHE_TICKS = 1000;
+const avoidConfig = require("config.avoid");
 const repairQueueCache = {};
 
 function getHomeRoom(creep) {
@@ -45,7 +46,25 @@ function getRoomIntel(roomName) {
   return Memory.rooms[roomName].intel || null;
 }
 
+function findHostileUnits(room) {
+  const hostiles = room.find(FIND_HOSTILE_CREEPS);
+
+  if (typeof FIND_HOSTILE_POWER_CREEPS === "undefined") {
+    return hostiles;
+  }
+
+  return hostiles.concat(room.find(FIND_HOSTILE_POWER_CREEPS));
+}
+
+function hasHostileUnits(room) {
+  return findHostileUnits(room).length > 0;
+}
+
 function isDangerousTransitRoom(roomName, destinationRoomName) {
+  if (avoidConfig.isRoomAvoided(roomName)) {
+    return true;
+  }
+
   if (roomName === destinationRoomName) {
     return false;
   }
@@ -411,4 +430,6 @@ module.exports = {
   moveToRoom,
   moveOffRoomEdge,
   getRepairQueue,
+  findHostileUnits,
+  hasHostileUnits,
 };

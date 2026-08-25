@@ -1,6 +1,7 @@
 const utils = require("utils");
 
 const STIM_SPAWN_THRESHOLD = 400;
+const HOSTILE_STIM_SPAWN_THRESHOLD = 1000;
 const STIM_BODY = [MOVE, MOVE, CARRY, CARRY];
 const STIM_FALLBACK_BODY = [MOVE, CARRY];
 const TOWER_REPAIR_MIN_ENERGY = 600;
@@ -26,9 +27,9 @@ function getRoomStims(room) {
     });
 }
 
-function spawnStimIfNeeded(room, towers) {
+function spawnStimIfNeeded(room, towers, threshold) {
     const needsStim = towers.some((tower) => {
-        return tower.store[RESOURCE_ENERGY] < STIM_SPAWN_THRESHOLD;
+        return tower.store[RESOURCE_ENERGY] < threshold;
     });
 
     if (!needsStim || getRoomStims(room).length > 0) {
@@ -80,9 +81,13 @@ module.exports = {
             return;
         }
 
-        spawnStimIfNeeded(room, towers);
+        const hostiles = utils.findHostileUnits(room);
+        spawnStimIfNeeded(
+            room,
+            towers,
+            hostiles.length > 0 ? HOSTILE_STIM_SPAWN_THRESHOLD : STIM_SPAWN_THRESHOLD
+        );
 
-        const hostiles = room.find(FIND_HOSTILE_CREEPS);
         if (hostiles.length > 0) {
             towers.forEach((tower) => {
                 const hostile = tower.pos.findClosestByRange(hostiles);

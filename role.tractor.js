@@ -2,6 +2,7 @@ const TOWER_REFILL_THRESHOLD = 700;
 const HOSTILE_TOWER_REFILL_THRESHOLD = 1000;
 const MIN_DROPPED_ENERGY = 50;
 const SOURCE_DROPPED_RANGE = 1;
+const utils = require("utils");
 
 function moveToTarget(creep, target, stroke) {
   creep.moveTo(target, {
@@ -66,7 +67,7 @@ function isControllerContainer(container) {
 }
 
 function hasHostiles(room) {
-  return room.find(FIND_HOSTILE_CREEPS).length > 0;
+  return utils.hasHostileUnits(room);
 }
 
 function findTowerDeliveryTarget(creep, threshold) {

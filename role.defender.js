@@ -5,7 +5,7 @@ function moveToTargetRoom(creep) {
 }
 
 function getAttackTarget(creep) {
-  const hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
+  const hostiles = utils.findHostileUnits(creep.room);
 
   if (hostiles.length > 0) {
     return creep.pos.findClosestByRange(hostiles) || hostiles[0];
