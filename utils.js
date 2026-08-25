@@ -2,6 +2,7 @@ const MIN_DROPPED_ENERGY = 25;
 const REPAIR_QUEUE_CACHE_TICKS = 10;
 const ROOM_ROUTE_CACHE_TICKS = 1000;
 const RAMPART_REPAIR_TARGET = 10000;
+const RAMPART_CRITICAL_REPAIR_TARGET = 1000;
 const avoidConfig = require("config.avoid");
 const repairQueueCache = {};
 
@@ -394,20 +395,38 @@ function getRepairQueue(room) {
   });
 
   const repairPriorities = {
-    [STRUCTURE_RAMPART]: 1,
     [STRUCTURE_ROAD]: 1,
     [STRUCTURE_CONTAINER]: 2,
+    [STRUCTURE_RAMPART]: 3,
     [STRUCTURE_TOWER]: 3,
     [STRUCTURE_SPAWN]: 4,
     [STRUCTURE_EXTENSION]: 5,
     [STRUCTURE_STORAGE]: 6,
   };
 
-  const queue = repairSites.sort((a, b) => {
-    const healthA = a.hits / a.hitsMax;
-    const healthB = b.hits / b.hitsMax;
+  function getRepairRatio(structure) {
+    if (structure.structureType === STRUCTURE_RAMPART) {
+      return structure.hits / RAMPART_REPAIR_TARGET;
+    }
 
-    if (healthA < 0.25 || healthB < 0.25) {
+    return structure.hits / structure.hitsMax;
+  }
+
+  function isCriticalRepair(structure) {
+    if (structure.structureType === STRUCTURE_RAMPART) {
+      return structure.hits < RAMPART_CRITICAL_REPAIR_TARGET;
+    }
+
+    return structure.hits < structure.hitsMax * 0.25;
+  }
+
+  const queue = repairSites.sort((a, b) => {
+    const healthA = getRepairRatio(a);
+    const healthB = getRepairRatio(b);
+    const criticalA = isCriticalRepair(a);
+    const criticalB = isCriticalRepair(b);
+
+    if (criticalA || criticalB) {
       return healthA - healthB;
     }
 

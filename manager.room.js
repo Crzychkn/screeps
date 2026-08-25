@@ -52,6 +52,8 @@ const MAINTENANCE_TARGET_CACHE_TICKS = 50;
 const SOURCE_WORK_TARGET = 5;
 const STORAGE_COMFORTABLE_ENERGY = 200000;
 const RAMPART_REPAIR_TARGET = 10000;
+const RAMPART_CRITICAL_REPAIR_TARGET = 1000;
+const RCL8_RECOVERY_UPGRADE_DOWNGRADE_BUFFER = 50000;
 const logisticsStatsCache = {};
 const expansionRouteCache = {};
 const supportRouteCache = {};
@@ -468,7 +470,23 @@ function getMaintenanceTargets(room) {
 
 function getCriticalMaintenanceTargets(maintenanceTargets) {
   return maintenanceTargets.filter((structure) => {
+    if (structure.structureType === STRUCTURE_RAMPART) {
+      return structure.hits < RAMPART_CRITICAL_REPAIR_TARGET;
+    }
+
     return structure.hits < structure.hitsMax * 0.35;
+  });
+}
+
+function getCriticalRoadOrContainerTargets(maintenanceTargets) {
+  return maintenanceTargets.filter((structure) => {
+    return (
+      (
+        structure.structureType === STRUCTURE_ROAD ||
+        structure.structureType === STRUCTURE_CONTAINER
+      ) &&
+      structure.hits < structure.hitsMax * 0.5
+    );
   });
 }
 
@@ -591,15 +609,25 @@ function getDesiredCounts(room) {
     }
   }
 
-  if (logistics.strainedEnergy) {
-    desired.upgrader = Math.min(desired.upgrader, 1);
-    desired.builder = 0;
-    desired.repairer = 0;
-    return desired;
-  }
-
   const maintenanceTargets = getMaintenanceTargets(room);
   const criticalMaintenanceTargets = getCriticalMaintenanceTargets(maintenanceTargets);
+  const criticalRoadOrContainerTargets =
+    getCriticalRoadOrContainerTargets(maintenanceTargets);
+
+  if (logistics.strainedEnergy) {
+    if (
+      rcl >= 8 &&
+      room.controller.ticksToDowngrade > RCL8_RECOVERY_UPGRADE_DOWNGRADE_BUFFER
+    ) {
+      desired.upgrader = 0;
+    } else {
+      desired.upgrader = Math.min(desired.upgrader, 1);
+    }
+
+    desired.builder = 0;
+    desired.repairer = criticalRoadOrContainerTargets.length > 0 ? 1 : 0;
+    return desired;
+  }
 
   if (
     rcl >= 2 &&
@@ -1615,11 +1643,9 @@ function canAssignExpansionScoutTarget(roomName) {
 
   const visibleRoom = Game.rooms[roomName];
 
-  if (visibleRoom && visibleRoom.controller && visibleRoom.controller.my) {
-    return false;
-  }
+  return !( visibleRoom && visibleRoom.controller && visibleRoom.controller.my );
 
-  return true;
+
 }
 
 function isExpansionScoutCandidate(roomName) {
@@ -1662,11 +1688,9 @@ function isStaleExpansionScoutCandidate(sourceRoom, roomName) {
     return false;
   }
 
-  if (!intel.controller || !intel.controller.exists || intel.controller.my) {
-    return false;
-  }
+  return !( !intel.controller || !intel.controller.exists || intel.controller.my );
 
-  return true;
+
 }
 
 function chooseStaleExpansionScoutTarget(room) {
