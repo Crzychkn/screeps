@@ -1,5 +1,51 @@
 const utils = require("utils");
 
+const STARVED_ENERGY_THRESHOLD = 25000;
+const RECOVERY_DOWNGRADE_BUFFER = 10000;
+
+function getStoredEnergy(room) {
+  let total = room.energyAvailable;
+
+  if (room.storage) {
+    total += room.storage.store[RESOURCE_ENERGY];
+  }
+
+  const containers = room.find(FIND_STRUCTURES, {
+    filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
+  });
+
+  for (const container of containers) {
+    total += container.store[RESOURCE_ENERGY];
+  }
+
+  return total;
+}
+
+function isStarved(room) {
+  return (
+    getStoredEnergy(room) <
+    Math.max(STARVED_ENERGY_THRESHOLD, room.energyCapacityAvailable * 5)
+  );
+}
+
+function isCriticalConstructionSite(site) {
+  return (
+    site.structureType === STRUCTURE_SPAWN ||
+    site.structureType === STRUCTURE_CONTAINER ||
+    site.structureType === STRUCTURE_TOWER
+  );
+}
+
+function findConstructionSites(room) {
+  const sites = room.find(FIND_CONSTRUCTION_SITES);
+
+  if (!isStarved(room)) {
+    return sites;
+  }
+
+  return sites.filter(isCriticalConstructionSite);
+}
+
 function moveToHomeRoom(creep, homeRoom) {
   utils.moveToRoom(creep, homeRoom.name, "#ffffff");
 }
@@ -34,7 +80,7 @@ module.exports = {
         return;
       }
 
-      const constructionSites = homeRoom.find(FIND_CONSTRUCTION_SITES);
+      const constructionSites = findConstructionSites(homeRoom);
       if (constructionSites.length > 0) {
         if (creep.build(constructionSites[0]) === ERR_NOT_IN_RANGE) {
           creep.moveTo(constructionSites[0], {
@@ -53,7 +99,14 @@ module.exports = {
               maxRooms: 1,
               reusePath: 5,
             });
-          } else if (repairQueue.length === 0 && homeRoom.controller) {
+          } else if (
+            repairQueue.length === 0 &&
+            homeRoom.controller &&
+            (
+              !isStarved(homeRoom) ||
+              homeRoom.controller.ticksToDowngrade <= RECOVERY_DOWNGRADE_BUFFER
+            )
+          ) {
             const result = creep.upgradeController(homeRoom.controller);
 
             if (result === ERR_NOT_IN_RANGE) {
@@ -64,6 +117,8 @@ module.exports = {
                 visualizePathStyle: { stroke: "#ffffff" },
               });
             }
+          } else if (isStarved(homeRoom)) {
+            utils.returnEnergyForRecovery(creep, homeRoom);
           }
       }
     }

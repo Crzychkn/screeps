@@ -1,5 +1,46 @@
 const utils = require("utils");
 
+const STARVED_ENERGY_THRESHOLD = 25000;
+const RECOVERY_DOWNGRADE_BUFFER = 10000;
+const RCL8_RECOVERY_DOWNGRADE_BUFFER = 50000;
+
+function getStoredEnergy(room) {
+  let total = room.energyAvailable;
+
+  if (room.storage) {
+    total += room.storage.store[RESOURCE_ENERGY];
+  }
+
+  const containers = room.find(FIND_STRUCTURES, {
+    filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
+  });
+
+  for (const container of containers) {
+    total += container.store[RESOURCE_ENERGY];
+  }
+
+  return total;
+}
+
+function shouldPauseUpgrading(room) {
+  if (!room.controller || !room.controller.my) {
+    return false;
+  }
+
+  const threshold = Math.max(
+    STARVED_ENERGY_THRESHOLD,
+    room.energyCapacityAvailable * 5
+  );
+  const downgradeBuffer = room.controller.level >= 8
+    ? RCL8_RECOVERY_DOWNGRADE_BUFFER
+    : RECOVERY_DOWNGRADE_BUFFER;
+
+  return (
+    getStoredEnergy(room) < threshold &&
+    room.controller.ticksToDowngrade > downgradeBuffer
+  );
+}
+
 function setWorkingState(creep) {
   if (creep.memory.upgrading && creep.store[RESOURCE_ENERGY] === 0) {
     creep.memory.upgrading = false;
@@ -92,6 +133,13 @@ module.exports = {
     }
 
     if (utils.moveOffRoomEdge(creep)) {
+      return;
+    }
+
+    if (shouldPauseUpgrading(homeRoom)) {
+      creep.memory.upgrading = false;
+      creep.memory.lastStatus = "paused_energy_recovery";
+      utils.returnEnergyForRecovery(creep, homeRoom);
       return;
     }
 

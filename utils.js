@@ -325,6 +325,79 @@ function harvestSource(creep, room) {
   return false;
 }
 
+function hasFreeEnergyCapacity(structure) {
+  return (
+    structure.store &&
+    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+  );
+}
+
+function findRecoveryEnergyTarget(creep, room) {
+  const criticalTower = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_TOWER &&
+        structure.store[RESOURCE_ENERGY] < 500 &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+
+  if (criticalTower) {
+    return criticalTower;
+  }
+
+  const spawnOrExtension = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        (
+          structure.structureType === STRUCTURE_SPAWN ||
+          structure.structureType === STRUCTURE_EXTENSION
+        ) &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+
+  if (spawnOrExtension) {
+    return spawnOrExtension;
+  }
+
+  if (room.storage && hasFreeEnergyCapacity(room.storage)) {
+    return room.storage;
+  }
+
+  return creep.pos.findClosestByRange(FIND_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_CONTAINER &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+}
+
+function returnEnergyForRecovery(creep, room) {
+  if (creep.store[RESOURCE_ENERGY] === 0) {
+    return false;
+  }
+
+  const target = findRecoveryEnergyTarget(creep, room);
+
+  if (!target) {
+    return false;
+  }
+
+  const result = creep.transfer(target, RESOURCE_ENERGY);
+
+  if (result === ERR_NOT_IN_RANGE) {
+    moveToTarget(creep, target);
+    return true;
+  }
+
+  return result === OK;
+}
+
 function getEnergy(creep) {
   const homeRoom = getHomeRoom(creep);
 
@@ -456,4 +529,5 @@ module.exports = {
   getRepairQueue,
   findHostileUnits,
   hasHostileUnits,
+  returnEnergyForRecovery,
 };

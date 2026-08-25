@@ -54,6 +54,8 @@ const STORAGE_COMFORTABLE_ENERGY = 200000;
 const RAMPART_REPAIR_TARGET = 10000;
 const RAMPART_CRITICAL_REPAIR_TARGET = 1000;
 const RCL8_RECOVERY_UPGRADE_DOWNGRADE_BUFFER = 50000;
+const RECOVERY_UPGRADE_DOWNGRADE_BUFFER = 10000;
+const STARVED_ENERGY_THRESHOLD = 25000;
 const logisticsStatsCache = {};
 const expansionRouteCache = {};
 const supportRouteCache = {};
@@ -294,6 +296,13 @@ function getLogisticsStats(room) {
 
   const sources = room.find(FIND_SOURCES);
   const constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES);
+  const criticalConstructionSiteCount = constructionSites.filter((site) => {
+    return (
+      site.structureType === STRUCTURE_SPAWN ||
+      site.structureType === STRUCTURE_CONTAINER ||
+      site.structureType === STRUCTURE_TOWER
+    );
+  }).length;
   const containers = room.find(FIND_STRUCTURES, {
     filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
   });
@@ -321,9 +330,14 @@ function getLogisticsStats(room) {
   const comfortableEnergyThreshold = room.storage
     ? Math.max(STORAGE_COMFORTABLE_ENERGY, room.energyCapacityAvailable * 10)
     : Math.max(1600, room.energyCapacityAvailable * 3);
+  const starvedEnergyThreshold = Math.max(
+    STARVED_ENERGY_THRESHOLD,
+    room.energyCapacityAvailable * 5
+  );
 
   const stats = {
     constructionSiteCount: constructionSites.length,
+    criticalConstructionSiteCount: criticalConstructionSiteCount,
     sourceCount: sources.length,
     sourceContainerCount: sourceContainers.length,
     sourceContainerEnergy: sourceContainerEnergy,
@@ -334,6 +348,7 @@ function getLogisticsStats(room) {
     hasSourceContainers: sourceContainers.length > 0,
     lowEnergy: storedEnergy < lowEnergyThreshold,
     strainedEnergy: storedEnergy < strainedEnergyThreshold,
+    starvedEnergy: storedEnergy < starvedEnergyThreshold,
     comfortableEnergy: storedEnergy >= comfortableEnergyThreshold,
   };
 
@@ -614,16 +629,38 @@ function getDesiredCounts(room) {
   const criticalRoadOrContainerTargets =
     getCriticalRoadOrContainerTargets(maintenanceTargets);
 
-  if (logistics.strainedEnergy) {
+  if (logistics.starvedEnergy) {
     if (
-      rcl >= 8 &&
-      room.controller.ticksToDowngrade > RCL8_RECOVERY_UPGRADE_DOWNGRADE_BUFFER
+      room.controller.ticksToDowngrade >
+        (rcl >= 8
+          ? RCL8_RECOVERY_UPGRADE_DOWNGRADE_BUFFER
+          : RECOVERY_UPGRADE_DOWNGRADE_BUFFER)
     ) {
       desired.upgrader = 0;
     } else {
       desired.upgrader = Math.min(desired.upgrader, 1);
     }
 
+    desired.builder = logistics.criticalConstructionSiteCount > 0 ? 1 : 0;
+    desired.repairer = criticalRoadOrContainerTargets.length > 0 ? 1 : 0;
+    desired.harvester = Math.max(desired.harvester, logistics.sourceCount);
+
+    if (
+      logistics.hasSourceContainers &&
+      (
+        logistics.sourceContainerEnergy > 0 ||
+        logistics.droppedSourceEnergy > 0 ||
+        room.energyAvailable < room.energyCapacityAvailable
+      )
+    ) {
+      desired.tractor = Math.max(desired.tractor, 1);
+    }
+
+    return desired;
+  }
+
+  if (logistics.strainedEnergy) {
+    desired.upgrader = Math.min(desired.upgrader, 1);
     desired.builder = 0;
     desired.repairer = criticalRoadOrContainerTargets.length > 0 ? 1 : 0;
     return desired;
