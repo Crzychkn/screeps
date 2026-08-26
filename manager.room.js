@@ -31,6 +31,7 @@ const SUPPORT_MAX_SUPPLIERS_PER_TARGET = 3;
 const SUPPORT_ROUTE_CACHE_TICKS = 1000;
 const ENERGY_STRAINED_THRESHOLD = 25000;
 const EXPANSION_PAUSE_LOW_ROOM_COUNT = 2;
+const EMPIRE_RECOVERY_LOG_INTERVAL = 500;
 const MILITARY_INTEL_MAX_AGE = 1500;
 const INCOME_LOG_INTERVAL = 100;
 const ROOM_LOG_INTERVAL = 100;
@@ -59,6 +60,7 @@ const STARVED_ENERGY_THRESHOLD = 25000;
 const logisticsStatsCache = {};
 const expansionRouteCache = {};
 const supportRouteCache = {};
+let empireRecoveryStatusCache = null;
 
 const ROLE_PRIORITY = [
   "harvester",
@@ -667,6 +669,14 @@ function getDesiredCounts(room) {
         logistics.sourceCount >= 2 ? 4 : 3
       );
     }
+
+    return desired;
+  }
+
+  if (getEmpireRecoveryStatus().active) {
+    desired.upgrader = Math.min(desired.upgrader, 1);
+    desired.builder = logistics.criticalConstructionSiteCount > 0 ? 1 : 0;
+    desired.repairer = criticalRoadOrContainerTargets.length > 0 ? 1 : 0;
 
     return desired;
   }
@@ -1457,6 +1467,10 @@ function hasExpansionCapacity() {
 }
 
 function getSupportEnergyFloor(room) {
+  if (!room.storage) {
+    return Math.max(3000, room.energyCapacityAvailable * 2);
+  }
+
   if (room.controller && room.controller.level >= 7) {
     return SUPPORT_MATURE_TARGET_ENERGY_FLOOR;
   }
@@ -1464,22 +1478,91 @@ function getSupportEnergyFloor(room) {
   return SUPPORT_TARGET_ENERGY_FLOOR;
 }
 
-function getLowEstablishedRoomCount() {
+function getEstablishedOwnedRooms() {
   return Object.values(Game.rooms).filter((room) => {
     if (!room.controller || !room.controller.my) {
       return false;
     }
 
-    if (room.find(FIND_MY_SPAWNS).length === 0) {
-      return false;
-    }
+    return room.find(FIND_MY_SPAWNS).length !== 0;
 
+
+  });
+}
+
+function getEmpireRecoveryStatus() {
+  if (
+    empireRecoveryStatusCache &&
+    empireRecoveryStatusCache.tick === Game.time
+  ) {
+    return empireRecoveryStatusCache.status;
+  }
+
+  const rooms = getEstablishedOwnedRooms();
+  const lowRooms = rooms.filter((room) => {
     return getStoredEnergy(room) < getSupportEnergyFloor(room);
-  }).length;
+  });
+
+  const status = {
+    active: lowRooms.length >= EXPANSION_PAUSE_LOW_ROOM_COUNT,
+    lowRoomCount: lowRooms.length,
+    roomCount: rooms.length,
+    lowRooms: lowRooms.map((room) => {
+      return {
+        name: room.name,
+        storedEnergy: getStoredEnergy(room),
+        floor: getSupportEnergyFloor(room),
+      };
+    }),
+  };
+
+  empireRecoveryStatusCache = {
+    tick: Game.time,
+    status: status,
+  };
+
+  return status;
+}
+
+function formatRecoveryRooms(rooms) {
+  return rooms.slice(0, 4).map((room) => {
+    return room.name + ":" + room.storedEnergy + "/" + room.floor;
+  }).join(",");
+}
+
+function logEmpireRecoveryStatus(status) {
+  const expansion = getExpansionMemory();
+
+  if (
+    expansion.lastEmpireRecoveryLog &&
+    Game.time - expansion.lastEmpireRecoveryLog < EMPIRE_RECOVERY_LOG_INTERVAL
+  ) {
+    return;
+  }
+
+  expansion.lastEmpireRecoveryLog = Game.time;
+
+  console.log(
+    "Empire recovery active: " +
+      status.lowRoomCount + "/" + status.roomCount +
+      " established rooms below floor [" +
+      formatRecoveryRooms(status.lowRooms) +
+      "]"
+  );
+}
+
+function getLowEstablishedRoomCount() {
+  return getEmpireRecoveryStatus().lowRoomCount;
 }
 
 function shouldPauseExpansionForEconomy() {
-  return getLowEstablishedRoomCount() >= EXPANSION_PAUSE_LOW_ROOM_COUNT;
+  const status = getEmpireRecoveryStatus();
+
+  if (status.active) {
+    logEmpireRecoveryStatus(status);
+  }
+
+  return status.active;
 }
 
 function getActiveBootstrapRoomCount() {
@@ -2754,6 +2837,10 @@ function manageSpawning(room) {
       if (runMeasuredSpawnStep(room, "pioneer", function () {
         return manageExpansionSupport(room, counts, desired);
       })) {
+        return;
+      }
+
+      if (getEmpireRecoveryStatus().active) {
         return;
       }
 
