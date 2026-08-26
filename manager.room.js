@@ -1478,6 +1478,17 @@ function getOwnedRoomCount() {
   }).length;
 }
 
+function getAllowedStructureCount(room, structureType) {
+  if (
+    !room.controller ||
+    !CONTROLLER_STRUCTURES[structureType]
+  ) {
+    return 0;
+  }
+
+  return CONTROLLER_STRUCTURES[structureType][room.controller.level] || 0;
+}
+
 function hasExpansionCapacity() {
   return Game.gcl.level > getOwnedRoomCount();
 }
