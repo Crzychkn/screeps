@@ -1,5 +1,6 @@
 const DEFAULT_AVOID_ROOMS = {
   E58S38: true,
+  E57S39: true,
 };
 
 function addAvoidedRooms(target, rooms) {
