@@ -4,6 +4,7 @@ const HOSTILE_TOWER_REFILL_THRESHOLD = 1000;
 const MIN_DROPPED_ENERGY = 50;
 const SOURCE_DROPPED_RANGE = 1;
 const URGENT_PARTIAL_DELIVERY_ENERGY = 100;
+const STARVED_ENERGY_THRESHOLD = 25000;
 const utils = require("utils");
 
 function moveToTarget(creep, target, stroke) {
@@ -24,6 +25,23 @@ function hasFreeEnergyCapacity(structure) {
   return (
     structure.store &&
     structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+  );
+}
+
+function getStoredEnergy(room) {
+  let total = room.energyAvailable;
+
+  if (room.storage) {
+    total += room.storage.store[RESOURCE_ENERGY];
+  }
+
+  return total;
+}
+
+function isStarved(room) {
+  return getStoredEnergy(room) < Math.max(
+    STARVED_ENERGY_THRESHOLD,
+    room.energyCapacityAvailable * 5
   );
 }
 
@@ -134,6 +152,14 @@ function findDeliveryTarget(creep) {
 
   if (priorityTarget) {
     return priorityTarget;
+  }
+
+  if (
+    creep.room.storage &&
+    isStarved(creep.room) &&
+    hasFreeEnergyCapacity(creep.room.storage)
+  ) {
+    return creep.room.storage;
   }
 
   const controllerContainers = creep.room.find(FIND_STRUCTURES, {

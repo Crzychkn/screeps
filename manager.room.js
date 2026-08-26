@@ -317,6 +317,7 @@ function getLogisticsStats(room) {
   const droppedSourceEnergy = sources.reduce((total, source) => {
     return total + getDroppedEnergyNearSource(source);
   }, 0);
+  const sourceBacklogEnergy = sourceContainerEnergy + droppedSourceEnergy;
   const assignedHarvesterWork = getAssignedHarvesterWorkBySource(room);
   const weakHarvestingSourceCount = sources.filter((source) => {
     return (assignedHarvesterWork[source.id] || 0) < SOURCE_WORK_TARGET;
@@ -341,6 +342,7 @@ function getLogisticsStats(room) {
     sourceCount: sources.length,
     sourceContainerCount: sourceContainers.length,
     sourceContainerEnergy: sourceContainerEnergy,
+    sourceBacklogEnergy: sourceBacklogEnergy,
     fullSourceContainerCount: fullSourceContainerCount,
     droppedSourceEnergy: droppedSourceEnergy,
     weakHarvestingSourceCount: weakHarvestingSourceCount,
@@ -646,14 +648,24 @@ function getDesiredCounts(room) {
     desired.harvester = Math.max(desired.harvester, logistics.sourceCount);
 
     if (
-      logistics.hasSourceContainers &&
-      (
-        logistics.sourceContainerEnergy > 0 ||
-        logistics.droppedSourceEnergy > 0 ||
-        room.energyAvailable < room.energyCapacityAvailable
-      )
+      logistics.sourceBacklogEnergy > 0 ||
+      room.energyAvailable < room.energyCapacityAvailable
     ) {
       desired.tractor = Math.max(desired.tractor, 1);
+    }
+
+    if (logistics.sourceBacklogEnergy >= 1000) {
+      desired.tractor = Math.max(
+        desired.tractor,
+        logistics.sourceCount >= 2 ? 3 : 2
+      );
+    }
+
+    if (logistics.sourceBacklogEnergy >= 5000) {
+      desired.tractor = Math.max(
+        desired.tractor,
+        logistics.sourceCount >= 2 ? 4 : 3
+      );
     }
 
     return desired;
