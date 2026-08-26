@@ -32,7 +32,8 @@ function isCriticalConstructionSite(site) {
   return (
     site.structureType === STRUCTURE_SPAWN ||
     site.structureType === STRUCTURE_CONTAINER ||
-    site.structureType === STRUCTURE_TOWER
+    site.structureType === STRUCTURE_TOWER ||
+    site.structureType === STRUCTURE_STORAGE
   );
 }
 

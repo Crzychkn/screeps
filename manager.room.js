@@ -302,7 +302,8 @@ function getLogisticsStats(room) {
     return (
       site.structureType === STRUCTURE_SPAWN ||
       site.structureType === STRUCTURE_CONTAINER ||
-      site.structureType === STRUCTURE_TOWER
+      site.structureType === STRUCTURE_TOWER ||
+      site.structureType === STRUCTURE_STORAGE
     );
   }).length;
   const containers = room.find(FIND_STRUCTURES, {
@@ -350,6 +351,11 @@ function getLogisticsStats(room) {
     weakHarvestingSourceCount: weakHarvestingSourceCount,
     storedEnergy: storedEnergy,
     hasSourceContainers: sourceContainers.length > 0,
+    missingSourceContainers: sourceContainers.length < sources.length,
+    missingStorage:
+      room.controller.level >= 4 &&
+      getAllowedStructureCount(room, STRUCTURE_STORAGE) > 0 &&
+      !room.storage,
     lowEnergy: storedEnergy < lowEnergyThreshold,
     strainedEnergy: storedEnergy < strainedEnergyThreshold,
     starvedEnergy: storedEnergy < starvedEnergyThreshold,
@@ -645,7 +651,12 @@ function getDesiredCounts(room) {
       desired.upgrader = Math.min(desired.upgrader, 1);
     }
 
-    desired.builder = logistics.criticalConstructionSiteCount > 0 ? 1 : 0;
+    desired.builder =
+      logistics.criticalConstructionSiteCount > 0 ||
+      logistics.missingStorage ||
+      logistics.missingSourceContainers
+        ? 1
+        : 0;
     desired.repairer = criticalRoadOrContainerTargets.length > 0 ? 1 : 0;
     desired.harvester = Math.max(desired.harvester, logistics.sourceCount);
 
@@ -675,7 +686,12 @@ function getDesiredCounts(room) {
 
   if (getEmpireRecoveryStatus().active) {
     desired.upgrader = Math.min(desired.upgrader, 1);
-    desired.builder = logistics.criticalConstructionSiteCount > 0 ? 1 : 0;
+    desired.builder =
+      logistics.criticalConstructionSiteCount > 0 ||
+      logistics.missingStorage ||
+      logistics.missingSourceContainers
+        ? 1
+        : 0;
     desired.repairer = criticalRoadOrContainerTargets.length > 0 ? 1 : 0;
 
     return desired;
