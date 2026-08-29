@@ -356,6 +356,13 @@ function getLogisticsStats(room) {
       room.controller.level >= 4 &&
       getAllowedStructureCount(room, STRUCTURE_STORAGE) > 0 &&
       !room.storage,
+    missingCriticalInfrastructure:
+      sourceContainers.length < sources.length ||
+      (
+        room.controller.level >= 4 &&
+        getAllowedStructureCount(room, STRUCTURE_STORAGE) > 0 &&
+        !room.storage
+      ),
     lowEnergy: storedEnergy < lowEnergyThreshold,
     strainedEnergy: storedEnergy < strainedEnergyThreshold,
     starvedEnergy: storedEnergy < starvedEnergyThreshold,
@@ -515,6 +522,13 @@ function getCriticalRoadOrContainerTargets(maintenanceTargets) {
   });
 }
 
+function getNoContainerHarvesterTarget(logistics) {
+  return Math.max(
+    logistics.sourceCount * 2,
+    logistics.sourceCount + logistics.weakHarvestingSourceCount
+  );
+}
+
 function getDesiredCounts(room) {
   const rcl = room.controller.level;
   const logistics = getLogisticsStats(room);
@@ -605,6 +619,11 @@ function getDesiredCounts(room) {
     desired.harvester = Math.min(desired.harvester, 2);
   }
 
+  if (rcl >= 4 && logistics.missingSourceContainers) {
+    desired.harvester = getNoContainerHarvesterTarget(logistics);
+    desired.tractor = Math.min(desired.tractor, logistics.sourceContainerCount);
+  }
+
   if (rcl === 7 && logistics.storedEnergy > 900000) {
     desired.upgrader = 4;
   }
@@ -653,12 +672,16 @@ function getDesiredCounts(room) {
 
     desired.builder =
       logistics.criticalConstructionSiteCount > 0 ||
-      logistics.missingStorage ||
-      logistics.missingSourceContainers
+      logistics.missingCriticalInfrastructure
         ? 1
         : 0;
     desired.repairer = criticalRoadOrContainerTargets.length > 0 ? 1 : 0;
     desired.harvester = Math.max(desired.harvester, logistics.sourceCount);
+
+    if (rcl >= 4 && logistics.missingSourceContainers) {
+      desired.harvester = getNoContainerHarvesterTarget(logistics);
+      desired.tractor = Math.min(desired.tractor, logistics.sourceContainerCount);
+    }
 
     if (
       logistics.sourceBacklogEnergy > 0 ||
@@ -681,6 +704,13 @@ function getDesiredCounts(room) {
       );
     }
 
+    if (rcl >= 4 && logistics.missingSourceContainers) {
+      desired.tractor = Math.min(
+        desired.tractor,
+        logistics.sourceContainerCount
+      );
+    }
+
     return desired;
   }
 
@@ -688,11 +718,15 @@ function getDesiredCounts(room) {
     desired.upgrader = Math.min(desired.upgrader, 1);
     desired.builder =
       logistics.criticalConstructionSiteCount > 0 ||
-      logistics.missingStorage ||
-      logistics.missingSourceContainers
+      logistics.missingCriticalInfrastructure
         ? 1
         : 0;
     desired.repairer = criticalRoadOrContainerTargets.length > 0 ? 1 : 0;
+
+    if (rcl >= 4 && logistics.missingSourceContainers) {
+      desired.harvester = getNoContainerHarvesterTarget(logistics);
+      desired.tractor = Math.min(desired.tractor, logistics.sourceContainerCount);
+    }
 
     return desired;
   }
