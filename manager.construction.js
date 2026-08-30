@@ -1,5 +1,6 @@
 const MAX_CONSTRUCTION_SITES_PER_ROOM = 5;
 const CONSTRUCTION_FAILURE_LOG_INTERVAL = 500;
+const RECOVERY_STORED_ENERGY_THRESHOLD = 25000;
 
 const BUILD_ORDER = [
   STRUCTURE_SPAWN,
@@ -61,6 +62,24 @@ function hasConstructionCapacity(room) {
   const sites = room.find(FIND_MY_CONSTRUCTION_SITES);
 
   return sites.length < MAX_CONSTRUCTION_SITES_PER_ROOM;
+}
+
+function getStoredEnergy(room) {
+  let total = room.energyAvailable;
+
+  if (room.storage) {
+    total += room.storage.store[RESOURCE_ENERGY];
+  }
+
+  const containers = room.find(FIND_STRUCTURES, {
+    filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
+  });
+
+  for (const container of containers) {
+    total += container.store[RESOURCE_ENERGY];
+  }
+
+  return total;
 }
 
 function isBuildablePosition(room, x, y) {
@@ -801,6 +820,78 @@ function placeContainers(room) {
   return placeControllerContainer(room);
 }
 
+function needsSourceContainers(room) {
+  const sources = room.find(FIND_SOURCES);
+
+  return sources.some((source) => !hasContainerNear(source.pos));
+}
+
+function needsStorage(room) {
+  return (
+    getAllowedStructureCount(room, STRUCTURE_STORAGE) > 0 &&
+    getStructureCount(room, STRUCTURE_STORAGE) <
+      getAllowedStructureCount(room, STRUCTURE_STORAGE)
+  );
+}
+
+function needsCriticalInfrastructure(room) {
+  return needsSourceContainers(room) || needsStorage(room);
+}
+
+function isRecoveryConstructionMode(room) {
+  return (
+    needsCriticalInfrastructure(room) ||
+    getStoredEnergy(room) <
+      Math.max(RECOVERY_STORED_ENERGY_THRESHOLD, room.energyCapacityAvailable * 5)
+  );
+}
+
+function shouldSkipRecoveryStructure(room, structureType) {
+  if (!isRecoveryConstructionMode(room)) {
+    return false;
+  }
+
+  return (
+    structureType === STRUCTURE_EXTENSION ||
+    structureType === STRUCTURE_RAMPART
+  );
+}
+
+function removeNoncriticalConstructionSiteForRecovery(room) {
+  if (!needsCriticalInfrastructure(room)) {
+    return false;
+  }
+
+  const sites = room.find(FIND_MY_CONSTRUCTION_SITES, {
+    filter: (site) => {
+      return (
+        site.structureType === STRUCTURE_EXTENSION ||
+        site.structureType === STRUCTURE_RAMPART
+      );
+    },
+  });
+
+  if (sites.length === 0) {
+    return false;
+  }
+
+  sites.sort((a, b) => {
+    return a.progress - b.progress;
+  });
+
+  const result = sites[0].remove();
+
+  if (result === OK) {
+    console.log(
+      `Construction recovery removed ${sites[0].structureType} site in ` +
+      `${room.name} for source/storage infrastructure`
+    );
+    return true;
+  }
+
+  return false;
+}
+
 function isRoadBuildablePosition(room, x, y) {
   if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
     return false;
@@ -998,10 +1089,16 @@ module.exports = {
     }
 
     if (!hasConstructionCapacity(room)) {
-      return;
+      if (!removeNoncriticalConstructionSiteForRecovery(room)) {
+        return;
+      }
     }
 
     for (const structureType of BUILD_ORDER) {
+      if (shouldSkipRecoveryStructure(room, structureType)) {
+        continue;
+      }
+
       if (tryBuild(room, structureType)) {
         return;
       }

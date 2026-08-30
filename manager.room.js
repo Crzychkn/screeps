@@ -383,6 +383,12 @@ function getSourceContainerForSource(source) {
   })[0];
 }
 
+function getSourceContainerSiteForSource(source) {
+  return source.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 1, {
+    filter: (site) => site.structureType === STRUCTURE_CONTAINER,
+  })[0];
+}
+
 function getAssignedHarvesterWork(room, source) {
   return _.filter(Game.creeps, (creep) => {
     return (
@@ -432,6 +438,7 @@ function logIncomeEfficiency(room) {
     const containerCapacity = container
       ? container.store.getCapacity(RESOURCE_ENERGY)
       : 0;
+    const containerSite = getSourceContainerSiteForSource(source);
     const droppedEnergy = getDroppedEnergyNearSource(source);
     const assignedWork = getAssignedHarvesterWork(room, source);
 
@@ -440,6 +447,11 @@ function logIncomeEfficiency(room) {
       " e:" + source.energy + "/" + source.energyCapacity +
       " regen:" + source.ticksToRegeneration +
       " cont:" + containerEnergy + "/" + containerCapacity +
+      (
+        containerSite
+          ? " contSite:" + containerSite.progress + "/" + containerSite.progressTotal
+          : ""
+      ) +
       " drop:" + droppedEnergy +
       " work:" + assignedWork + "/5"
     );
