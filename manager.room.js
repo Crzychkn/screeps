@@ -847,6 +847,27 @@ function getBodiesForRole(role, rcl, room) {
       logistics &&
       rcl >= 4 &&
       logistics.sourceContainerCount >= logistics.sourceCount;
+    const missingSourceContainers =
+      logistics &&
+      rcl >= 4 &&
+      logistics.sourceContainerCount < logistics.sourceCount;
+
+    if (missingSourceContainers && rcl >= 7) {
+      return [
+        [WORK, WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
+        [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
+        [WORK, CARRY, CARRY, MOVE, MOVE],
+        [WORK, CARRY, MOVE],
+      ];
+    }
+
+    if (missingSourceContainers) {
+      return [
+        [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
+        [WORK, CARRY, CARRY, MOVE, MOVE],
+        [WORK, CARRY, MOVE],
+      ];
+    }
 
     if (hasContainerMining && rcl >= 7) {
       return [

@@ -162,6 +162,26 @@ function findDeliveryTarget(creep) {
     return creep.room.storage;
   }
 
+  const containers = creep.room.find(FIND_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_CONTAINER &&
+        !isSourceContainer(structure) &&
+        !isControllerContainer(structure) &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+  const container = creep.pos.findClosestByRange(containers);
+
+  if (container) {
+    return container;
+  }
+
+  if (isStarved(creep.room)) {
+    return null;
+  }
+
   const controllerContainers = creep.room.find(FIND_STRUCTURES, {
     filter: (structure) => {
       return (
@@ -180,18 +200,7 @@ function findDeliveryTarget(creep) {
     return creep.room.storage;
   }
 
-  const containers = creep.room.find(FIND_STRUCTURES, {
-    filter: (structure) => {
-      return (
-        structure.structureType === STRUCTURE_CONTAINER &&
-        !isSourceContainer(structure) &&
-        !isControllerContainer(structure) &&
-        hasFreeEnergyCapacity(structure)
-      );
-    },
-  });
-
-  return creep.pos.findClosestByRange(containers);
+  return null;
 }
 
 function findSourceContainer(creep) {

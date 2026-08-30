@@ -196,6 +196,16 @@ function isControllerContainer(container, room) {
   return container.pos.getRangeTo(room.controller) <= 3;
 }
 
+function isSourceContainer(container) {
+  if (container.structureType !== STRUCTURE_CONTAINER) {
+    return false;
+  }
+
+  const sources = container.pos.findInRange(FIND_SOURCES, 1);
+
+  return sources.length > 0;
+}
+
 function withdrawFromControllerContainer(creep, room) {
   const controllerContainers = room.find(FIND_STRUCTURES, {
     filter: (structure) => {
@@ -371,6 +381,19 @@ function findRecoveryEnergyTarget(creep, room) {
     filter: (structure) => {
       return (
         structure.structureType === STRUCTURE_CONTAINER &&
+        !isSourceContainer(structure) &&
+        !isControllerContainer(structure, room) &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+}
+
+function findFallbackRecoveryEnergyTarget(creep, room) {
+  return creep.pos.findClosestByRange(FIND_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_CONTAINER &&
         hasFreeEnergyCapacity(structure)
       );
     },
@@ -385,7 +408,20 @@ function returnEnergyForRecovery(creep, room) {
   const target = findRecoveryEnergyTarget(creep, room);
 
   if (!target) {
-    return false;
+    const fallback = findFallbackRecoveryEnergyTarget(creep, room);
+
+    if (!fallback) {
+      return false;
+    }
+
+    const fallbackResult = creep.transfer(fallback, RESOURCE_ENERGY);
+
+    if (fallbackResult === ERR_NOT_IN_RANGE) {
+      moveToTarget(creep, fallback);
+      return true;
+    }
+
+    return fallbackResult === OK;
   }
 
   const result = creep.transfer(target, RESOURCE_ENERGY);
