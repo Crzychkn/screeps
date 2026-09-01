@@ -261,6 +261,46 @@ function isSourceContainer(container) {
   return sources.length > 0;
 }
 
+function isControllerContainer(container) {
+  if (container.structureType !== STRUCTURE_CONTAINER) {
+    return false;
+  }
+
+  if (!container.room.controller) {
+    return false;
+  }
+
+  return container.pos.getRangeTo(container.room.controller) <= 3;
+}
+
+function getCentralStoredEnergy(room) {
+  let total = room.energyAvailable;
+
+  if (room.storage) {
+    total += room.storage.store[RESOURCE_ENERGY];
+  }
+
+  if (room.terminal) {
+    total += room.terminal.store[RESOURCE_ENERGY];
+  }
+
+  const containers = room.find(FIND_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_CONTAINER &&
+        !isSourceContainer(structure) &&
+        !isControllerContainer(structure)
+      );
+    },
+  });
+
+  for (const container of containers) {
+    total += container.store[RESOURCE_ENERGY];
+  }
+
+  return total;
+}
+
 function getDroppedEnergyNearSource(source) {
   return source.pos.findInRange(FIND_DROPPED_RESOURCES, 1, {
     filter: (resource) => resource.resourceType === RESOURCE_ENERGY,
@@ -325,7 +365,8 @@ function getLogisticsStats(room) {
   const weakHarvestingSourceCount = sources.filter((source) => {
     return (assignedHarvesterWork[source.id] || 0) < SOURCE_WORK_TARGET;
   }).length;
-  const storedEnergy = getStoredEnergy(room);
+  const totalStoredEnergy = getStoredEnergy(room);
+  const centralStoredEnergy = getCentralStoredEnergy(room);
   const lowEnergyThreshold = Math.max(800, room.energyCapacityAvailable * 2);
   const strainedEnergyThreshold = Math.max(
     ENERGY_STRAINED_THRESHOLD,
@@ -349,7 +390,9 @@ function getLogisticsStats(room) {
     fullSourceContainerCount: fullSourceContainerCount,
     droppedSourceEnergy: droppedSourceEnergy,
     weakHarvestingSourceCount: weakHarvestingSourceCount,
-    storedEnergy: storedEnergy,
+    storedEnergy: centralStoredEnergy,
+    centralStoredEnergy: centralStoredEnergy,
+    totalStoredEnergy: totalStoredEnergy,
     hasSourceContainers: sourceContainers.length > 0,
     missingSourceContainers: sourceContainers.length < sources.length,
     missingStorage:
@@ -363,10 +406,10 @@ function getLogisticsStats(room) {
         getAllowedStructureCount(room, STRUCTURE_STORAGE) > 0 &&
         !room.storage
       ),
-    lowEnergy: storedEnergy < lowEnergyThreshold,
-    strainedEnergy: storedEnergy < strainedEnergyThreshold,
-    starvedEnergy: storedEnergy < starvedEnergyThreshold,
-    comfortableEnergy: storedEnergy >= comfortableEnergyThreshold,
+    lowEnergy: centralStoredEnergy < lowEnergyThreshold,
+    strainedEnergy: centralStoredEnergy < strainedEnergyThreshold,
+    starvedEnergy: centralStoredEnergy < starvedEnergyThreshold,
+    comfortableEnergy: centralStoredEnergy >= comfortableEnergyThreshold,
   };
 
   logisticsStatsCache[room.name] = {
@@ -421,7 +464,9 @@ function logIncomeEfficiency(room) {
     return;
   }
 
-  const storedEnergy = getStoredEnergy(room);
+  const logistics = getLogisticsStats(room);
+  const storedEnergy = logistics.centralStoredEnergy;
+  const totalStoredEnergy = logistics.totalStoredEnergy;
   const delta =
     previous && previous.storedEnergy !== undefined
       ? storedEnergy - previous.storedEnergy
@@ -459,6 +504,7 @@ function logIncomeEfficiency(room) {
 
   console.log(
     `${room.name} income - stored: ${storedEnergy} ` +
+    `total: ${totalStoredEnergy} sourceBacklog: ${logistics.sourceBacklogEnergy} ` +
     `delta/${ticks}: ${formatEnergyDelta(delta)} (${deltaPerTick}/tick), ` +
     `sources: ${sourceDetails.join(" | ")}`
   );
@@ -1594,7 +1640,7 @@ function getEmpireRecoveryStatus() {
 
   const rooms = getEstablishedOwnedRooms();
   const lowRooms = rooms.filter((room) => {
-    return getStoredEnergy(room) < getSupportEnergyFloor(room);
+    return getCentralStoredEnergy(room) < getSupportEnergyFloor(room);
   });
 
   const status = {
@@ -1604,7 +1650,7 @@ function getEmpireRecoveryStatus() {
     lowRooms: lowRooms.map((room) => {
       return {
         name: room.name,
-        storedEnergy: getStoredEnergy(room),
+        storedEnergy: getCentralStoredEnergy(room),
         floor: getSupportEnergyFloor(room),
       };
     }),
@@ -2611,7 +2657,7 @@ function getSupportTargetRooms(sourceRoom) {
       return false;
     }
 
-    if (getStoredEnergy(room) < getSupportEnergyFloor(room)) {
+    if (getCentralStoredEnergy(room) < getSupportEnergyFloor(room)) {
       return true;
     }
 
@@ -2631,7 +2677,7 @@ function getSupportTargetRooms(sourceRoom) {
 }
 
 function getSupportTargetScore(room) {
-  return getStoredEnergy(room);
+  return getCentralStoredEnergy(room);
 }
 
 function manageEnergySupport(room, counts, desired) {
@@ -2650,7 +2696,8 @@ function manageEnergySupport(room, counts, desired) {
   });
 
   for (const target of targets) {
-    const maxSuppliers = getStoredEnergy(target) < getSupportEnergyFloor(target)
+    const targetEnergy = getCentralStoredEnergy(target);
+    const maxSuppliers = targetEnergy < getSupportEnergyFloor(target)
       ? SUPPORT_MAX_SUPPLIERS_PER_TARGET
       : 1;
 
@@ -2670,7 +2717,7 @@ function manageEnergySupport(room, counts, desired) {
 
     console.log(
       `Energy support ${room.name} -> ${target.name} ` +
-      `stored=${getStoredEnergy(target)} suppliers=${getSuppliersForTarget(target.name).length}/${maxSuppliers}`
+      `stored=${targetEnergy} total=${getStoredEnergy(target)} suppliers=${getSuppliersForTarget(target.name).length}/${maxSuppliers}`
     );
     spawnSupplier(room, body, target.name);
     return true;

@@ -5,6 +5,7 @@ const MIN_DROPPED_ENERGY = 50;
 const SOURCE_DROPPED_RANGE = 1;
 const URGENT_PARTIAL_DELIVERY_ENERGY = 100;
 const STARVED_ENERGY_THRESHOLD = 25000;
+const CRITICAL_SPAWN_FILL_RATIO = 0.5;
 const utils = require("utils");
 
 function moveToTarget(creep, target, stroke) {
@@ -122,7 +123,34 @@ function findTowerDeliveryTarget(creep, threshold) {
   })[0];
 }
 
-function findPriorityDeliveryTarget(creep) {
+function findSpawnOrExtensionDeliveryTarget(creep) {
+  const spawnOrExtensions = creep.room.find(FIND_MY_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        (
+          structure.structureType === STRUCTURE_SPAWN ||
+          structure.structureType === STRUCTURE_EXTENSION
+        ) &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+
+  if (spawnOrExtensions.length === 0) {
+    return null;
+  }
+
+  return creep.pos.findClosestByRange(spawnOrExtensions);
+}
+
+function needsCriticalSpawnFill(room) {
+  return room.energyAvailable < Math.max(
+    300,
+    room.energyCapacityAvailable * CRITICAL_SPAWN_FILL_RATIO
+  );
+}
+
+function findCriticalDeliveryTarget(creep) {
   if (hasHostiles(creep.room)) {
     const tower = findTowerDeliveryTarget(creep, HOSTILE_TOWER_REFILL_THRESHOLD);
 
@@ -140,30 +168,34 @@ function findPriorityDeliveryTarget(creep) {
     return criticalTower;
   }
 
-  const spawnOrExtensions = creep.room.find(FIND_MY_STRUCTURES, {
-    filter: (structure) => {
-      return (
-        (
-          structure.structureType === STRUCTURE_SPAWN ||
-          structure.structureType === STRUCTURE_EXTENSION
-        ) &&
-        hasFreeEnergyCapacity(structure)
-      );
-    },
-  });
+  if (needsCriticalSpawnFill(creep.room)) {
+    return findSpawnOrExtensionDeliveryTarget(creep);
+  }
 
-  if (spawnOrExtensions.length > 0) {
-    return creep.pos.findClosestByRange(spawnOrExtensions);
+  return null;
+}
+
+function findPriorityDeliveryTarget(creep) {
+  const criticalTarget = findCriticalDeliveryTarget(creep);
+
+  if (criticalTarget) {
+    return criticalTarget;
+  }
+
+  const spawnOrExtensions = findSpawnOrExtensionDeliveryTarget(creep);
+
+  if (spawnOrExtensions) {
+    return spawnOrExtensions;
   }
 
   return findTowerDeliveryTarget(creep, TOWER_REFILL_THRESHOLD);
 }
 
 function findDeliveryTarget(creep) {
-  const priorityTarget = findPriorityDeliveryTarget(creep);
+  const criticalTarget = findCriticalDeliveryTarget(creep);
 
-  if (priorityTarget) {
-    return priorityTarget;
+  if (criticalTarget) {
+    return criticalTarget;
   }
 
   if (
@@ -172,6 +204,12 @@ function findDeliveryTarget(creep) {
     hasFreeEnergyCapacity(creep.room.storage)
   ) {
     return creep.room.storage;
+  }
+
+  const priorityTarget = findPriorityDeliveryTarget(creep);
+
+  if (priorityTarget) {
+    return priorityTarget;
   }
 
   const containers = creep.room.find(FIND_STRUCTURES, {
