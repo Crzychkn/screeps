@@ -12,10 +12,22 @@ function moveToTarget(creep, target, stroke) {
   creep.moveTo(target, {
     maxRooms: 1,
     reusePath: 5,
+    ignoreCreeps: true,
     visualizePathStyle: {
       stroke: stroke,
     },
   });
+}
+
+function setStatus(creep, status, target) {
+  creep.memory.lastStatus = status;
+  creep.memory.lastStatusTick = Game.time;
+
+  if (target && target.id) {
+    creep.memory.targetId = target.id;
+  } else {
+    delete creep.memory.targetId;
+  }
 }
 
 function hasFreeEnergyCapacity(structure) {
@@ -325,12 +337,18 @@ function harvestEnergy(creep) {
 
   if (!source) {
     creep.say("🚫 source");
+    setStatus(creep, "no_source");
     return;
   }
 
   const result = creep.harvest(source);
 
+  if (result === OK) {
+    setStatus(creep, "harvesting", source);
+  }
+
   if (result === ERR_NOT_IN_RANGE) {
+    setStatus(creep, "moving_to_source", source);
     moveToTarget(creep, source, "#ffaa00");
   }
 }
@@ -385,13 +403,16 @@ function deliverEnergy(creep) {
   const target = findDeliveryTarget(creep);
 
   if (!target) {
+    setStatus(creep, "fallback_work");
     fallbackWork(creep);
     return;
   }
 
+  setStatus(creep, "delivering_energy", target);
   const result = creep.transfer(target, RESOURCE_ENERGY);
 
   if (result === ERR_NOT_IN_RANGE) {
+    setStatus(creep, "moving_to_delivery_target", target);
     moveToTarget(creep, target, "#ffffff");
     return;
   }
@@ -401,6 +422,7 @@ function deliverEnergy(creep) {
     hasLogisticsSupport(getHomeRoom(creep)) &&
     target.structureType === STRUCTURE_CONTAINER
   ) {
+    setStatus(creep, "dropping_overflow_energy", target);
     creep.drop(RESOURCE_ENERGY);
   }
 }

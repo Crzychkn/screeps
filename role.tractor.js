@@ -11,10 +11,22 @@ function moveToTarget(creep, target, stroke) {
   creep.moveTo(target, {
     maxRooms: 1,
     reusePath: 5,
+    ignoreCreeps: true,
     visualizePathStyle: {
       stroke: stroke,
     },
   });
+}
+
+function setStatus(creep, status, target) {
+  creep.memory.lastStatus = status;
+  creep.memory.lastStatusTick = Game.time;
+
+  if (target && target.id) {
+    creep.memory.targetId = target.id;
+  } else {
+    delete creep.memory.targetId;
+  }
 }
 
 function hasEnergy(structure) {
@@ -292,10 +304,12 @@ function collectEnergy(creep) {
 
   if (sourceContainer) {
     creep.say("🚚 load");
+    setStatus(creep, "withdrawing_source_container", sourceContainer);
 
     const result = creep.withdraw(sourceContainer, RESOURCE_ENERGY);
 
     if (result === ERR_NOT_IN_RANGE) {
+      setStatus(creep, "moving_to_source_container", sourceContainer);
       moveToTarget(creep, sourceContainer, "#ffaa00");
     }
 
@@ -306,10 +320,12 @@ function collectEnergy(creep) {
 
   if (droppedEnergy) {
     creep.say("🚚 pickup");
+    setStatus(creep, "picking_up_dropped", droppedEnergy);
 
     const result = creep.pickup(droppedEnergy);
 
     if (result === ERR_NOT_IN_RANGE) {
+      setStatus(creep, "moving_to_dropped", droppedEnergy);
       moveToTarget(creep, droppedEnergy, "#ffaa00");
     }
 
@@ -320,10 +336,12 @@ function collectEnergy(creep) {
 
   if (storage) {
     creep.say("🚚 storage");
+    setStatus(creep, "withdrawing_storage", storage);
 
     const result = creep.withdraw(storage, RESOURCE_ENERGY);
 
     if (result === ERR_NOT_IN_RANGE) {
+      setStatus(creep, "moving_to_storage", storage);
       moveToTarget(creep, storage, "#ffaa00");
     }
 
@@ -353,14 +371,17 @@ function deliverEnergy(creep) {
     }
 
     creep.say("wait");
+    setStatus(creep, "waiting_no_delivery_target");
     return;
   }
 
   creep.say("🚚 fill");
+  setStatus(creep, "delivering_energy", target);
 
   const result = creep.transfer(target, RESOURCE_ENERGY);
 
   if (result === ERR_NOT_IN_RANGE) {
+    setStatus(creep, "moving_to_delivery_target", target);
     moveToTarget(creep, target, "#ffffff");
   }
 }

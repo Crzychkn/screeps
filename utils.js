@@ -15,6 +15,7 @@ function moveToTarget(creep, target) {
   creep.moveTo(target, {
     maxRooms: 1,
     reusePath: 5,
+    ignoreCreeps: true,
     visualizePathStyle: {
       stroke: "#ffffff",
     },
