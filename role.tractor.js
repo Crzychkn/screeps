@@ -41,6 +41,51 @@ function hasFreeEnergyCapacity(structure) {
   );
 }
 
+function isWalkableStructure(structure) {
+  return (
+    structure.structureType === STRUCTURE_ROAD ||
+    structure.structureType === STRUCTURE_CONTAINER ||
+    (
+      structure.structureType === STRUCTURE_RAMPART &&
+      (structure.my || structure.isPublic)
+    )
+  );
+}
+
+function hasAdjacentWalkablePosition(target) {
+  const room = target.room;
+  const terrain = room.getTerrain();
+
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      if (dx === 0 && dy === 0) {
+        continue;
+      }
+
+      const x = target.pos.x + dx;
+      const y = target.pos.y + dy;
+
+      if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
+        continue;
+      }
+
+      if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+        continue;
+      }
+
+      const blockers = room.lookForAt(LOOK_STRUCTURES, x, y).filter((structure) => {
+        return !isWalkableStructure(structure);
+      });
+
+      if (blockers.length === 0) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 function getStoredEnergy(room) {
   let total = room.energyAvailable;
 
@@ -109,7 +154,8 @@ function findTowerDeliveryTarget(creep, threshold) {
       return (
         structure.structureType === STRUCTURE_TOWER &&
         structure.store[RESOURCE_ENERGY] < threshold &&
-        hasFreeEnergyCapacity(structure)
+        hasFreeEnergyCapacity(structure) &&
+        hasAdjacentWalkablePosition(structure)
       );
     },
   });
@@ -131,7 +177,8 @@ function findSpawnOrExtensionDeliveryTarget(creep) {
           structure.structureType === STRUCTURE_SPAWN ||
           structure.structureType === STRUCTURE_EXTENSION
         ) &&
-        hasFreeEnergyCapacity(structure)
+        hasFreeEnergyCapacity(structure) &&
+        hasAdjacentWalkablePosition(structure)
       );
     },
   });
@@ -198,18 +245,19 @@ function findDeliveryTarget(creep) {
     return criticalTarget;
   }
 
-  if (
-    creep.room.storage &&
-    isStarved(creep.room) &&
-    hasFreeEnergyCapacity(creep.room.storage)
-  ) {
-    return creep.room.storage;
-  }
-
   const priorityTarget = findPriorityDeliveryTarget(creep);
 
   if (priorityTarget) {
     return priorityTarget;
+  }
+
+  if (
+    creep.room.storage &&
+    isStarved(creep.room) &&
+    hasFreeEnergyCapacity(creep.room.storage) &&
+    hasAdjacentWalkablePosition(creep.room.storage)
+  ) {
+    return creep.room.storage;
   }
 
   const containers = creep.room.find(FIND_STRUCTURES, {
@@ -218,7 +266,8 @@ function findDeliveryTarget(creep) {
         structure.structureType === STRUCTURE_CONTAINER &&
         !isSourceContainer(structure) &&
         !isControllerContainer(structure) &&
-        hasFreeEnergyCapacity(structure)
+        hasFreeEnergyCapacity(structure) &&
+        hasAdjacentWalkablePosition(structure)
       );
     },
   });
@@ -236,7 +285,8 @@ function findDeliveryTarget(creep) {
     filter: (structure) => {
       return (
         isControllerContainer(structure) &&
-        hasFreeEnergyCapacity(structure)
+        hasFreeEnergyCapacity(structure) &&
+        hasAdjacentWalkablePosition(structure)
       );
     },
   });
@@ -246,7 +296,11 @@ function findDeliveryTarget(creep) {
     return controllerContainer;
   }
 
-  if (creep.room.storage && hasFreeEnergyCapacity(creep.room.storage)) {
+  if (
+    creep.room.storage &&
+    hasFreeEnergyCapacity(creep.room.storage) &&
+    hasAdjacentWalkablePosition(creep.room.storage)
+  ) {
     return creep.room.storage;
   }
 
@@ -259,7 +313,8 @@ function findSourceContainer(creep) {
       return (
         structure.structureType === STRUCTURE_CONTAINER &&
         isSourceContainer(structure) &&
-        hasEnergy(structure)
+        hasEnergy(structure) &&
+        hasAdjacentWalkablePosition(structure)
       );
     },
   });

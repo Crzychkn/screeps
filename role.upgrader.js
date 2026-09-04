@@ -4,15 +4,45 @@ const STARVED_ENERGY_THRESHOLD = 25000;
 const RECOVERY_DOWNGRADE_BUFFER = 10000;
 const RCL8_RECOVERY_DOWNGRADE_BUFFER = 50000;
 
-function getStoredEnergy(room) {
+function isSourceContainer(container) {
+  if (container.structureType !== STRUCTURE_CONTAINER) {
+    return false;
+  }
+
+  return container.pos.findInRange(FIND_SOURCES, 1).length > 0;
+}
+
+function isControllerContainer(container) {
+  if (container.structureType !== STRUCTURE_CONTAINER) {
+    return false;
+  }
+
+  if (!container.room.controller) {
+    return false;
+  }
+
+  return container.pos.getRangeTo(container.room.controller) <= 3;
+}
+
+function getCentralStoredEnergy(room) {
   let total = room.energyAvailable;
 
   if (room.storage) {
     total += room.storage.store[RESOURCE_ENERGY];
   }
 
+  if (room.terminal) {
+    total += room.terminal.store[RESOURCE_ENERGY];
+  }
+
   const containers = room.find(FIND_STRUCTURES, {
-    filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_CONTAINER &&
+        !isSourceContainer(structure) &&
+        !isControllerContainer(structure)
+      );
+    },
   });
 
   for (const container of containers) {
@@ -36,7 +66,7 @@ function shouldPauseUpgrading(room) {
     : RECOVERY_DOWNGRADE_BUFFER;
 
   return (
-    getStoredEnergy(room) < threshold &&
+    getCentralStoredEnergy(room) < threshold &&
     room.controller.ticksToDowngrade > downgradeBuffer
   );
 }

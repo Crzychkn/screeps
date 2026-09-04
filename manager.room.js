@@ -755,10 +755,17 @@ function getDesiredCounts(room) {
       );
     }
 
-    if (logistics.sourceBacklogEnergy >= 5000) {
+    if (logistics.sourceBacklogEnergy >= 2000) {
       desired.tractor = Math.max(
         desired.tractor,
         logistics.sourceCount >= 2 ? 4 : 3
+      );
+    }
+
+    if (logistics.sourceBacklogEnergy >= 5000) {
+      desired.tractor = Math.max(
+        desired.tractor,
+        logistics.sourceCount >= 2 ? 6 : 4
       );
     }
 
