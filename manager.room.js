@@ -54,8 +54,8 @@ const SOURCE_WORK_TARGET = 5;
 const STORAGE_COMFORTABLE_ENERGY = 200000;
 const RAMPART_REPAIR_TARGET = 10000;
 const RAMPART_CRITICAL_REPAIR_TARGET = 1000;
-const RCL8_RECOVERY_UPGRADE_DOWNGRADE_BUFFER = 50000;
-const RECOVERY_UPGRADE_DOWNGRADE_BUFFER = 10000;
+const RCL8_RECOVERY_UPGRADE_DOWNGRADE_BUFFER = 15000;
+const RECOVERY_UPGRADE_DOWNGRADE_BUFFER = 3000;
 const STARVED_ENERGY_THRESHOLD = 25000;
 const logisticsStatsCache = {};
 const expansionRouteCache = {};
@@ -580,11 +580,29 @@ function getCriticalRoadOrContainerTargets(maintenanceTargets) {
   });
 }
 
+function getCriticalRecoveryRepairTargets(maintenanceTargets) {
+  return maintenanceTargets.filter((structure) => {
+    if (structure.structureType === STRUCTURE_RAMPART) {
+      return structure.hits < RAMPART_CRITICAL_REPAIR_TARGET;
+    }
+
+    if (structure.structureType === STRUCTURE_CONTAINER) {
+      return structure.hits < structure.hitsMax * 0.35;
+    }
+
+    return false;
+  });
+}
+
 function getNoContainerHarvesterTarget(logistics) {
   return Math.max(
     logistics.sourceCount * 2,
     logistics.sourceCount + logistics.weakHarvestingSourceCount
   );
+}
+
+function hasRecoveryWorkBudget(room) {
+  return room.energyAvailable >= Math.max(300, room.energyCapacityAvailable * 0.5);
 }
 
 function getDesiredCounts(room) {
@@ -715,6 +733,8 @@ function getDesiredCounts(room) {
   const criticalMaintenanceTargets = getCriticalMaintenanceTargets(maintenanceTargets);
   const criticalRoadOrContainerTargets =
     getCriticalRoadOrContainerTargets(maintenanceTargets);
+  const criticalRecoveryRepairTargets =
+    getCriticalRecoveryRepairTargets(maintenanceTargets);
 
   if (logistics.starvedEnergy) {
     if (
@@ -729,11 +749,17 @@ function getDesiredCounts(room) {
     }
 
     desired.builder =
-      logistics.criticalConstructionSiteCount > 0 ||
-      logistics.missingCriticalInfrastructure
+      hasRecoveryWorkBudget(room) &&
+      (
+        logistics.criticalConstructionSiteCount > 0 ||
+        logistics.missingCriticalInfrastructure
+      )
         ? 1
         : 0;
-    desired.repairer = criticalRoadOrContainerTargets.length > 0 ? 1 : 0;
+    desired.repairer =
+      hasRecoveryWorkBudget(room) && criticalRecoveryRepairTargets.length > 0
+        ? 1
+        : 0;
     desired.harvester = Math.max(desired.harvester, logistics.sourceCount);
 
     if (rcl >= 4 && logistics.missingSourceContainers) {
@@ -782,11 +808,17 @@ function getDesiredCounts(room) {
   if (getEmpireRecoveryStatus().active) {
     desired.upgrader = Math.min(desired.upgrader, 1);
     desired.builder =
-      logistics.criticalConstructionSiteCount > 0 ||
-      logistics.missingCriticalInfrastructure
+      hasRecoveryWorkBudget(room) &&
+      (
+        logistics.criticalConstructionSiteCount > 0 ||
+        logistics.missingCriticalInfrastructure
+      )
         ? 1
         : 0;
-    desired.repairer = criticalRoadOrContainerTargets.length > 0 ? 1 : 0;
+    desired.repairer =
+      hasRecoveryWorkBudget(room) && criticalRecoveryRepairTargets.length > 0
+        ? 1
+        : 0;
 
     if (rcl >= 4 && logistics.missingSourceContainers) {
       desired.harvester = getNoContainerHarvesterTarget(logistics);

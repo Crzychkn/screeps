@@ -1,8 +1,8 @@
 const utils = require("utils");
 
 const STARVED_ENERGY_THRESHOLD = 25000;
-const RECOVERY_DOWNGRADE_BUFFER = 10000;
-const RCL8_RECOVERY_DOWNGRADE_BUFFER = 50000;
+const RECOVERY_DOWNGRADE_BUFFER = 3000;
+const RCL8_RECOVERY_DOWNGRADE_BUFFER = 15000;
 
 function isSourceContainer(container) {
   if (container.structureType !== STRUCTURE_CONTAINER) {

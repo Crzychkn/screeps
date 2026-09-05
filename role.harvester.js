@@ -1,5 +1,6 @@
 const TOWER_REFILL_THRESHOLD = 700;
 const HOSTILE_TOWER_REFILL_THRESHOLD = 1000;
+const CRITICAL_SPAWN_FILL_RATIO = 0.5;
 const SOURCE_REBALANCE_INTERVAL = 100;
 const utils = require("utils");
 
@@ -165,6 +166,29 @@ function findClosestOwnedStructureToFill(creep, structureType) {
   });
 }
 
+function findCriticalSpawnOrExtensionToFill(creep, room) {
+  if (
+    room.energyAvailable >= Math.max(
+      300,
+      room.energyCapacityAvailable * CRITICAL_SPAWN_FILL_RATIO
+    )
+  ) {
+    return null;
+  }
+
+  return creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        (
+          structure.structureType === STRUCTURE_SPAWN ||
+          structure.structureType === STRUCTURE_EXTENSION
+        ) &&
+        hasFreeEnergyCapacity(structure)
+      );
+    },
+  });
+}
+
 function hasHostiles(room) {
   return utils.hasHostileUnits(room);
 }
@@ -295,6 +319,12 @@ function findDeliveryTarget(creep) {
     if (tower) {
       return tower;
     }
+  }
+
+  const criticalSpawnOrExtension = findCriticalSpawnOrExtensionToFill(creep, room);
+
+  if (criticalSpawnOrExtension) {
+    return criticalSpawnOrExtension;
   }
 
   if (hasLogisticsSupport(room)) {
