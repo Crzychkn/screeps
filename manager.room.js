@@ -54,8 +54,8 @@ const SOURCE_WORK_TARGET = 5;
 const STORAGE_COMFORTABLE_ENERGY = 200000;
 const RAMPART_REPAIR_TARGET = 10000;
 const RAMPART_CRITICAL_REPAIR_TARGET = 1000;
-const RCL8_RECOVERY_UPGRADE_DOWNGRADE_BUFFER = 15000;
-const RECOVERY_UPGRADE_DOWNGRADE_BUFFER = 3000;
+const RCL8_RECOVERY_UPGRADE_DOWNGRADE_BUFFER = 50000;
+const RECOVERY_UPGRADE_DOWNGRADE_BUFFER = 10000;
 const STARVED_ENERGY_THRESHOLD = 25000;
 const logisticsStatsCache = {};
 const expansionRouteCache = {};
@@ -605,6 +605,20 @@ function hasRecoveryWorkBudget(room) {
   return room.energyAvailable >= Math.max(300, room.energyCapacityAvailable * 0.5);
 }
 
+function getControllerDowngradeBuffer(room) {
+  return room.controller.level >= 8
+    ? RCL8_RECOVERY_UPGRADE_DOWNGRADE_BUFFER
+    : RECOVERY_UPGRADE_DOWNGRADE_BUFFER;
+}
+
+function isControllerDowngradeUrgent(room) {
+  return (
+    room.controller &&
+    room.controller.my &&
+    room.controller.ticksToDowngrade <= getControllerDowngradeBuffer(room)
+  );
+}
+
 function getDesiredCounts(room) {
   const rcl = room.controller.level;
   const logistics = getLogisticsStats(room);
@@ -737,15 +751,10 @@ function getDesiredCounts(room) {
     getCriticalRecoveryRepairTargets(maintenanceTargets);
 
   if (logistics.starvedEnergy) {
-    if (
-      room.controller.ticksToDowngrade >
-        (rcl >= 8
-          ? RCL8_RECOVERY_UPGRADE_DOWNGRADE_BUFFER
-          : RECOVERY_UPGRADE_DOWNGRADE_BUFFER)
-    ) {
+    if (!isControllerDowngradeUrgent(room)) {
       desired.upgrader = 0;
     } else {
-      desired.upgrader = Math.min(desired.upgrader, 1);
+      desired.upgrader = Math.max(desired.upgrader, rcl >= 4 ? 2 : 1);
     }
 
     desired.builder =
@@ -806,7 +815,9 @@ function getDesiredCounts(room) {
   }
 
   if (getEmpireRecoveryStatus().active) {
-    desired.upgrader = Math.min(desired.upgrader, 1);
+    desired.upgrader = isControllerDowngradeUrgent(room)
+      ? Math.max(desired.upgrader, rcl >= 4 ? 2 : 1)
+      : Math.min(desired.upgrader, 1);
     desired.builder =
       hasRecoveryWorkBudget(room) &&
       (
@@ -2909,6 +2920,39 @@ function manageHostileEmergencySpawning(room, counts) {
   return true;
 }
 
+function getFunctionalUpgraders(room) {
+  return getRoomCreeps(room, "upgrader").filter((creep) => {
+    return (
+      creep.getActiveBodyparts(WORK) > 0 &&
+      creep.getActiveBodyparts(CARRY) > 0 &&
+      creep.getActiveBodyparts(MOVE) > 0
+    );
+  });
+}
+
+function manageControllerEmergencySpawning(room, desired) {
+  if (!isControllerDowngradeUrgent(room)) {
+    return false;
+  }
+
+  if (getFunctionalUpgraders(room).length >= desired.upgrader) {
+    return false;
+  }
+
+  const body = chooseBody(room, "upgrader");
+
+  if (!body) {
+    return false;
+  }
+
+  console.log(
+    `Controller rescue in ${room.name}: ttl=${room.controller.ticksToDowngrade} ` +
+    `upgraders=${getFunctionalUpgraders(room).length}/${desired.upgrader}`
+  );
+  spawnRole(room, "upgrader", body);
+  return true;
+}
+
 function runMeasuredSpawnStep(room, step, callback) {
   const before = Game.cpu.getUsed();
   const result = callback();
@@ -2981,6 +3025,12 @@ function manageSpawning(room) {
       spawnRole(room, "harvester", emergencyBody);
     }
 
+    return;
+  }
+
+  if (runMeasuredSpawnStep(room, "controllerRescue", function () {
+    return manageControllerEmergencySpawning(room, desired);
+  })) {
     return;
   }
 
