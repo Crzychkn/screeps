@@ -360,6 +360,13 @@ function getLogisticsStats(room) {
   const droppedSourceEnergy = sources.reduce((total, source) => {
     return total + getDroppedEnergyNearSource(source);
   }, 0);
+  const unharvestedSourceEnergy = sources.reduce((total, source) => {
+    if (source.energy < source.energyCapacity) {
+      return total;
+    }
+
+    return total + source.energy;
+  }, 0);
   const sourceBacklogEnergy = sourceContainerEnergy + droppedSourceEnergy;
   const assignedHarvesterWork = getAssignedHarvesterWorkBySource(room);
   const weakHarvestingSourceCount = sources.filter((source) => {
@@ -387,6 +394,7 @@ function getLogisticsStats(room) {
     sourceContainerCount: sourceContainers.length,
     sourceContainerEnergy: sourceContainerEnergy,
     sourceBacklogEnergy: sourceBacklogEnergy,
+    unharvestedSourceEnergy: unharvestedSourceEnergy,
     fullSourceContainerCount: fullSourceContainerCount,
     droppedSourceEnergy: droppedSourceEnergy,
     weakHarvestingSourceCount: weakHarvestingSourceCount,
@@ -505,6 +513,7 @@ function logIncomeEfficiency(room) {
   console.log(
     `${room.name} income - stored: ${storedEnergy} ` +
     `total: ${totalStoredEnergy} sourceBacklog: ${logistics.sourceBacklogEnergy} ` +
+    `unharvested: ${logistics.unharvestedSourceEnergy} ` +
     `delta/${ticks}: ${formatEnergyDelta(delta)} (${deltaPerTick}/tick), ` +
     `sources: ${sourceDetails.join(" | ")}`
   );
@@ -596,8 +605,8 @@ function getCriticalRecoveryRepairTargets(maintenanceTargets) {
 
 function getNoContainerHarvesterTarget(logistics) {
   return Math.max(
-    logistics.sourceCount * 2,
-    logistics.sourceCount + logistics.weakHarvestingSourceCount
+    logistics.sourceCount * 3,
+    logistics.sourceCount + logistics.weakHarvestingSourceCount * 2
   );
 }
 
@@ -715,7 +724,10 @@ function getDesiredCounts(room) {
 
   if (rcl >= 4 && logistics.missingSourceContainers) {
     desired.harvester = getNoContainerHarvesterTarget(logistics);
-    desired.tractor = Math.min(desired.tractor, logistics.sourceContainerCount);
+    desired.tractor =
+      logistics.sourceBacklogEnergy > 0
+        ? Math.max(desired.tractor, 1)
+        : Math.min(desired.tractor, logistics.sourceContainerCount);
   }
 
   if (rcl === 7 && logistics.storedEnergy > 900000) {
@@ -783,7 +795,10 @@ function getDesiredCounts(room) {
 
     if (rcl >= 4 && logistics.missingSourceContainers) {
       desired.harvester = getNoContainerHarvesterTarget(logistics);
-      desired.tractor = Math.min(desired.tractor, logistics.sourceContainerCount);
+      desired.tractor =
+        logistics.sourceBacklogEnergy > 0
+          ? Math.max(desired.tractor, 1)
+          : Math.min(desired.tractor, logistics.sourceContainerCount);
     }
 
     if (
@@ -814,7 +829,11 @@ function getDesiredCounts(room) {
       );
     }
 
-    if (rcl >= 4 && logistics.missingSourceContainers) {
+    if (
+      rcl >= 4 &&
+      logistics.missingSourceContainers &&
+      logistics.sourceBacklogEnergy === 0
+    ) {
       desired.tractor = Math.min(
         desired.tractor,
         logistics.sourceContainerCount
@@ -849,7 +868,10 @@ function getDesiredCounts(room) {
 
     if (rcl >= 4 && logistics.missingSourceContainers) {
       desired.harvester = getNoContainerHarvesterTarget(logistics);
-      desired.tractor = Math.min(desired.tractor, logistics.sourceContainerCount);
+      desired.tractor =
+        logistics.sourceBacklogEnergy > 0
+          ? Math.max(desired.tractor, 1)
+          : Math.min(desired.tractor, logistics.sourceContainerCount);
     }
 
     return desired;

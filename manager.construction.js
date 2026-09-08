@@ -652,6 +652,34 @@ function getAdjacentBuildablePositions(room, pos) {
   return positions;
 }
 
+function removeRoadBlockingContainerPlacement(room, pos) {
+  const roadSite = pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 1, {
+    filter: (site) => site.structureType === STRUCTURE_ROAD,
+  })[0];
+
+  if (roadSite && roadSite.remove() === OK) {
+    console.log(
+      `Construction recovery removed road site in ${room.name} near ` +
+      `${pos.x},${pos.y} for source container`
+    );
+    return true;
+  }
+
+  const road = pos.findInRange(FIND_STRUCTURES, 1, {
+    filter: (structure) => structure.structureType === STRUCTURE_ROAD,
+  })[0];
+
+  if (road && road.destroy() === OK) {
+    console.log(
+      `Construction recovery removed road in ${room.name} near ` +
+      `${pos.x},${pos.y} for source container`
+    );
+    return true;
+  }
+
+  return false;
+}
+
 function hasContainerNear(pos) {
   const structures = pos.findInRange(FIND_STRUCTURES, 1, {
     filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
@@ -744,6 +772,7 @@ function placeSourceContainers(room) {
     const positions = getAdjacentBuildablePositions(room, source.pos);
 
     if (positions.length === 0) {
+      removeRoadBlockingContainerPlacement(room, source.pos);
       continue;
     }
 
