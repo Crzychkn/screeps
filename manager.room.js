@@ -844,7 +844,9 @@ function getDesiredCounts(room) {
   }
 
   if (getEmpireRecoveryStatus().active) {
-    desired.upgrader = isControllerDowngradeUrgent(room)
+    const controllerUrgent = isControllerDowngradeUrgent(room);
+
+    desired.upgrader = controllerUrgent
       ? Math.max(desired.upgrader, rcl >= 4 ? 2 : 1)
       : Math.min(desired.upgrader, 1);
     desired.builder =
@@ -872,6 +874,10 @@ function getDesiredCounts(room) {
         logistics.sourceBacklogEnergy > 0
           ? Math.max(desired.tractor, 1)
           : Math.min(desired.tractor, logistics.sourceContainerCount);
+
+      if (!controllerUrgent) {
+        desired.upgrader = 0;
+      }
     }
 
     return desired;

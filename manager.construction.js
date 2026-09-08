@@ -758,7 +758,7 @@ function placeSourceContainers(room) {
   const allowed = getAllowedStructureCount(room, STRUCTURE_CONTAINER);
   const current = getStructureCount(room, STRUCTURE_CONTAINER);
 
-  if (current >= allowed) {
+  if (current >= allowed && !freeContainerSlotForSourceContainer(room)) {
     return false;
   }
 
@@ -789,6 +789,72 @@ function placeSourceContainers(room) {
     if (tryPlaceAt(room, STRUCTURE_CONTAINER, pos.x, pos.y)) {
       return true;
     }
+  }
+
+  return false;
+}
+
+function freeContainerSlotForSourceContainer(room) {
+  if (!needsSourceContainers(room)) {
+    return false;
+  }
+
+  const noncriticalSites = room.find(FIND_MY_CONSTRUCTION_SITES, {
+    filter: (site) => {
+      return (
+        site.structureType === STRUCTURE_CONTAINER &&
+        !isSourceContainer(site)
+      );
+    },
+  });
+
+  if (noncriticalSites.length > 0) {
+    noncriticalSites.sort((a, b) => a.progress - b.progress);
+
+    if (noncriticalSites[0].remove() === OK) {
+      console.log(
+        `Construction recovery removed container site in ${room.name} ` +
+        `to free a source container slot`
+      );
+      return true;
+    }
+  }
+
+  let noncriticalContainers = room.find(FIND_STRUCTURES, {
+    filter: (structure) => {
+      return (
+        structure.structureType === STRUCTURE_CONTAINER &&
+        !isSourceContainer(structure) &&
+        !isControllerContainer(structure)
+      );
+    },
+  });
+
+  if (noncriticalContainers.length === 0) {
+    noncriticalContainers = room.find(FIND_STRUCTURES, {
+      filter: (structure) => {
+        return (
+          structure.structureType === STRUCTURE_CONTAINER &&
+          !isSourceContainer(structure)
+        );
+      },
+    });
+  }
+
+  if (noncriticalContainers.length === 0) {
+    return false;
+  }
+
+  noncriticalContainers.sort((a, b) => {
+    return a.store[RESOURCE_ENERGY] - b.store[RESOURCE_ENERGY];
+  });
+
+  if (noncriticalContainers[0].destroy() === OK) {
+    console.log(
+      `Construction recovery destroyed non-source container in ${room.name} ` +
+      `to free a source container slot`
+    );
+    return true;
   }
 
   return false;
