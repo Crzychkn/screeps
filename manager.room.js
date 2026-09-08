@@ -605,6 +605,10 @@ function hasRecoveryWorkBudget(room) {
   return room.energyAvailable >= Math.max(300, room.energyCapacityAvailable * 0.5);
 }
 
+function hasCriticalInfrastructureBuildBudget(room) {
+  return room.energyAvailable >= 300;
+}
+
 function getControllerDowngradeBuffer(room) {
   return room.controller.level >= 8
     ? RCL8_RECOVERY_UPGRADE_DOWNGRADE_BUFFER
@@ -758,7 +762,13 @@ function getDesiredCounts(room) {
     }
 
     desired.builder =
-      hasRecoveryWorkBudget(room) &&
+      (
+        hasRecoveryWorkBudget(room) ||
+        (
+          logistics.missingCriticalInfrastructure &&
+          hasCriticalInfrastructureBuildBudget(room)
+        )
+      ) &&
       (
         logistics.criticalConstructionSiteCount > 0 ||
         logistics.missingCriticalInfrastructure
@@ -819,7 +829,13 @@ function getDesiredCounts(room) {
       ? Math.max(desired.upgrader, rcl >= 4 ? 2 : 1)
       : Math.min(desired.upgrader, 1);
     desired.builder =
-      hasRecoveryWorkBudget(room) &&
+      (
+        hasRecoveryWorkBudget(room) ||
+        (
+          logistics.missingCriticalInfrastructure &&
+          hasCriticalInfrastructureBuildBudget(room)
+        )
+      ) &&
       (
         logistics.criticalConstructionSiteCount > 0 ||
         logistics.missingCriticalInfrastructure
