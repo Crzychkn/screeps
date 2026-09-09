@@ -37,14 +37,67 @@ function isCriticalConstructionSite(site) {
   );
 }
 
-function findConstructionSites(room) {
-  const sites = room.find(FIND_CONSTRUCTION_SITES);
+function isSourceContainerSite(site) {
+  return (
+    site.structureType === STRUCTURE_CONTAINER &&
+    site.pos.findInRange(FIND_SOURCES, 1).length > 0
+  );
+}
 
-  if (!isStarved(room)) {
-    return sites;
+function getConstructionPriority(site) {
+  if (isSourceContainerSite(site)) {
+    return 0;
   }
 
-  return sites.filter(isCriticalConstructionSite);
+  if (site.structureType === STRUCTURE_SPAWN) {
+    return 1;
+  }
+
+  if (site.structureType === STRUCTURE_STORAGE) {
+    return 2;
+  }
+
+  if (site.structureType === STRUCTURE_TOWER) {
+    return 3;
+  }
+
+  if (site.structureType === STRUCTURE_CONTAINER) {
+    return 4;
+  }
+
+  if (site.structureType === STRUCTURE_EXTENSION) {
+    return 5;
+  }
+
+  if (site.structureType === STRUCTURE_ROAD) {
+    return 6;
+  }
+
+  if (site.structureType === STRUCTURE_RAMPART) {
+    return 7;
+  }
+
+  return 8;
+}
+
+function findConstructionSites(room) {
+  const sites = room.find(FIND_MY_CONSTRUCTION_SITES);
+  const filteredSites = isStarved(room)
+    ? sites.filter(isCriticalConstructionSite)
+    : sites;
+
+  filteredSites.sort((a, b) => {
+    const priorityA = getConstructionPriority(a);
+    const priorityB = getConstructionPriority(b);
+
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+
+    return b.progress - a.progress;
+  });
+
+  return filteredSites;
 }
 
 function moveToHomeRoom(creep, homeRoom) {
