@@ -372,6 +372,12 @@ function getLogisticsStats(room) {
   const weakHarvestingSourceCount = sources.filter((source) => {
     return (assignedHarvesterWork[source.id] || 0) < SOURCE_WORK_TARGET;
   }).length;
+  const harvesterWorkDeficit = sources.reduce((total, source) => {
+    return total + Math.max(
+      0,
+      SOURCE_WORK_TARGET - (assignedHarvesterWork[source.id] || 0)
+    );
+  }, 0);
   const totalStoredEnergy = getStoredEnergy(room);
   const centralStoredEnergy = getCentralStoredEnergy(room);
   const lowEnergyThreshold = Math.max(800, room.energyCapacityAvailable * 2);
@@ -398,6 +404,7 @@ function getLogisticsStats(room) {
     fullSourceContainerCount: fullSourceContainerCount,
     droppedSourceEnergy: droppedSourceEnergy,
     weakHarvestingSourceCount: weakHarvestingSourceCount,
+    harvesterWorkDeficit: harvesterWorkDeficit,
     storedEnergy: centralStoredEnergy,
     centralStoredEnergy: centralStoredEnergy,
     totalStoredEnergy: totalStoredEnergy,
@@ -514,6 +521,7 @@ function logIncomeEfficiency(room) {
     `${room.name} income - stored: ${storedEnergy} ` +
     `total: ${totalStoredEnergy} sourceBacklog: ${logistics.sourceBacklogEnergy} ` +
     `unharvested: ${logistics.unharvestedSourceEnergy} ` +
+    `workDeficit: ${logistics.harvesterWorkDeficit} ` +
     `delta/${ticks}: ${formatEnergyDelta(delta)} (${deltaPerTick}/tick), ` +
     `sources: ${sourceDetails.join(" | ")}`
   );
@@ -610,6 +618,13 @@ function getNoContainerHarvesterTarget(logistics) {
   );
 }
 
+function getContainerMiningHarvesterTarget(logistics) {
+  return Math.max(
+    logistics.sourceCount,
+    logistics.sourceCount + Math.ceil(logistics.harvesterWorkDeficit / 2)
+  );
+}
+
 function hasRecoveryWorkBudget(room) {
   return room.energyAvailable >= Math.max(300, room.energyCapacityAvailable * 0.5);
 }
@@ -696,13 +711,13 @@ function getDesiredCounts(room) {
   }
 
   if (rcl >= 4 && logistics.sourceContainerCount >= logistics.sourceCount) {
-    desired.harvester = logistics.sourceCount;
+    desired.harvester = getContainerMiningHarvesterTarget(logistics);
   }
 
   if (rcl >= 4 && logistics.weakHarvestingSourceCount > 0) {
     desired.harvester = Math.max(
       desired.harvester,
-      logistics.sourceCount + logistics.weakHarvestingSourceCount
+      getContainerMiningHarvesterTarget(logistics)
     );
   }
 
