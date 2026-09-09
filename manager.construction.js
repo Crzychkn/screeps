@@ -960,8 +960,13 @@ function removeNoncriticalConstructionSiteForRecovery(room) {
   const sites = room.find(FIND_MY_CONSTRUCTION_SITES, {
     filter: (site) => {
       return (
+        site.structureType === STRUCTURE_ROAD ||
         site.structureType === STRUCTURE_EXTENSION ||
-        site.structureType === STRUCTURE_RAMPART
+        site.structureType === STRUCTURE_RAMPART ||
+        (
+          site.structureType === STRUCTURE_CONTAINER &&
+          !isSourceContainer(site)
+        )
       );
     },
   });
