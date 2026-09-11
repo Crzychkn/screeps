@@ -329,6 +329,37 @@ function getAssignedHarvesterWorkBySource(room) {
   return assignedWork;
 }
 
+function getProductiveHarvesterWorkBySource(room) {
+  const productiveWork = {};
+
+  for (const name in Game.creeps) {
+    const creep = Game.creeps[name];
+
+    if (
+      creep.memory.role !== "harvester" ||
+      creep.memory.homeRoom !== room.name ||
+      creep.room.name !== room.name ||
+      !creep.memory.sourceId ||
+      creep.memory.delivering ||
+      creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0
+    ) {
+      continue;
+    }
+
+    const source = Game.getObjectById(creep.memory.sourceId);
+
+    if (!source || creep.pos.getRangeTo(source) > 1) {
+      continue;
+    }
+
+    productiveWork[creep.memory.sourceId] =
+      (productiveWork[creep.memory.sourceId] || 0) +
+      creep.getActiveBodyparts(WORK);
+  }
+
+  return productiveWork;
+}
+
 function getLogisticsStats(room) {
   const cached = logisticsStatsCache[room.name];
 
@@ -369,13 +400,14 @@ function getLogisticsStats(room) {
   }, 0);
   const sourceBacklogEnergy = sourceContainerEnergy + droppedSourceEnergy;
   const assignedHarvesterWork = getAssignedHarvesterWorkBySource(room);
+  const productiveHarvesterWork = getProductiveHarvesterWorkBySource(room);
   const weakHarvestingSourceCount = sources.filter((source) => {
-    return (assignedHarvesterWork[source.id] || 0) < SOURCE_WORK_TARGET;
+    return (productiveHarvesterWork[source.id] || 0) < SOURCE_WORK_TARGET;
   }).length;
   const harvesterWorkDeficit = sources.reduce((total, source) => {
     return total + Math.max(
       0,
-      SOURCE_WORK_TARGET - (assignedHarvesterWork[source.id] || 0)
+      SOURCE_WORK_TARGET - (productiveHarvesterWork[source.id] || 0)
     );
   }, 0);
   const totalStoredEnergy = getStoredEnergy(room);
@@ -405,6 +437,7 @@ function getLogisticsStats(room) {
     droppedSourceEnergy: droppedSourceEnergy,
     weakHarvestingSourceCount: weakHarvestingSourceCount,
     harvesterWorkDeficit: harvesterWorkDeficit,
+    productiveHarvesterWork: productiveHarvesterWork,
     storedEnergy: centralStoredEnergy,
     centralStoredEnergy: centralStoredEnergy,
     totalStoredEnergy: totalStoredEnergy,
@@ -501,6 +534,8 @@ function logIncomeEfficiency(room) {
     const containerSite = getSourceContainerSiteForSource(source);
     const droppedEnergy = getDroppedEnergyNearSource(source);
     const assignedWork = getAssignedHarvesterWork(room, source);
+    const productiveWork =
+      logistics.productiveHarvesterWork[source.id] || 0;
 
     return (
       "S" + (index + 1) +
@@ -513,7 +548,7 @@ function logIncomeEfficiency(room) {
           : ""
       ) +
       " drop:" + droppedEnergy +
-      " work:" + assignedWork + "/5"
+      " work:" + productiveWork + "/" + assignedWork + "/5"
     );
   });
 
